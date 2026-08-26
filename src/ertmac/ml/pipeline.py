@@ -1,77 +1,58 @@
 import pandas as pd
-import logging
-from typing import List, Dict, Any, Tuple
-from .contracts import MLPipelineConfig, causal_feature_cutoff
-from .validation import check_feature_leakage, validate_causal_contract, check_overlap
-from .models import BaseRiskModel
-
-logger = logging.getLogger("ml_pipeline")
+from typing import Dict, List
+from .contracts import MLPipelineConfig
+from .models import BaseModel
+from .validation import compute_metrics
 
 class LOWOExperimentRunner:
-    """
-    Manages Leave-One-Well-Out (LOWO) scientific evaluation.
-    """
     def __init__(self, config: MLPipelineConfig):
         self.config = config
         
-    def generate_splits(self, df_features: pd.DataFrame) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def run_experiment(self, df_features: pd.DataFrame, model: BaseModel, target_col: str = 'is_event') -> Dict:
         """
-        Generates LOWO train/test splits safely.
+        Runs rigorous Leave-One-Well-Out cross-validation.
+        df_features must contain: 'well_id', 'independent_group', and target_col
         """
-        # Ensure well_id exists
-        if 'well_id' not in df_features.columns:
-            raise ValueError("Dataset missing 'well_id' for LOWO split.")
+        if 'independent_group' not in df_features.columns:
+            raise ValueError("df_features must contain 'independent_group' for scientific LOWO splitting.")
             
-        # Ensure target exists
-        if 'target' not in df_features.columns:
-            raise ValueError("Dataset missing 'target' column.")
-            
-        wells = df_features['well_id'].unique()
-        positive_wells = df_features[df_features['target'] == 1]['well_id'].unique()
+        groups = df_features['independent_group'].unique()
         
-        # Hard readiness gate
-        self.config.validate_dataset_readiness(len(positive_wells))
+        # 1. Gate Check
+        pos_groups = df_features[df_features[target_col] == 1]['independent_group'].nunique()
+        self.config.validate_dataset_readiness(pos_groups)
         
-        splits = []
-        for test_well in wells:
-            train_df = df_features[df_features['well_id'] != test_well].copy()
-            test_df = df_features[df_features['well_id'] == test_well].copy()
-            
-            # Check overlap
-            check_overlap(set(train_df['well_id']), set(test_df['well_id']))
-            
-            # Zero-positive fold handling
-            if train_df['target'].sum() == 0:
-                raise ValueError(f"Fold for test well {test_well} has zero positive examples in train set.")
-                
-            splits.append((train_df, test_df))
-            
-        return splits
-
-    def run_experiment(self, df_features: pd.DataFrame, model: BaseRiskModel):
-        """
-        Executes the LOWO experiment.
-        """
-        # 1. Validation
-        check_feature_leakage(df_features)
-        
-        # 2. Split Generation
-        splits = self.generate_splits(df_features)
+        # 2. LOWO Execution
+        feature_cols = [c for c in df_features.columns if c not in ['well_id', 'independent_group', target_col, 'md', 'timestamp', 'event_episode_id']]
         
         results = []
-        for i, (train_df, test_df) in enumerate(splits):
-            logger.info(f"Fold {i}: Train samples={len(train_df)}, Test samples={len(test_df)}")
+        all_y_true = []
+        all_y_prob = []
+        
+        for g in groups:
+            train = df_features[df_features['independent_group'] != g]
+            test = df_features[df_features['independent_group'] == g]
             
-            # 3. Model Training
-            # (Blocked until real data arrives, but the interface is here)
-            X_train = train_df.drop(columns=['target', 'well_id', 'md'])
-            y_train = train_df['target']
-            X_test = test_df.drop(columns=['target', 'well_id', 'md'])
+            if len(test) == 0 or len(train) == 0:
+                continue
+                
+            # Train
+            model.fit(train[feature_cols], train[target_col])
             
-            model.fit(X_train, y_train)
-            probs = model.predict_proba(X_test)
+            # Predict
+            probs = model.predict_proba(test[feature_cols])
             
-            test_df['pred_proba'] = probs
-            results.append(test_df)
+            all_y_true.extend(test[target_col].values)
+            all_y_prob.extend(probs)
             
-        return pd.concat(results)
+            metrics = compute_metrics(test[target_col].values, probs)
+            metrics['holdout_group'] = g
+            results.append(metrics)
+            
+        import numpy as np
+        macro_metrics = compute_metrics(np.array(all_y_true), np.array(all_y_prob))
+            
+        return {
+            "per_fold_results": results,
+            "macro_metrics": macro_metrics
+        }

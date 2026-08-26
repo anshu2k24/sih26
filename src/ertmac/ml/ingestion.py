@@ -1,18 +1,27 @@
 import pandas as pd
-import numpy as np
+import re
 
 class IngestionValidator:
     REQUIRED_EVENT_COLS = [
-        "well_id", "wellbore_id", "timestamp", "md",
-        "event_type", "event_text", "mitigation", "resolution"
+        "well_id", "timestamp", "md",
+        "event_type", "primary_evidence", "mitigation"
     ]
     
     REQUIRED_SENSOR_COLS = [
-        "well_id", "wellbore_id", "timestamp", "md", "tvd",
+        "well_id", "timestamp", "md",
         "rop", "wob", "rpm", "torque", "hookload", "spp",
         "flow_in", "mud_density"
     ]
     
+    def get_independent_group(self, well_id: str) -> str:
+        """
+        Groups parent and sidetrack wells together.
+        Example: '15/9-F-15' and '15/9-F-15S' -> '15/9-F-15'
+        Example: 'Well A' and 'Well A ST1' -> 'Well A'
+        """
+        # Very basic regex to strip common sidetrack suffixes
+        return re.sub(r'(\s*[A-Z]$|\s*ST\d*$|S$|T\d*$)', '', well_id).strip()
+
     def validate_event_data(self, df: pd.DataFrame) -> dict:
         missing_cols = [c for c in self.REQUIRED_EVENT_COLS if c not in df.columns]
         if missing_cols:
@@ -21,7 +30,7 @@ class IngestionValidator:
         report = {
             "total_rows": len(df),
             "unique_wells": df["well_id"].nunique(),
-            "unique_wellbores": df["wellbore_id"].nunique(),
+            "independent_groups": df["well_id"].apply(self.get_independent_group).nunique(),
             "event_counts": df["event_type"].value_counts().to_dict(),
             "null_md_count": df["md"].isnull().sum(),
         }
@@ -32,13 +41,11 @@ class IngestionValidator:
         if missing_cols:
             raise ValueError(f"Sensor data missing required columns: {missing_cols}")
             
-        # Detect duplicates
         duplicates = df.duplicated(subset=["well_id", "timestamp", "md"]).sum()
         
-        # Detect non-monotonic depth sequences per well
         non_monotonic = 0
-        df = df.sort_values(["well_id", "timestamp"])
-        for _, group in df.groupby("well_id"):
+        df_sorted = df.sort_values(["well_id", "timestamp"])
+        for _, group in df_sorted.groupby("well_id"):
             diffs = group["md"].diff().dropna()
             non_monotonic += (diffs < 0).sum()
             
@@ -52,31 +59,39 @@ class IngestionValidator:
         return report
         
     def check_readiness(self, event_df: pd.DataFrame, sensor_df: pd.DataFrame) -> tuple[bool, str]:
-        # 1. Check >=5 positive wells
-        pos_wells = event_df[event_df['event_type'] == 'FORMATION_MUD_LOSS']['well_id'].unique()
-        if len(pos_wells) < 5:
-            return False, f"Only {len(pos_wells)} positive wells found. Minimum 5 required."
+        # Filter for Target
+        target_events = event_df[event_df['event_type'] == 'FORMATION_MUD_LOSS'].copy()
+        
+        if len(sensor_df) == 0:
+            return False, "Minimum 5 required. Zero telemetry provided."
             
-        # 2. Check telemetry overlap
-        sensor_wells = sensor_df['well_id'].unique()
-        overlapping = set(pos_wells).intersection(set(sensor_wells))
+        target_events['independent_group'] = target_events['well_id'].apply(self.get_independent_group)
+        sensor_df['independent_group'] = sensor_df['well_id'].apply(self.get_independent_group)
+        
+        pos_groups = target_events['independent_group'].unique()
+        if len(pos_groups) < 5:
+            return False, f"Only {len(pos_groups)} independent positive well groups found. Minimum 5 required."
+            
+        sensor_groups = sensor_df['independent_group'].unique()
+        overlapping = set(pos_groups).intersection(set(sensor_groups))
         if len(overlapping) < 5:
-            return False, f"Telemetry only covers {len(overlapping)} positive wells. Minimum 5 required."
+            return False, f"Telemetry only covers {len(overlapping)} independent positive well groups. Minimum 5 required."
             
-        # 3. Check telemetry reaching onset_md - 25m
-        valid_wells = 0
-        for w in overlapping:
-            w_events = event_df[(event_df['well_id'] == w) & (event_df['event_type'] == 'FORMATION_MUD_LOSS')]
-            w_sensor = sensor_df[sensor_df['well_id'] == w]
-            min_sensor_md = w_sensor['md'].min()
+        valid_groups = set()
+        for g in overlapping:
+            g_events = target_events[target_events['independent_group'] == g]
+            g_sensor = sensor_df[sensor_df['independent_group'] == g]
             
-            for _, ev in w_events.iterrows():
+            if len(g_sensor) == 0: continue
+            min_sensor_md = g_sensor['md'].min()
+            
+            for _, ev in g_events.iterrows():
                 cutoff = ev['md'] - 25.0
                 if pd.notnull(cutoff) and min_sensor_md <= cutoff:
-                    valid_wells += 1
-                    break # One valid event is enough to count the well
+                    valid_groups.add(g)
+                    break
                     
-        if valid_wells < 5:
-            return False, f"Telemetry does not reach onset - 25m for enough wells. Only {valid_wells} valid wells."
+        if len(valid_groups) < 5:
+            return False, f"Telemetry does not reach onset - 25m for enough independent groups. Only {len(valid_groups)} valid groups."
             
         return True, "READY_FOR_FIRST_ML_EXPERIMENT"

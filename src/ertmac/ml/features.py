@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict
 from dataclasses import dataclass
 
 @dataclass
@@ -10,7 +10,7 @@ class CausalFeatureConfig:
     
     def __post_init__(self):
         if self.windows is None:
-            self.windows = [1.0, 5.0, 10.0]
+            self.windows = [5.0, 10.0, 25.0, 50.0]
         if self.sensor_channels is None:
             self.sensor_channels = [
                 'rop', 'wob', 'rpm', 'torque', 
@@ -20,8 +20,8 @@ class CausalFeatureConfig:
 def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config: CausalFeatureConfig) -> Dict[str, float]:
     """
     Constructs features using strictly data <= cutoff_md.
+    No future information is allowed.
     """
-    # LEAKAGE CHECK
     df_past = df_sensor[df_sensor['md'] <= cutoff_md].copy()
     
     if len(df_past) == 0:
@@ -32,11 +32,9 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
     features = {}
     latest_md = df_past['md'].iloc[-1]
     
-    # Distance check to ensure we aren't joining across a massive gap
     if cutoff_md - latest_md > 5.0:
         raise ValueError(f"Sensor gap too large: nearest sample is {cutoff_md - latest_md}m away")
         
-    # Construct rolling features
     for col in config.sensor_channels:
         if col not in df_past.columns:
             continue
@@ -45,10 +43,9 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
         mds = df_past['md'].values
         
         # Recent state (last value)
-        features[f'{col}_current'] = series[-1]
+        features[f'{col}_current'] = float(series[-1])
         
         for w in config.windows:
-            # Mask for window
             mask = (mds >= (latest_md - w)) & (mds <= latest_md)
             window_data = series[mask]
             
@@ -57,15 +54,19 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
                 features[f'{col}_std_{w}m'] = float(np.std(window_data))
                 features[f'{col}_min_{w}m'] = float(np.min(window_data))
                 features[f'{col}_max_{w}m'] = float(np.max(window_data))
-                if len(window_data) > 1:
-                    features[f'{col}_delta_{w}m'] = float(window_data[-1] - window_data[0])
+                features[f'{col}_delta_{w}m'] = float(window_data[-1] - window_data[0])
+                
+                # Simple slope
+                if len(window_data) > 1 and (mds[mask][-1] - mds[mask][0]) > 0:
+                    features[f'{col}_slope_{w}m'] = features[f'{col}_delta_{w}m'] / (mds[mask][-1] - mds[mask][0])
                 else:
-                    features[f'{col}_delta_{w}m'] = 0.0
+                    features[f'{col}_slope_{w}m'] = 0.0
             else:
                 features[f'{col}_mean_{w}m'] = np.nan
                 features[f'{col}_std_{w}m'] = np.nan
                 features[f'{col}_min_{w}m'] = np.nan
                 features[f'{col}_max_{w}m'] = np.nan
                 features[f'{col}_delta_{w}m'] = np.nan
+                features[f'{col}_slope_{w}m'] = np.nan
                 
     return features

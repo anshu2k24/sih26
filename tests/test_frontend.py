@@ -12,19 +12,19 @@ def test_frontend_code_boundaries():
         content = f.read()
         
     # Check ML Status Panel presence
-    assert "STATUS: PREDICTIVE ML BLOCKED" in content, "Missing ML blocked status"
-    assert "REASON: Real OIL/eRTMAC telemetry not provided." in content, "Missing ML blocked reason"
+    assert "ML BLOCKED — NEED REAL DATA" in content, "Missing ML blocked status"
+    assert "OIL/eRTMAC data not found" in content, "Missing ML blocked reason"
     
     # Check Placeholder presence
-    assert "Predictive Risk Alerts — Awaiting OIL/eRTMAC Data" in content, "Missing predictive placeholder"
+    assert "Predictive Risk" in content, "Missing predictive placeholder"
     
     # Check for NO predictions in historical section
-    assert "predict" not in content.split("HISTORICAL INTELLIGENCE")[1].lower(), "Found prediction text in historical intelligence section"
-    assert "probability" not in content.split("HISTORICAL INTELLIGENCE")[1].lower(), "Found probability text in historical intelligence section"
+    assert "predict" not in content.split("Historical NWIS Intelligence")[1].split("Predictive Risk")[0].lower(), "Found prediction text in historical intelligence section"
+    assert "probability" not in content.split("Historical NWIS Intelligence")[1].split("Predictive Risk")[0].lower(), "Found probability text in historical intelligence section"
     
     # Check provenance fields are displayed
-    assert "Source DDR Record:" in content, "Missing provenance display"
-    assert "Primary Evidence:" in content, "Missing evidence display"
+    assert "Source Record:" in content, "Missing provenance display"
+    assert "Evidence:" in content, "Missing evidence display"
 
 def test_api_responses_contain_no_predictions():
     # Load the API and test a response

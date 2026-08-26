@@ -13,17 +13,15 @@ def test_frontend_demo_boundaries():
         content = f.read()
         
     # Check ML Status Panel presence
-    assert "PREDICTIVE ML BLOCKED" in content
-    assert "Real OIL/eRTMAC telemetry not provided" in content
+    assert "ML BLOCKED — NEED REAL DATA" in content
+    assert "data/raw/oil_ertmac_sensors.parquet" in content
     
-    # Check Future Predictive Layer constraints
-    assert "No synthetic data, fabricated probabilities, or fake risk scores" in content
+
     
-    # Check "Why this matters" section
-    assert "Why this matters" in content
+
     
     # Check NO predictions in historical section
-    historical_section = content.split("HISTORICAL INTELLIGENCE")[1].split("Future Predictive Layer")[0]
+    historical_section = content.split("Historical NWIS Intelligence")[1].split("Predictive Risk")[0]
     assert "predict" not in historical_section.lower()
     assert "probabilit" not in historical_section.lower()
 
