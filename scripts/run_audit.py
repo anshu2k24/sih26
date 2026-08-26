@@ -85,7 +85,7 @@ def derive_findings(schema_result: dict, dq: dict, wc: dict) -> list[str]:
     findings.append(
         f"Data spans <strong>{str(rc['earliest_report'].min())}</strong> to "
         f"<strong>{str(rc['latest_report'].max())}</strong> across "
-        f"<strong>{len(rc)} wellbores</strong>. "
+        f"<strong>23 unique nameWell</strong> and <strong>26 unique nameWellbore</strong> values. "
         f"Wellbore <code>NO 15/9-F-12</code> has the most reports (165)."
     )
 
@@ -100,17 +100,15 @@ def derive_findings(schema_result: dict, dq: dict, wc: dict) -> list[str]:
 
     # No high-frequency data
     findings.append(
-        "<span class='warn'>⚠️ DATA LIMITATION:</span> This DDR dataset contains "
-        "<strong>one record per 24-hour period</strong> per wellbore. "
-        "High-frequency drilling parameters (WOB, RPM, torque, hookload, standpipe pressure) "
-        "are <strong>NOT present</strong> as clean columns. Do not assume their availability."
+        "<span class='warn'>⚠️ DATA LIMITATION:</span> This Parquet is Daily Drilling Report data "
+        "and is NOT a continuous drilling telemetry dataset. High-frequency drilling parameters "
+        "(WOB, RPM, torque, hookload, standpipe pressure) are <strong>NOT present</strong> as clean columns."
     )
 
     # ML split note
     findings.append(
-        "🔬 <strong>ML NOTE:</strong> Splits must be by wellbore (not random rows) "
-        "to prevent leakage. 26 wellbores available; recommend holding out ≥2 "
-        "complete wellbores as final test set."
+        "🔬 <strong>ML NOTE:</strong> Do not treat activity prediction as the primary PS26121 ML problem. "
+        "Splits must be by wellbore (not random rows) to prevent leakage."
     )
 
     return findings
