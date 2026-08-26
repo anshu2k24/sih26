@@ -1,0 +1,25 @@
+candidate_target,horizon_m,verified_episodes,valid_episodes,distinct_wells,wells,meets_5_well_gate
+FORMATION_MUD_LOSS,25,17,4,2,"15/9-F-15, 15/9-F-9 A",False
+FORMATION_MUD_LOSS,50,17,4,2,"15/9-F-15, 15/9-F-9 A",False
+FORMATION_MUD_LOSS,100,17,4,2,"15/9-F-15, 15/9-F-9 A",False
+Tight Hole,25,39,4,2,"15/9-F-15S, 15/9-F-5",False
+Tight Hole,50,39,4,2,"15/9-F-15S, 15/9-F-5",False
+Tight Hole,100,39,3,2,"15/9-F-15S, 15/9-F-5",False
+Pack-off,25,18,2,1,15/9-F-15,False
+Pack-off,50,18,2,1,15/9-F-15,False
+Pack-off,100,18,0,0,,False
+Stuck Pipe,25,12,0,0,,False
+Stuck Pipe,50,12,0,0,,False
+Stuck Pipe,100,12,0,0,,False
+Equipment Failure,25,34,3,2,"15/9-F-14, 15/9-F-5",False
+Equipment Failure,50,34,3,2,"15/9-F-14, 15/9-F-5",False
+Equipment Failure,100,34,3,2,"15/9-F-14, 15/9-F-5",False
+CEMENTING/OPERATIONAL_LOSS,25,4,1,1,15/9-F-15,False
+CEMENTING/OPERATIONAL_LOSS,50,4,1,1,15/9-F-15,False
+CEMENTING/OPERATIONAL_LOSS,100,4,1,1,15/9-F-15,False
+UNIFIED_DRILLING_RISK,25,86,10,4,"15/9-F-15, 15/9-F-15S, 15/9-F-5, 15/9-F-9 A",False
+UNIFIED_DRILLING_RISK,50,86,10,4,"15/9-F-15, 15/9-F-15S, 15/9-F-5, 15/9-F-9 A",False
+UNIFIED_DRILLING_RISK,100,86,7,4,"15/9-F-15, 15/9-F-15S, 15/9-F-5, 15/9-F-9 A",False
+ALL_EVENTS,25,129,14,5,"15/9-F-14, 15/9-F-15, 15/9-F-15S, 15/9-F-5, 15/9-F-9 A",True
+ALL_EVENTS,50,129,14,5,"15/9-F-14, 15/9-F-15, 15/9-F-15S, 15/9-F-5, 15/9-F-9 A",True
+ALL_EVENTS,100,129,11,5,"15/9-F-14, 15/9-F-15, 15/9-F-15S, 15/9-F-5, 15/9-F-9 A",True

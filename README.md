@@ -11,6 +11,19 @@ and evidence-backed recommendations using historical daily drilling report data.
 
 ---
 
+## 🚨 CURRENT STATUS 🚨
+
+**Historical NWIS Engine:** ✅ **FUNCTIONAL**
+The application can query real historical DDR events by depth, extracting verified mitigations and evidence with exact provenance.
+
+**Predictive ML Pipeline:** 🛑 **BLOCKED BY DATA**
+The ML architecture (Feature Engineering, LOWO validation, Baseline Models) is 100% complete and tested. However, model training is hard-blocked because the public Equinor Volve dataset lacks sufficient independent wells with high-frequency sensor telemetry to support a scientifically valid test.
+
+**To resume ML:**
+We require real `oil_ertmac_events.parquet` and `oil_ertmac_sensors.parquet` data satisfying the minimum 5-well constraint. See `reports/next_data_requirements.md` for details.
+
+---
+
 ## Setup
 
 ### Requirements
@@ -67,17 +80,24 @@ pip install -e ".[dev]"
 
 ---
 
+## Component Execution Status
+
+- **FUNCTIONAL**: Actually executable against real available data.
+- **BLOCKED**: Intentionally refuses execution because required real data is absent.
+
 ## Checkpoints
 
-| Checkpoint | Description | Status |
+| Phase | Description | Status |
 |---|---|---|
-| 1 | Raw dataset audit | **In progress** |
-| 2 | Nested structure flattening | Pending approval |
-| 3 | Final ML dataset + feature definitions | Pending |
-| 4 | Train/val/test strategy | Pending |
-| 5 | Baseline models | Pending |
-| 6 | Main model training/evaluation | Pending |
-| 7 | Error analysis | Pending |
+| 1 | Raw data audit | COMPLETE |
+| 2 | DDR/event extraction + semantic labeling | COMPLETE |
+| 3 | Event episode validation/leakage audit | COMPLETE |
+| 4 | Sensor/event causal integration audit | COMPLETE |
+| 5 | ML dataset/readiness investigation | COMPLETE |
+| 6 | LOWO/model pipeline architecture | COMPLETE (Execution BLOCKED) |
+| 7 | NWIS historical intelligence engine | FUNCTIONAL |
+| 8 | Minimal frontend/API | FUNCTIONAL |
+| 9 | Predictive ML training | BLOCKED (Awaiting OIL/eRTMAC data) |
 
 ---
 
