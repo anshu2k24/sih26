@@ -1,0 +1,14 @@
+pandas<4,>=3.0
+numpy<3,>=2.0
+pyarrow<26,>=15
+duckdb<2,>=1.5
+matplotlib<4,>=3.9
+seaborn<1,>=0.13
+scipy<2,>=1.13
+jinja2<4,>=3.1
+missingno<1,>=0.5
+tabulate<1,>=0.9
+
+[dev]
+pytest<9,>=8
+pytest-cov<7,>=6
