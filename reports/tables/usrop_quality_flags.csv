@@ -1,0 +1,11 @@
+Rule,Violations,Percentage,Affected Wells
+ROP <= 0,0,0.0,
+WOB <= 0,0,0.0,
+RPM < 0,0,0.0,
+Torque < 0,0,0.0,
+Flow < 0,0,0.0,
+Mud density <= 0,0,0.0,
+Diameter <= 0,0,0.0,
+Hookload < 0,0,0.0,
+TVD <= 0,0,0.0,
+TVD > MD + 0.1,0,0.0,

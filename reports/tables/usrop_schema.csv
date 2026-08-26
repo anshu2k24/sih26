@@ -1,0 +1,13 @@
+field,dtype,valid_range,missingness
+Measured Depth m,float64,"[225.17, 4090.00]",0
+Weight on Bit kkgf,float64,"[0.00, 31.41]",0
+Average Standpipe Pressure kPa,float64,"[1432.66, 24998.46]",0
+Average Surface Torque kN.m,float64,"[0.01, 36.49]",0
+Rate of Penetration m/h,float64,"[0.33, 99.21]",0
+Average Rotary Speed rpm,float64,"[0.00, 311.23]",0
+Mud Flow In L/min,float64,"[185.42, 4538.45]",0
+Mud Density In g/cm3,float64,"[1.02, 12.02]",0
+Diameter mm,float64,"[215.90, 444.50]",0
+Average Hookload kkgf,float64,"[84.05, 152.93]",0
+Hole Depth (TVD) m,float64,"[225.16, 3248.39]",0
+USROP Gamma gAPI,float64,"[0.00, 260.90]",0

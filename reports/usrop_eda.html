@@ -1,0 +1,209 @@
+
+    <html>
+    <head><title>USROP EDA</title></head>
+    <body>
+    <h1>USROP Exploratory Data Analysis</h1>
+    <p>Please review the detailed figures generated in <code>reports/figures/usrop/</code>.</p>
+    <h2>Data Quality</h2>
+    <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Rule</th>
+      <th>Violations</th>
+      <th>Percentage</th>
+      <th>Affected Wells</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ROP &lt;= 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>WOB &lt;= 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>RPM &lt; 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>Torque &lt; 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>Flow &lt; 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>Mud density &lt;= 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>Diameter &lt;= 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>Hookload &lt; 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>TVD &lt;= 0</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>TVD &gt; MD + 0.1</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+    <h2>Well Summaries</h2>
+    <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>well</th>
+      <th>row_count</th>
+      <th>MD_min</th>
+      <th>MD_max</th>
+      <th>depth_span</th>
+      <th>median_MD_step</th>
+      <th>mean_MD_step</th>
+      <th>p1_step</th>
+      <th>p50_step</th>
+      <th>p99_step</th>
+      <th>duplicate_MDs</th>
+      <th>non_monotonic_MDs</th>
+      <th>gaps_gt_1m</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>15/9-F-14</td>
+      <td>47645</td>
+      <td>987.948</td>
+      <td>3466.033</td>
+      <td>2478.085</td>
+      <td>0.037</td>
+      <td>0.052013</td>
+      <td>0.003</td>
+      <td>0.037</td>
+      <td>0.219</td>
+      <td>2</td>
+      <td>0</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>15/9-F-15</td>
+      <td>53041</td>
+      <td>1306.525</td>
+      <td>4065.346</td>
+      <td>2758.821</td>
+      <td>0.027</td>
+      <td>0.052014</td>
+      <td>0.003</td>
+      <td>0.027</td>
+      <td>0.150</td>
+      <td>2</td>
+      <td>0</td>
+      <td>38</td>
+    </tr>
+    <tr>
+      <td>15/9-F-15S</td>
+      <td>51708</td>
+      <td>1400.550</td>
+      <td>4090.001</td>
+      <td>2689.451</td>
+      <td>0.031</td>
+      <td>0.052013</td>
+      <td>0.003</td>
+      <td>0.031</td>
+      <td>0.247</td>
+      <td>0</td>
+      <td>0</td>
+      <td>44</td>
+    </tr>
+    <tr>
+      <td>15/9-F-5</td>
+      <td>18548</td>
+      <td>2828.239</td>
+      <td>3792.200</td>
+      <td>963.961</td>
+      <td>0.031</td>
+      <td>0.051974</td>
+      <td>0.003</td>
+      <td>0.031</td>
+      <td>0.153</td>
+      <td>0</td>
+      <td>0</td>
+      <td>19</td>
+    </tr>
+    <tr>
+      <td>15/9-F-7</td>
+      <td>6389</td>
+      <td>301.231</td>
+      <td>633.536</td>
+      <td>332.305</td>
+      <td>0.051</td>
+      <td>0.052020</td>
+      <td>0.003</td>
+      <td>0.051</td>
+      <td>0.110</td>
+      <td>0</td>
+      <td>0</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>15/9-F-9</td>
+      <td>7851</td>
+      <td>225.171</td>
+      <td>633.536</td>
+      <td>408.365</td>
+      <td>0.045</td>
+      <td>0.052021</td>
+      <td>0.003</td>
+      <td>0.045</td>
+      <td>0.152</td>
+      <td>0</td>
+      <td>0</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>15/9-F-9 A</td>
+      <td>13746</td>
+      <td>491.033</td>
+      <td>1205.999</td>
+      <td>714.966</td>
+      <td>0.042</td>
+      <td>0.052016</td>
+      <td>0.003</td>
+      <td>0.042</td>
+      <td>0.147</td>
+      <td>0</td>
+      <td>0</td>
+      <td>10</td>
+    </tr>
+  </tbody>
+</table>
+    </body>
+    </html>
+    
