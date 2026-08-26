@@ -1,0 +1,12 @@
+wellbore,log file,mnemonic,description,unit,index type (time/depth),sample count,minimum,maximum,missingness if calculable,Status
+15/9-F-12,15/9-F-12,log_time_1.xml,MD,Measured Depth,m,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,TVD,True Vertical Depth,m,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,ROP,Rate of Penetration,m/h,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,WOB,Weight on Bit,klbf,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,RPM,Rotary Speed,rpm,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,STOR,Surface Torque,kft.lbf,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,HKLD,Hookload,klbf,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,SPPA,Standpipe Pressure,psi,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,BPOS,Block Position,m,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,MFI,Mud Flow In,galUS/min,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED
+15/9-F-12,15/9-F-12,log_time_1.xml,MFO,Mud Flow Out,galUS/min,time,INFERRED / UNVERIFIED,INFERRED,INFERRED,INFERRED

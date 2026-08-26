@@ -1,0 +1,76 @@
+{
+    "source_url": "https://www.equinor.com/energy/volve-data-sharing",
+    "access_method": "Azure Blob Storage (SAS Token required) / Databricks Marketplace",
+    "container": "volve",
+    "path_prefix": "WITSML Realtime drilling data/",
+    "data_format": "WITSML 1.3.1.1 and 1.4.1.1 (XML)",
+    "estimated_total_size_gb": 50,
+    "wells_with_realtime_data": [
+        "15/9-F-1 C",
+        "15/9-F-11",
+        "15/9-F-11 A",
+        "15/9-F-11 B",
+        "15/9-F-12",
+        "15/9-F-14",
+        "15/9-F-15",
+        "15/9-F-4",
+        "15/9-F-5"
+    ],
+    "key_channels_discovered": [
+        {
+            "mnemonic": "MD",
+            "unit": "m",
+            "description": "Measured Depth"
+        },
+        {
+            "mnemonic": "TVD",
+            "unit": "m",
+            "description": "True Vertical Depth"
+        },
+        {
+            "mnemonic": "ROP",
+            "unit": "m/h",
+            "description": "Rate of Penetration"
+        },
+        {
+            "mnemonic": "WOB",
+            "unit": "klbf",
+            "description": "Weight on Bit"
+        },
+        {
+            "mnemonic": "RPM",
+            "unit": "rpm",
+            "description": "Rotary Speed"
+        },
+        {
+            "mnemonic": "STOR",
+            "unit": "kft.lbf",
+            "description": "Surface Torque"
+        },
+        {
+            "mnemonic": "HKLD",
+            "unit": "klbf",
+            "description": "Hookload"
+        },
+        {
+            "mnemonic": "SPPA",
+            "unit": "psi",
+            "description": "Standpipe Pressure"
+        },
+        {
+            "mnemonic": "BPOS",
+            "unit": "m",
+            "description": "Block Position"
+        },
+        {
+            "mnemonic": "MFI",
+            "unit": "galUS/min",
+            "description": "Mud Flow In"
+        },
+        {
+            "mnemonic": "MFO",
+            "unit": "galUS/min",
+            "description": "Mud Flow Out"
+        }
+    ]
+}
