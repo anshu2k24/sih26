@@ -74,4 +74,25 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
                 features[f'{col}_delta_{w}m'] = np.nan
                 features[f'{col}_slope_{w}m'] = np.nan
                 
+        # --- Experiment A: Domain Invariant Features ---
+        mean_25m = features.get(f'{col}_mean_25.0m', np.nan)
+        if not pd.isna(mean_25m) and mean_25m != 0:
+            mean_5m = features.get(f'{col}_mean_5.0m', np.nan)
+            mean_10m = features.get(f'{col}_mean_10.0m', np.nan)
+            std_25m = features.get(f'{col}_std_25.0m', np.nan)
+            delta_5m = features.get(f'{col}_delta_5.0m', np.nan)
+            slope_25m = features.get(f'{col}_slope_25.0m', np.nan)
+            
+            features[f'{col}_ratio_5m_25m'] = float(mean_5m / mean_25m) if not pd.isna(mean_5m) else np.nan
+            features[f'{col}_ratio_10m_25m'] = float(mean_10m / mean_25m) if not pd.isna(mean_10m) else np.nan
+            features[f'{col}_rel_delta_5m'] = float(delta_5m / mean_25m) if not pd.isna(delta_5m) else np.nan
+            features[f'{col}_cv_25m'] = float(std_25m / mean_25m) if not pd.isna(std_25m) else np.nan
+            features[f'{col}_norm_slope_25m'] = float(slope_25m / mean_25m) if not pd.isna(slope_25m) else np.nan
+        else:
+            features[f'{col}_ratio_5m_25m'] = np.nan
+            features[f'{col}_ratio_10m_25m'] = np.nan
+            features[f'{col}_rel_delta_5m'] = np.nan
+            features[f'{col}_cv_25m'] = np.nan
+            features[f'{col}_norm_slope_25m'] = np.nan
+            
     return features

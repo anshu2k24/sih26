@@ -73,9 +73,20 @@ def build_dataset(df_events, df_sensors, target_event='FORMATION_MUD_LOSS', hori
     return pd.DataFrame(feature_rows)
 
 def main():
-    processed_dir = REPO_ROOT / "data" / "processed"
-    events_path = processed_dir / "normalized_events.parquet"
-    sensors_path = processed_dir / "normalized_sensors.parquet"
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", choices=["real", "synthetic"], default="real")
+    args = parser.parse_args()
+    
+    if args.dataset == "real":
+        processed_dir = REPO_ROOT / "data" / "processed"
+    else:
+        processed_dir = REPO_ROOT / "data" / "synthetic"
+        print("🚨 WARNING: SYNTHETIC DEVELOPMENT MODE 🚨")
+        print("SYNTHETIC DEVELOPMENT ONLY — NOT REAL-WORLD PERFORMANCE")
+        
+    events_path = processed_dir / ("oil_ertmac_events.parquet" if args.dataset == "synthetic" else "normalized_events.parquet")
+    sensors_path = processed_dir / ("oil_ertmac_sensors.parquet" if args.dataset == "synthetic" else "normalized_sensors.parquet")
     
     if not events_path.exists() or not sensors_path.exists():
         print("ML BLOCKED — NEED REAL DATA (Processed files missing)")
@@ -83,6 +94,12 @@ def main():
         
     df_events = pd.read_parquet(events_path)
     df_sensors = pd.read_parquet(sensors_path)
+    
+    # In synthetic mode, we must run ingestion validation manually because they were written straight to parquet
+    from ertmac.ml.normalization import handle_sentinels_and_impossible
+    if args.dataset == "synthetic":
+        df_events, _ = handle_sentinels_and_impossible(df_events, is_sensor=False)
+        df_sensors, _ = handle_sentinels_and_impossible(df_sensors, is_sensor=True)
     
     validator = IngestionValidator()
     is_ready, msg, stats = validator.check_readiness(df_events, df_sensors)
@@ -99,7 +116,7 @@ def main():
         sys.exit(0)
         
     # Run Experiment
-    config = MLPipelineConfig(min_positive_independent_wells=5)
+    config = MLPipelineConfig(min_independent_positive_well_groups=5)
     runner = LOWOExperimentRunner(config)
     
     models = {

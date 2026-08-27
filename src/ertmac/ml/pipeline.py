@@ -23,7 +23,7 @@ class LOWOExperimentRunner:
         self.config.validate_dataset_readiness(pos_groups)
         
         # 2. LOWO Execution
-        feature_cols = [c for c in df_features.columns if c not in ['well_id', 'independent_group', target_col, 'md', 'timestamp', 'event_episode_id']]
+        feature_cols = [c for c in df_features.columns if c not in ['well_id', 'wellbore_id', 'independent_group', target_col, 'md', 'timestamp', 'event_episode_id']]
         
         results = []
         all_y_true = []
