@@ -305,26 +305,21 @@ without user approval.
 
 Required checkpoints:
 
-CHECKPOINT 1
-Raw dataset audit completed.
+CHECKPOINT 1: Raw data audit (COMPLETE)
+CHECKPOINT 2: DDR/event extraction + semantic labeling (COMPLETE)
+CHECKPOINT 3: Event episode validation/leakage audit (COMPLETE)
+CHECKPOINT 4: Sensor/event causal integration audit (COMPLETE)
+CHECKPOINT 5: ML dataset/readiness investigation (COMPLETE)
+CHECKPOINT 6: LOWO/model pipeline architecture (COMPLETE, Execution BLOCKED)
+CHECKPOINT 7: NWIS historical intelligence engine (FUNCTIONAL)
+CHECKPOINT 8: Minimal frontend/API (FUNCTIONAL)
+CHECKPOINT 9: Production data ingestion & normalization (COMPLETE)
+CHECKPOINT 10: Predictive ML training (BLOCKED - AWAITING OIL/eRTMAC DATA)
 
-CHECKPOINT 2
-Nested structures flattened and refined datasets produced.
-
-CHECKPOINT 3
-Final ML dataset + target + feature definitions approved.
-
-CHECKPOINT 4
-Train/validation/test strategy approved.
-
-CHECKPOINT 5
-Baseline models trained.
-
-CHECKPOINT 6
-Main model trained/evaluated.
-
-CHECKPOINT 7
-Error analysis completed.
+**ML RESUME POINT:**
+When real OIL/eRTMAC data arrives in `data/raw/`, run:
+`python scripts/ingest_oil_ertmac.py`
+If it passes the readiness gate (>= 5 independent positive well groups), ML will unblock.
 
 ---
 

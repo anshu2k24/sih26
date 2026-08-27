@@ -29,8 +29,13 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
         
     df_past = df_past.sort_values('md')
     
-    features = {}
     latest_md = df_past['md'].iloc[-1]
+    
+    # CRITICAL LEAKAGE ASSERTIONS
+    assert latest_md <= cutoff_md, f"Leakage detected: {latest_md} > {cutoff_md}"
+    assert (df_past['md'] > cutoff_md).sum() == 0, "Post-onset data found in past window"
+    
+    features = {}
     
     if cutoff_md - latest_md > 5.0:
         raise ValueError(f"Sensor gap too large: nearest sample is {cutoff_md - latest_md}m away")

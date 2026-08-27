@@ -28,6 +28,7 @@ class LOWOExperimentRunner:
         results = []
         all_y_true = []
         all_y_prob = []
+        all_groups = []
         
         for g in groups:
             train = df_features[df_features['independent_group'] != g]
@@ -36,6 +37,9 @@ class LOWOExperimentRunner:
             if len(test) == 0 or len(train) == 0:
                 continue
                 
+            # Check for leakage explicitly
+            assert len(set(train['independent_group']).intersection(set(test['independent_group']))) == 0, "Group Leakage!"
+            
             # Train
             model.fit(train[feature_cols], train[target_col])
             
@@ -44,15 +48,37 @@ class LOWOExperimentRunner:
             
             all_y_true.extend(test[target_col].values)
             all_y_prob.extend(probs)
+            all_groups.extend(test['independent_group'].values)
             
-            metrics = compute_metrics(test[target_col].values, probs)
+            try:
+                metrics = compute_metrics(test[target_col].values, probs)
+            except Exception as e:
+                # E.g. undefined if no positives in test fold
+                metrics = {"error": str(e), "auc": np.nan, "pr_auc": np.nan}
+                
             metrics['holdout_group'] = g
             results.append(metrics)
             
         import numpy as np
-        macro_metrics = compute_metrics(np.array(all_y_true), np.array(all_y_prob))
+        try:
+            macro_metrics = compute_metrics(np.array(all_y_true), np.array(all_y_prob))
+        except Exception as e:
+            macro_metrics = {"error": str(e)}
+            
+        # Explainability
+        feature_importances = {}
+        if hasattr(model, 'model') and hasattr(model.model, 'feature_importances_'):
+            # LightGBM exposes feature_importances_
+            importances = model.model.feature_importances_
+            feature_importances = dict(zip(feature_cols, importances))
             
         return {
             "per_fold_results": results,
-            "macro_metrics": macro_metrics
+            "macro_metrics": macro_metrics,
+            "predictions": pd.DataFrame({
+                "independent_group": all_groups,
+                "y_true": all_y_true,
+                "y_prob": all_y_prob
+            }),
+            "feature_importances": feature_importances
         }

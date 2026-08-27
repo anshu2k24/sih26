@@ -54,7 +54,7 @@ def test_e2e_ml_ingestion_blocker():
     # Since OIL data is NOT provided, the system shouldn't even reach the dataframe logic, 
     # but if we pass empty dataframes (simulating the failure in audit.py), it must block.
     import pandas as pd
-    is_ready, msg = validator.check_readiness(pd.DataFrame(columns=["well_id", "event_type"]), pd.DataFrame(columns=["well_id", "md"]))
+    is_ready, msg, stats = validator.check_readiness(pd.DataFrame(columns=["well_id", "wellbore_id", "event_type"]), pd.DataFrame(columns=["well_id", "wellbore_id", "md"]))
     
     assert is_ready is False
     assert "Minimum 5 required" in msg

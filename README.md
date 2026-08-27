@@ -97,7 +97,8 @@ pip install -e ".[dev]"
 | 6 | LOWO/model pipeline architecture | COMPLETE (Execution BLOCKED) |
 | 7 | NWIS historical intelligence engine | FUNCTIONAL |
 | 8 | Minimal frontend/API | FUNCTIONAL |
-| 9 | Predictive ML training | BLOCKED (Awaiting OIL/eRTMAC data) |
+| 9 | Production data ingestion & normalization | COMPLETE |
+| 10 | Predictive ML training | BLOCKED (Awaiting OIL/eRTMAC data) |
 
 ---
 

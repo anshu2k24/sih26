@@ -26,20 +26,25 @@ class LogisticRegressionBaseline(BaseModel):
     def __init__(self):
         try:
             from sklearn.linear_model import LogisticRegression
-            self.model = LogisticRegression(max_iter=1000, class_weight='balanced')
+            from sklearn.preprocessing import StandardScaler
+            from sklearn.impute import SimpleImputer
+            from sklearn.pipeline import make_pipeline
+            
+            self.model = make_pipeline(
+                SimpleImputer(strategy='mean'),
+                StandardScaler(),
+                LogisticRegression(max_iter=1000, class_weight='balanced')
+            )
         except ImportError:
             self.model = None
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         if self.model is None:
             raise ImportError("scikit-learn not installed")
-        # Handle nans safely (simplistic fill for baseline)
-        X_fill = X.fillna(X.mean()).fillna(0)
-        self.model.fit(X_fill, y)
+        self.model.fit(X, y)
         
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        X_fill = X.fillna(X.mean()).fillna(0)
-        return self.model.predict_proba(X_fill)[:, 1]
+        return self.model.predict_proba(X)[:, 1]
 
 class LightGBMBaseline(BaseModel):
     def __init__(self):

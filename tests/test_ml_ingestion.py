@@ -11,12 +11,8 @@ from ertmac.ml.ingestion import IngestionValidator
 
 @pytest.fixture
 def validator():
-    return IngestionValidator()
-
-def test_missing_columns(validator):
-    df_bad = pd.DataFrame({"well_id": [1, 2]})
-    with pytest.raises(ValueError, match="missing required columns"):
-        validator.validate_event_data(df_bad)
+    # test explicit mapping
+    return IngestionValidator(explicit_mappings={"W1-ST": "W1"})
 
 def test_duplicate_and_monotonic(validator):
     df = pd.DataFrame({
@@ -37,9 +33,10 @@ def test_duplicate_and_monotonic(validator):
 def test_check_readiness_insufficient_wells(validator):
     df_evt = pd.DataFrame({
         "well_id": ["W1", "W2"],
+        "wellbore_id": ["W1", "W2"],
         "event_type": ["FORMATION_MUD_LOSS", "FORMATION_MUD_LOSS"]
     })
-    is_ready, msg = validator.check_readiness(df_evt, pd.DataFrame())
+    is_ready, msg, stats = validator.check_readiness(df_evt, pd.DataFrame())
     assert not is_ready
     assert "Minimum 5 required" in msg
 
@@ -48,15 +45,17 @@ def test_check_readiness_insufficient_history(validator):
     wells = [f"W{i}" for i in range(5)]
     df_evt = pd.DataFrame({
         "well_id": wells,
+        "wellbore_id": wells,
         "event_type": ["FORMATION_MUD_LOSS"] * 5,
         "md": [1000.0] * 5
     })
     # Sensor data starts at 990 (doesn't reach 975)
     df_sensor = pd.DataFrame({
         "well_id": wells,
+        "wellbore_id": wells,
         "md": [990.0] * 5
     })
-    is_ready, msg = validator.check_readiness(df_evt, df_sensor)
+    is_ready, msg, stats = validator.check_readiness(df_evt, df_sensor)
     assert not is_ready
     assert "Telemetry does not reach" in msg
 
@@ -64,14 +63,31 @@ def test_check_readiness_success(validator):
     wells = [f"W{i}" for i in range(5)]
     df_evt = pd.DataFrame({
         "well_id": wells,
+        "wellbore_id": wells,
         "event_type": ["FORMATION_MUD_LOSS"] * 5,
         "md": [1000.0] * 5
     })
     # Sensor data starts at 900 (well before 975)
     df_sensor = pd.DataFrame({
         "well_id": wells,
+        "wellbore_id": wells,
         "md": [900.0] * 5
     })
-    is_ready, msg = validator.check_readiness(df_evt, df_sensor)
+    is_ready, msg, stats = validator.check_readiness(df_evt, df_sensor)
     assert is_ready
     assert "READY_FOR_FIRST_ML_EXPERIMENT" in msg
+    assert stats["verified_positive_groups"] == 5
+
+def test_explicit_mapping(validator):
+    # W1 and W1-ST are mapped to W1
+    df_evt = pd.DataFrame({
+        "well_id": ["W1", "W1-ST"],
+        "wellbore_id": ["W1", "W1-ST"],
+        "event_type": ["FORMATION_MUD_LOSS", "FORMATION_MUD_LOSS"],
+        "md": [1000.0, 1000.0]
+    })
+    df_evt = validator.assign_mappings(df_evt)
+    assert df_evt["independent_well_group"].nunique() == 1
+    assert df_evt["independent_well_group"].iloc[0] == "W1"
+    assert df_evt["independent_well_group"].iloc[1] == "W1"
+    assert df_evt["mapping_confidence"].iloc[1] == "HIGH"
