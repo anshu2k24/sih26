@@ -56,40 +56,40 @@ In offshore exploration and development drilling, unexpected downhole incidents 
 
 ```mermaid
 flowchart TD
-    subgraph Data Layer ["1. Telemetry & Intelligence Sources"]
-        A[Equinor Volve Parquet<br/>data/Volve_USROP_1Hz.parquet]
-        B[NWIS Knowledge SQLite<br/>data/nwis_knowledge.db]
-        C[Uploaded DDR Documents<br/>PDF / TXT / CSV]
+    subgraph DataLayer ["1. Telemetry & Intelligence Sources"]
+        A["Equinor Volve Parquet<br/>data/Volve_USROP_1Hz.parquet"]
+        B["NWIS Knowledge SQLite<br/>data/nwis_knowledge.db"]
+        C["Uploaded DDR Documents<br/>PDF / TXT / CSV"]
     end
 
-    subgraph Streaming Engine ["2. Real-Time Causal Streaming Pipeline"]
-        D[VolveReplaySensorSource<br/>1Hz Causal Generator]
-        E[SensorWebSocketServer<br/>ws://localhost:8765]
-        F[SensorStreamClient<br/>Local Replay Consumer]
-        G[CausalStreamBuffer<br/>Max 200m Window / No Future Leakage]
+    subgraph StreamingEngine ["2. Real-Time Causal Streaming Pipeline"]
+        D["VolveReplaySensorSource<br/>1Hz Causal Generator"]
+        E["SensorWebSocketServer<br/>ws://localhost:8765"]
+        F["SensorStreamClient<br/>Local Replay Consumer"]
+        G["CausalStreamBuffer<br/>Max 200m Window / No Future Leakage"]
     end
 
-    subgraph Cloud Persistence & Auth ["3. Cloud Infrastructure & Security"]
-        H[Supabase Auth Engine<br/>GoTrue JWT Issuer]
-        I[Supabase PostgreSQL Cluster<br/>Multi-Tenant Profiles & Tables]
-        J[Resend Email Gateway<br/>Automated Alert Delivery]
+    subgraph CloudPersistence ["3. Cloud Infrastructure & Security"]
+        H["Supabase Auth Engine<br/>GoTrue JWT Issuer"]
+        I["Supabase PostgreSQL Cluster<br/>Multi-Tenant Profiles & Tables"]
+        J["Resend Email Gateway<br/>Automated Alert Delivery"]
     end
 
-    subgraph Backend Orchestrator ["4. FastAPI Orchestration Backend (Port 8000)"]
-        K[Server-Side JWT Verifier & RBAC Guard<br/>In-Memory 60s Token & Profile Cache]
-        L[REST API Endpoints<br/>/api/wells, /api/alerts, /api/settings, etc.]
-        M[Application WebSocket Gateway<br/>/api/ws/wells/{well_id}?token=JWT]
-        N[ML Readiness Gate<br/>ertmac.ml.ingestion]
-        O[Audit Service<br/>Append-Only Compliance Trail]
-        P[OCR & Document Parser<br/>Local Tesseract Engine]
+    subgraph BackendOrchestrator ["4. FastAPI Orchestration Backend (Port 8000)"]
+        K["Server-Side JWT Verifier & RBAC Guard<br/>In-Memory 60s Token & Profile Cache"]
+        L["REST API Endpoints<br/>/api/wells, /api/alerts, /api/settings, etc."]
+        M["Application WebSocket Gateway<br/>/api/ws/wells/:well_id?token=JWT"]
+        N["ML Readiness Gate<br/>ertmac.ml.ingestion"]
+        O["Audit Service<br/>Append-Only Compliance Trail"]
+        P["OCR & Document Parser<br/>Local Tesseract Engine"]
     end
 
-    subgraph Frontend Console ["5. React 18 + TypeScript Console (Port 5173)"]
-        Q[Persistent AppShell Layout & Outlet]
-        R[ActiveWellContext & WebSocket Listener]
-        S[13 Operational Feature Modules]
-        T[Recharts Live Telemetry Visualizer]
-        U[Leaflet Geospatial Map]
+    subgraph FrontendConsole ["5. React 18 + TypeScript Console (Port 5173)"]
+        Q["Persistent AppShell Layout & Outlet"]
+        R["ActiveWellContext & WebSocket Listener"]
+        S["13 Operational Feature Modules"]
+        T["Recharts Live Telemetry Visualizer"]
+        U["Leaflet Geospatial Map"]
     end
 
     A --> D
@@ -406,13 +406,13 @@ For Linux VPS (Ubuntu 22.04/24.04 LTS) deployments, Caddy handles HTTPS/WSS auto
 
 ```mermaid
 flowchart LR
-    Client([Web Client / Browser]) -->|HTTPS / WSS| Proxy[Caddy Reverse Proxy with Auto-SSL]
-    Proxy -->|Static Bundle /index.html| Dist[frontend/dist]
-    Proxy -->|REST API /api/*| Backend[FastAPI Port 8000]
-    Proxy -->|WebSocket /api/ws/*| Backend
-    Backend -->|Stream Port 8765| Simulator[Sensor Stream Replayer]
-    Backend -->|Postgres Port 5432 / HTTPS| Supabase[(Supabase Cloud Postgres)]
-    Backend -->|REST HTTPS| Resend[Resend Email API]
+    Client["Web Client / Browser"] -->|"HTTPS / WSS"| Proxy["Caddy Reverse Proxy with Auto-SSL"]
+    Proxy -->|"Static Bundle /index.html"| Dist["frontend/dist"]
+    Proxy -->|"REST API /api/*"| Backend["FastAPI Port 8000"]
+    Proxy -->|"WebSocket /api/ws/*"| Backend
+    Backend -->|"Stream Port 8765"| Simulator["Sensor Stream Replayer"]
+    Backend -->|"Postgres / HTTPS"| Supabase["Supabase Cloud Postgres"]
+    Backend -->|"REST HTTPS"| Resend["Resend Email API"]
 ```
 
 ### Caddy Configuration (`/etc/caddy/Caddyfile`)
