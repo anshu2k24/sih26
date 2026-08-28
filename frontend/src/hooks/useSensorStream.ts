@@ -3,8 +3,14 @@ import type { SensorRecord, StreamConnectionStatus } from "../types/sensor";
 import type { MLStatusState } from "../types/ml";
 import type { WSEventMessage } from "../types/api";
 import { fetchWellState, fetchSensorHistory } from "../services/api";
+import { supabase } from "../lib/supabase";
 
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || "ws://localhost:8000";
+const WS_BASE_URL =
+  import.meta.env.VITE_WS_BASE_URL ||
+  (typeof window !== "undefined" && window.location.protocol === "https:"
+    ? `wss://${window.location.host}`
+    : "ws://localhost:8000");
+
 const MAX_HISTORY = 2000;
 
 export function useSensorStream(selectedWell: string) {
@@ -49,28 +55,45 @@ export function useSensorStream(selectedWell: string) {
   }, []);
 
   useEffect(() => {
-    // 1. Reset state on well change
-    setStatus("CONNECTING");
-    setCurrentMd(0);
-    setTvd(null);
-    setLastTimestamp("N/A");
-    setSamplesReceived(0);
-    setLatestSensor(null);
-    setHistory([]);
+    let isSubscribed = true;
+    let isIntentionalClose = false;
 
+    setStatus("CONNECTING");
     loadInitialState(selectedWell);
 
-    let isSubscribed = true;
+    const connectWebSocket = async () => {
+      // Clear any pending reconnect timers
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
 
-    const connectWebSocket = () => {
+      // Close existing socket cleanly without triggering error reconnect loop
       if (wsRef.current) {
-        wsRef.current.close();
+        isIntentionalClose = true;
+        wsRef.current.close(1000, "Switching well or refreshing session");
+        wsRef.current = null;
       }
 
       const encodedWell = encodeURIComponent(selectedWell);
-      const wsUrl = `${WS_BASE_URL}/api/ws/wells/${encodedWell}`;
-      console.log(`[WebSocket] Connecting to ${wsUrl}...`);
+      let wsUrl = `${WS_BASE_URL}/api/ws/wells/${encodedWell}`;
 
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.access_token) {
+          wsUrl += `?token=${encodeURIComponent(data.session.access_token)}`;
+        } else if (import.meta.env.VITE_SUPABASE_URL) {
+          // Waiting for user login
+          if (isSubscribed) setStatus("STREAM DISCONNECTED");
+          return;
+        }
+      } catch (err) {
+        console.warn("[WebSocket] Could not retrieve Supabase session:", err);
+      }
+
+      if (!isSubscribed) return;
+
+      isIntentionalClose = false;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -96,7 +119,6 @@ export function useSensorStream(selectedWell: string) {
 
             // Append strictly emitted record to history
             setHistory((prev) => {
-              // Reset history if well reset or regressive stream position
               if (prev.length > 0 && rec.md < prev[prev.length - 1].md) {
                 return [rec];
               }
@@ -115,15 +137,13 @@ export function useSensorStream(selectedWell: string) {
         }
       };
 
-      ws.onerror = (err) => {
+      ws.onerror = () => {
         if (!isSubscribed) return;
-        console.warn("[WebSocket] Error encountered:", err);
         setStatus("STREAM DISCONNECTED");
       };
 
-      ws.onclose = () => {
-        if (!isSubscribed) return;
-        console.warn("[WebSocket] Connection closed. Attempting reconnect in 1.5s...");
+      ws.onclose = (event) => {
+        if (!isSubscribed || isIntentionalClose) return;
         setStatus("STREAM DISCONNECTED");
         setMlState((prev) => ({
           ...prev,
@@ -132,11 +152,15 @@ export function useSensorStream(selectedWell: string) {
           gate_reason: "Application WebSocket disconnected.",
         }));
 
-        reconnectTimerRef.current = window.setTimeout(() => {
-          if (isSubscribed) {
-            connectWebSocket();
-          }
-        }, 1500);
+        // Only schedule reconnect if closed unexpectedly and still subscribed
+        if (event.code !== 1000 && !reconnectTimerRef.current) {
+          reconnectTimerRef.current = window.setTimeout(() => {
+            reconnectTimerRef.current = null;
+            if (isSubscribed) {
+              connectWebSocket();
+            }
+          }, 3000);
+        }
       };
     };
 
@@ -144,11 +168,14 @@ export function useSensorStream(selectedWell: string) {
 
     return () => {
       isSubscribed = false;
+      isIntentionalClose = true;
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
       }
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef.current.close(1000, "Component unmounted");
+        wsRef.current = null;
       }
     };
   }, [selectedWell, loadInitialState]);

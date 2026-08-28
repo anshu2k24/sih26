@@ -61,11 +61,16 @@ def test_e2e_ml_ingestion_blocker():
 
 def test_geospatial_refusal():
     """
-    Verifies that the geospatial layer correctly refuses to invent coordinates.
+    Verifies that the geospatial layer calculates distance with coordinates and refuses when well is unknown.
     """
     geo = GeospatialIntelligence()
-    assert geo.coordinates_available is False
+    assert geo.coordinates_available is True
     
-    # Attempting to find nearby wells returns empty explicitly rather than faking it.
-    nearby = geo.find_nearby_wells("NO 15/9-19 A", 5.0)
-    assert nearby == []
+    # Active well 15/9-F-15 returns nearby wells sorted by Haversine distance
+    nearby = geo.find_nearby_wells("15/9-F-15", radius_km=5.0)
+    assert len(nearby) > 0
+    assert nearby[0]["distance_km"] <= 5.0
+    
+    # Unknown well ID returns empty list per missing data policy
+    unknown_nearby = geo.find_nearby_wells("UNKNOWN_WELL_999", radius_km=5.0)
+    assert unknown_nearby == []

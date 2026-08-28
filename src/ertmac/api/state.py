@@ -32,10 +32,38 @@ class ApplicationStateManager:
         except Exception:
             self.available_wells = ["15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-15S"]
 
+        # Load well coordinates metadata
+        self.coords_metadata = {}
+        try:
+            from pathlib import Path
+            import json
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent
+            coords_path = repo_root / "data" / "processed" / "usrop" / "well_coordinates.json"
+            if coords_path.exists():
+                with open(coords_path, "r", encoding="utf-8") as f:
+                    self.coords_metadata = json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load well_coordinates.json: {e}")
+
         self._lock = threading.Lock()
 
-    def get_available_wells(self) -> List[Dict[str, str]]:
-        return [{"well_id": w, "status": "available"} for w in self.available_wells]
+    def get_available_wells(self) -> List[Dict[str, Any]]:
+        results = []
+        for w in self.available_wells:
+            meta = self.coords_metadata.get(w, {})
+            item = {
+                "well_id": w,
+                "status": meta.get("status", "available"),
+                "name": meta.get("name", f"Well {w}"),
+                "field": meta.get("field", "Volve"),
+                "operator": meta.get("operator", "Equinor"),
+                "latitude": meta.get("latitude"),
+                "longitude": meta.get("longitude"),
+                "water_depth_m": meta.get("water_depth_m", 84.0),
+                "slot_name": meta.get("slot_name")
+            }
+            results.append(item)
+        return results
 
     def get_well_state(self, well_id: str) -> Dict[str, Any]:
         st = self.stream_client.get_state()

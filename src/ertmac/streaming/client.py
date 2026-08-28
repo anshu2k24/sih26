@@ -72,7 +72,7 @@ class SensorStreamClient:
     async def _connect_and_listen(self) -> None:
         while self._running:
             try:
-                logger.info(f"Connecting to WebSocket stream at {self.uri}...")
+                logger.debug(f"Connecting to WebSocket stream at {self.uri}...")
                 async with websockets.connect(self.uri, ping_interval=20.0, ping_timeout=20.0) as ws:
                     with self._lock:
                         self.status = "LIVE"
@@ -84,7 +84,7 @@ class SensorStreamClient:
                         self._process_message(message)
 
             except Exception as e:
-                logger.warning(f"WebSocket connection lost: {e}")
+                logger.debug(f"Sensor stream disconnected/offline at {self.uri}: {e} (retrying in 5s)...")
             finally:
                 with self._lock:
                     self.status = "STREAM DISCONNECTED"
@@ -97,7 +97,7 @@ class SensorStreamClient:
                     }
 
             if self._running:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(5.0)
 
     def _process_message(self, message_str: str) -> None:
         try:

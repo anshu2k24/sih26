@@ -44,7 +44,7 @@ def main():
 
     if args.backend_only:
         print("Starting FastAPI Orchestration Backend on http://localhost:8000 ...")
-        cmd = [python_bin, "-m", "uvicorn", "ertmac.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
+        cmd = [python_bin, "-m", "uvicorn", "ertmac.api.server:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
         subprocess.run(cmd, cwd=REPO_ROOT, env=env)
         return
 
@@ -62,34 +62,78 @@ def main():
         env=env
     )
 
-    print("[2/3] Starting FastAPI Orchestration Backend on http://localhost:8000 ...")
+    print("[2/3] Starting FastAPI Orchestration Backend on http://localhost:8000 (Hot Reloading src/)...")
     p_backend = subprocess.Popen(
-        [python_bin, "-m", "uvicorn", "ertmac.api.server:app", "--host", "0.0.0.0", "--port", "8000"],
+        [
+            python_bin, "-m", "uvicorn", "ertmac.api.server:app",
+            "--host", "0.0.0.0",
+            "--port", "8000",
+            "--reload",
+            "--reload-dir", str(SRC_DIR),
+        ],
         cwd=REPO_ROOT,
         env=env
     )
 
-    print("[3/3] Starting React + Vite Frontend Console on http://localhost:5173 ...")
+    print("[3/3] Starting React + Vite Frontend Console on http://localhost:5173 (Hot Module Replacement)...")
     npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
     p_frontend = subprocess.Popen(
         [npm_cmd, "run", "dev"],
         cwd=FRONTEND_DIR
     )
 
-    print("\n=== PS121 Application Stack Running! ===")
+    print("\n=== PS121 Application Stack Running with Nodemon-style Hot Reloading! ===")
     print("  - React Operational Console: http://localhost:5173")
     print("  - FastAPI OpenAPI Docs     : http://localhost:8000/docs")
     print("  - Sensor WebSocket Stream  : ws://localhost:8765")
-    print("  - Application WebSocket GW : ws://localhost:8000/api/ws/wells/15/9-F-15")
+    print("  - Application WebSocket GW : ws://localhost:8000/api/ws/wells/15/9-F-14")
+    print("  - Backend Auto-Reload      : Active on src/ (Nodemon style)")
+    print("  - Frontend HMR             : Active via Vite\n")
     print("Press Ctrl+C to terminate all services.\n")
 
     try:
-        p_frontend.wait()
+        while True:
+            time.sleep(1)
+            # Auto-restart backend if unexpectedly exited
+            if p_backend.poll() is not None:
+                print("\n[Supervisor] Backend process exited. Auto-restarting FastAPI backend...")
+                p_backend = subprocess.Popen(
+                    [
+                        python_bin, "-m", "uvicorn", "ertmac.api.server:app",
+                        "--host", "0.0.0.0",
+                        "--port", "8000",
+                        "--reload",
+                        "--reload-dir", str(SRC_DIR),
+                    ],
+                    cwd=REPO_ROOT,
+                    env=env
+                )
+
+            # Auto-restart sensor stream if unexpectedly exited
+            if p_stream.poll() is not None:
+                print("\n[Supervisor] Stream simulator exited. Auto-restarting stream...")
+                p_stream = subprocess.Popen(
+                    [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)],
+                    cwd=REPO_ROOT,
+                    env=env
+                )
+
+            # Check frontend process
+            if p_frontend.poll() is not None:
+                print("\n[Supervisor] Frontend process exited. Auto-restarting Vite dev server...")
+                p_frontend = subprocess.Popen(
+                    [npm_cmd, "run", "dev"],
+                    cwd=FRONTEND_DIR
+                )
+
     except KeyboardInterrupt:
-        print("\nShutting down PS121 Application Stack...")
-        p_frontend.terminate()
-        p_backend.terminate()
-        p_stream.terminate()
+        print("\nShutting down PS121 Application Stack gracefully...")
+        for p in [p_frontend, p_backend, p_stream]:
+            try:
+                p.terminate()
+            except Exception:
+                pass
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()

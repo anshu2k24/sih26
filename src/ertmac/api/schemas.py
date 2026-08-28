@@ -4,6 +4,13 @@ from pydantic import BaseModel, Field
 class WellItem(BaseModel):
     well_id: str
     status: str = "available"
+    name: Optional[str] = None
+    field: Optional[str] = None
+    operator: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    water_depth_m: Optional[float] = None
+    slot_name: Optional[str] = None
 
 class WellsResponse(BaseModel):
     wells: List[WellItem]

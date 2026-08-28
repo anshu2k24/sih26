@@ -17,11 +17,18 @@ frontend/dist/
 data/raw/
 data/processed/
 data/features/
+data/uploads/
 !data/.gitkeep
 
 # Artifacts and Outputs
 reports/
 artifacts/
+
+# Secrets — NEVER commit real credentials
+.env
+.env.local
+frontend/.env
+frontend/.env.local
 
 # OS generated files
 .DS_Store
