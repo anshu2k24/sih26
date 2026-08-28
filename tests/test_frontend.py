@@ -8,7 +8,7 @@ def test_frontend_code_boundaries():
     app_path = REPO_ROOT / "app.py"
     assert app_path.exists(), "Frontend file missing"
     
-    with open(app_path, "r") as f:
+    with open(app_path, "r", encoding="utf-8") as f:
         content = f.read()
         
     # Check ML Status Panel presence

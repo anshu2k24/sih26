@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import argparse
+import time
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SRC_DIR = REPO_ROOT / "src"
+FRONTEND_DIR = REPO_ROOT / "frontend"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from ertmac.streaming import SCIENTIFIC_LABEL
+
+def get_env():
+    env = dict(os.environ)
+    existing_pp = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = f"{SRC_DIR}{os.pathsep}{existing_pp}" if existing_pp else str(SRC_DIR)
+    return env
+
+def main():
+    parser = argparse.ArgumentParser(description=f"SIH 2026 PS121 Application Stack Launcher — {SCIENTIFIC_LABEL}")
+    parser.add_argument("--well", type=str, default="15/9-F-15", help="Well ID to stream (default: 15/9-F-15)")
+    parser.add_argument("--speed", type=float, default=50.0, help="Replay speed multiplier (default: 50.0x)")
+    parser.add_argument("--backend-only", action="store_true", help="Launch FastAPI backend only")
+    parser.add_argument("--stream-only", action="store_true", help="Launch sensor stream simulator only")
+    parser.add_argument("--frontend-only", action="store_true", help="Launch React frontend only")
+    args = parser.parse_args()
+
+    python_bin = sys.executable
+    env = get_env()
+
+    print(f"=== SIH 2026 PS121 — eRTMAC-NWIS Application Stack ===")
+    print(f"Scientific Label: {SCIENTIFIC_LABEL}")
+
+    if args.stream_only:
+        print(f"Starting Sensor Stream Simulator for well '{args.well}' at {args.speed}x speed...")
+        cmd = [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)]
+        subprocess.run(cmd, cwd=REPO_ROOT, env=env)
+        return
+
+    if args.backend_only:
+        print("Starting FastAPI Orchestration Backend on http://localhost:8000 ...")
+        cmd = [python_bin, "-m", "uvicorn", "ertmac.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
+        subprocess.run(cmd, cwd=REPO_ROOT, env=env)
+        return
+
+    if args.frontend_only:
+        print("Starting React + Vite Frontend on http://localhost:5173 ...")
+        npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
+        cmd = [npm_cmd, "run", "dev"]
+        subprocess.run(cmd, cwd=FRONTEND_DIR)
+        return
+
+    print("\n[1/3] Starting Sensor Stream Simulator on ws://localhost:8765 ...")
+    p_stream = subprocess.Popen(
+        [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)],
+        cwd=REPO_ROOT,
+        env=env
+    )
+
+    print("[2/3] Starting FastAPI Orchestration Backend on http://localhost:8000 ...")
+    p_backend = subprocess.Popen(
+        [python_bin, "-m", "uvicorn", "ertmac.api.server:app", "--host", "0.0.0.0", "--port", "8000"],
+        cwd=REPO_ROOT,
+        env=env
+    )
+
+    print("[3/3] Starting React + Vite Frontend Console on http://localhost:5173 ...")
+    npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
+    p_frontend = subprocess.Popen(
+        [npm_cmd, "run", "dev"],
+        cwd=FRONTEND_DIR
+    )
+
+    print("\n=== PS121 Application Stack Running! ===")
+    print("  - React Operational Console: http://localhost:5173")
+    print("  - FastAPI OpenAPI Docs     : http://localhost:8000/docs")
+    print("  - Sensor WebSocket Stream  : ws://localhost:8765")
+    print("  - Application WebSocket GW : ws://localhost:8000/api/ws/wells/15/9-F-15")
+    print("Press Ctrl+C to terminate all services.\n")
+
+    try:
+        p_frontend.wait()
+    except KeyboardInterrupt:
+        print("\nShutting down PS121 Application Stack...")
+        p_frontend.terminate()
+        p_backend.terminate()
+        p_stream.terminate()
+
+if __name__ == "__main__":
+    main()

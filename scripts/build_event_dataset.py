@@ -29,7 +29,10 @@ def main():
         
     df_ver = pd.read_csv(VERIFIED_PATH)
     df_cand = pd.read_csv(CANDIDATES_PATH)
-    df_err = pd.read_csv(ERRORS_PATH) if ERRORS_PATH.exists() else pd.DataFrame()
+    try:
+        df_err = pd.read_csv(ERRORS_PATH) if ERRORS_PATH.exists() else pd.DataFrame()
+    except Exception:
+        df_err = pd.DataFrame()
     
     # ---------------------------------------------------------
     # TASK 1: RECONSTRUCT & VALIDATE EPISODES
