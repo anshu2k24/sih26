@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 import pandas as pd
 import numpy as np
+import joblib
+import os
 
 @dataclass
 class InferenceInput:
@@ -33,6 +35,16 @@ class PreprocessingStrategy:
     RAW = "RAW"  # Use basic causal stats without external train-fold scaling
     GLOBAL_STANDARDIZED = "GLOBAL_STANDARDIZED"  # Fit on training wells only, apply to inference
     RELATIVE_DELTA = "RELATIVE_DELTA"  # Express inputs strictly as relative changes/slopes over a window
+
+class ModelSafetyError(Exception):
+    pass
+
+def load_production_model(model_path: str):
+    if 'ertmac_production_v1.joblib' in model_path:
+        raise ModelSafetyError("INVALID MODEL: ertmac_production_v1.joblib is quarantined due to synthetic contamination.")
+    if 'synthetic' in model_path.lower():
+        raise ModelSafetyError("INVALID MODEL: Synthetic models cannot be used in production.")
+    return joblib.load(model_path)
 
 class DataQualityGate:
     def __init__(self, required_history_md=25.0, max_gap_md=10.0):
