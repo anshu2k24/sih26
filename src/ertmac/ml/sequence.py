@@ -124,24 +124,36 @@ def extract_sequences(df_events, df_sensors, target_event='FORMATION_MUD_LOSS', 
     return np.array(X_list), np.array(y_list), np.array(groups)
 
 
-def fit_predict_cnn(X_train, y_train, X_test, epochs=30, batch_size=16):
+def fit_predict_cnn(X_train, y_train, X_test, epochs=30, batch_size=16, per_sample_norm=False):
     """
-    Standardize channels based on X_train only.
+    Standardize channels.
     Train CNN, predict on X_train and X_test.
     """
     # X shape: (samples, seq_length, channels)
     num_channels = X_train.shape[2]
     seq_length = X_train.shape[1]
     
-    # 1. Normalize based on Train ONLY
-    train_means = np.nanmean(X_train, axis=(0, 1))
-    train_stds = np.nanstd(X_train, axis=(0, 1))
-    
-    # Avoid div by zero
-    train_stds[train_stds == 0] = 1e-6
-    
-    X_train_norm = (X_train - train_means) / train_stds
-    X_test_norm = (X_test - train_means) / train_stds
+    if per_sample_norm:
+        # Normalize each sample independently (time dimension)
+        tr_m = np.nanmean(X_train, axis=1, keepdims=True)
+        tr_s = np.nanstd(X_train, axis=1, keepdims=True)
+        tr_s[tr_s == 0] = 1e-6
+        X_train_norm = (X_train - tr_m) / tr_s
+        
+        te_m = np.nanmean(X_test, axis=1, keepdims=True)
+        te_s = np.nanstd(X_test, axis=1, keepdims=True)
+        te_s[te_s == 0] = 1e-6
+        X_test_norm = (X_test - te_m) / te_s
+    else:
+        # 1. Normalize based on Train ONLY
+        train_means = np.nanmean(X_train, axis=(0, 1))
+        train_stds = np.nanstd(X_train, axis=(0, 1))
+        
+        # Avoid div by zero
+        train_stds[train_stds == 0] = 1e-6
+        
+        X_train_norm = (X_train - train_means) / train_stds
+        X_test_norm = (X_test - train_means) / train_stds
     
     # Replace any remaining NaNs with 0
     X_train_norm = np.nan_to_num(X_train_norm)
