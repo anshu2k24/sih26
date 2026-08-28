@@ -164,25 +164,31 @@ sequenceDiagram
 ## 📐 Core Mathematical & Spatial Formulations
 
 ### 1. Geospatial Haversine Surface Distance
-Given the active wellhead coordinates $(\phi_1, \lambda_1)$ and an offset wellbore $(\phi_2, \lambda_2)$, surface distance $d$ is computed via the great-circle Haversine formulation:
+Given active wellhead coordinates $(\phi_1, \lambda_1)$ and an offset wellbore $(\phi_2, \lambda_2)$, surface distance $d$ is computed via the great-circle Haversine formulation:
 
 $$\Delta\phi = \phi_2 - \phi_1, \quad \Delta\lambda = \lambda_2 - \lambda_1$$
 
 $$a = \sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)$$
 
-$$d = 2 R_{\text{earth}} \arcsin\left(\sqrt{a}\right), \quad \text{where } R_{\text{earth}} \approx 6371.0 \text{ km}$$
+$$d = 2 R_{\text{earth}} \arcsin\left(\sqrt{a}\right), \quad R_{\text{earth}} \approx 6371.0 \text{ km}$$
 
-An offset well qualifies for intelligence correlation if and only if $d \le R_{\text{search\_radius}}$ (default $5.0\text{ km}$).
+An offset well qualifies for intelligence correlation if and only if:
+
+$$d \le R_{\text{search}} \quad (\text{default: } 5.0\text{ km})$$
+
+---
 
 ### 2. Stratigraphic Depth Correlation Band
 Historical incident episodes from qualified offset wells are projected onto the active drilling bit depth based on Measured Depth (MD) and True Vertical Depth (TVD):
 
-$$\text{Match Condition} \iff | \text{MD}_{\text{historical}} - \text{MD}_{\text{current}} | \le \Delta\text{Window}_{\text{depth}} \quad (\text{default } \pm 50.0\text{ m})$$
+$$|\text{MD}_{\text{historical}} - \text{MD}_{\text{current}}| \le \Delta h_{\text{window}} \quad (\text{default: } \pm 50.0\text{ m})$$
+
+---
 
 ### 3. Causal Stream Invariant Formulation
 To prevent future data contamination, any statistical or ML feature function $f(\cdot)$ at stream time $t_k$ with bit depth $\text{MD}_k$ must satisfy:
 
-$$f(\mathcal{D}_{t_k}) = f\Big(\{ s_i \in \mathcal{D} \mid t_i \le t_k \;\land\; \text{MD}_i \le \text{MD}_k \}\Big)$$
+$$f(\mathcal{D}_{t_k}) = f\Big(\{ s_i \in \mathcal{D} \mid t_i \le t_k, \; \text{MD}_i \le \text{MD}_k \}\Big)$$
 
 $$\forall s_j \text{ with } \text{MD}_j > \text{MD}_k \implies s_j \notin \text{FeatureBuffer}$$
 
