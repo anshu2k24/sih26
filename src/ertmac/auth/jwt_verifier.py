@@ -12,7 +12,7 @@ Always derive identity from verified JWT claims + database lookup.
 
 import os
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
 
 logger = logging.getLogger("ertmac.auth.jwt_verifier")

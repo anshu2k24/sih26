@@ -16,7 +16,7 @@ NEVER:
 import os
 import logging
 from enum import Enum
-from typing import Set, Optional, Dict, Any
+from typing import Set, Optional, Dict, Any, Tuple
 from fastapi import Header, HTTPException, Depends, status
 
 from ertmac.auth.jwt_verifier import (
