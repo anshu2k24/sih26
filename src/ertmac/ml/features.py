@@ -66,6 +66,19 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
                     features[f'{col}_slope_{w}m'] = features[f'{col}_delta_{w}m'] / (mds[mask][-1] - mds[mask][0])
                 else:
                     features[f'{col}_slope_{w}m'] = 0.0
+                    
+                # Percentiles and Volatility
+                features[f'{col}_p10_{w}m'] = float(np.percentile(window_data, 10))
+                features[f'{col}_p90_{w}m'] = float(np.percentile(window_data, 90))
+                features[f'{col}_range_{w}m'] = features[f'{col}_p90_{w}m'] - features[f'{col}_p10_{w}m']
+                
+                # Directional changes (volatility proxy)
+                if len(window_data) > 2:
+                    diffs = np.diff(window_data)
+                    dir_changes = np.sum(np.diff(np.sign(diffs)) != 0)
+                    features[f'{col}_dir_changes_{w}m'] = float(dir_changes)
+                else:
+                    features[f'{col}_dir_changes_{w}m'] = 0.0
             else:
                 features[f'{col}_mean_{w}m'] = np.nan
                 features[f'{col}_std_{w}m'] = np.nan
@@ -88,11 +101,40 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
             features[f'{col}_rel_delta_5m'] = float(delta_5m / mean_25m) if not pd.isna(delta_5m) else np.nan
             features[f'{col}_cv_25m'] = float(std_25m / mean_25m) if not pd.isna(std_25m) else np.nan
             features[f'{col}_norm_slope_25m'] = float(slope_25m / mean_25m) if not pd.isna(slope_25m) else np.nan
+            
+            # Additional Temporal combinations
+            features[f'{col}_diff_5m_25m'] = float(mean_5m - mean_25m) if not pd.isna(mean_5m) else np.nan
+            features[f'{col}_diff_10m_25m'] = float(mean_10m - mean_25m) if not pd.isna(mean_10m) else np.nan
+            
+            slope_5m = features.get(f'{col}_slope_5.0m', np.nan)
+            slope_10m = features.get(f'{col}_slope_10.0m', np.nan)
+            
+            # Trend consistency
+            features[f'{col}_trend_consistency'] = 1.0 if (not pd.isna(slope_5m) and not pd.isna(slope_10m) and not pd.isna(slope_25m) and (np.sign(slope_5m) == np.sign(slope_10m) == np.sign(slope_25m))) else 0.0
+            
         else:
             features[f'{col}_ratio_5m_25m'] = np.nan
             features[f'{col}_ratio_10m_25m'] = np.nan
             features[f'{col}_rel_delta_5m'] = np.nan
             features[f'{col}_cv_25m'] = np.nan
             features[f'{col}_norm_slope_25m'] = np.nan
+            features[f'{col}_diff_5m_25m'] = np.nan
+            features[f'{col}_diff_10m_25m'] = np.nan
+            features[f'{col}_trend_consistency'] = np.nan
             
+    # Cross-Channel Ratios
+    # SPP vs Flow In (useful for pump efficiency / mud loss)
+    spp_25m = features.get('spp_mean_25.0m', np.nan)
+    flow_25m = features.get('flow_in_mean_25.0m', np.nan)
+    features['spp_flow_ratio_25m'] = float(spp_25m / flow_25m) if (not pd.isna(spp_25m) and not pd.isna(flow_25m) and flow_25m != 0) else np.nan
+    
+    # Torque vs WOB
+    torque_25m = features.get('torque_mean_25.0m', np.nan)
+    wob_25m = features.get('wob_mean_25.0m', np.nan)
+    features['torque_wob_ratio_25m'] = float(torque_25m / wob_25m) if (not pd.isna(torque_25m) and not pd.isna(wob_25m) and wob_25m != 0) else np.nan
+    
+    # ROP vs WOB
+    rop_25m = features.get('rop_mean_25.0m', np.nan)
+    features['rop_wob_ratio_25m'] = float(rop_25m / wob_25m) if (not pd.isna(rop_25m) and not pd.isna(wob_25m) and wob_25m != 0) else np.nan
+
     return features
