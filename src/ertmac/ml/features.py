@@ -47,6 +47,15 @@ def construct_causal_features(df_sensor: pd.DataFrame, cutoff_md: float, config:
         series = df_past[col].values
         mds = df_past['md'].values
         
+        # PER-WELL RELATIVE NORMALIZATION
+        # Normalize to expanding causal baseline (mean/std of history up to cutoff_md)
+        base_mean = float(np.mean(series))
+        base_std = float(np.std(series))
+        if base_std > 1e-6:
+            series = (series - base_mean) / base_std
+        else:
+            series = series - base_mean
+        
         # Recent state (last value)
         features[f'{col}_current'] = float(series[-1])
         

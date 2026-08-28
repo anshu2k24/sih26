@@ -75,7 +75,9 @@ class DataQualityGate:
             
         # 6. Excessive Gaps
         history_df = history_df.sort_values('md')
-        gaps = history_df['md'].diff().max()
+        causal_window_start = current_md - self.required_history_md
+        causal_window = history_df[history_df['md'] >= causal_window_start]
+        gaps = causal_window['md'].diff().max()
         if pd.notna(gaps) and gaps > self.max_gap_md:
             return "FAIL_EXCESSIVE_GAPS"
             
