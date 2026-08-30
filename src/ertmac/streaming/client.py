@@ -113,7 +113,7 @@ class SensorStreamClient:
                         if not self._running:
                             break
                         self._process_message(json.dumps(record.to_dict()))
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(0.08)
 
                 except Exception as e:
                     logger.debug(f"In-process stream loop ended or errored: {e}")
