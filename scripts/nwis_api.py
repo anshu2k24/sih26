@@ -1,11 +1,88 @@
 import pandas as pd
 import numpy as np
+import logging
+
+logger = logging.getLogger("nwis_historical_api")
+
 
 class NWISHistoricalAPI:
-    def __init__(self, verified_events_path):
-        self.df_events = pd.read_csv(verified_events_path)
+    def __init__(self, verified_events_path=None):
+        """
+        Loads verified historical DDR events.
+        Priority: Supabase historical_ddr_events table → CSV file fallback (development only).
+        """
+        import os
+        is_prod = os.getenv("ENVIRONMENT", "").lower() == "production"
+
+        self.df_events = self._load_from_supabase()
+
+        # In production, NEVER fall back to local files
+        if (self.df_events is None or len(self.df_events) == 0) and not is_prod:
+            if verified_events_path:
+                from pathlib import Path
+                csv_path = Path(verified_events_path)
+                if csv_path.exists():
+                    logger.info(f"Loading events from CSV fallback (development only): {csv_path}")
+                    self.df_events = pd.read_csv(verified_events_path)
+                else:
+                    self.df_events = pd.DataFrame()
+            else:
+                self.df_events = pd.DataFrame()
+        elif self.df_events is None:
+            self.df_events = pd.DataFrame()
+
         # Drop episodes missing onset_md
-        self.df_events = self.df_events[self.df_events['onset_md'].notnull()].copy()
+        if len(self.df_events) > 0:
+            self.df_events = self.df_events[self.df_events['onset_md'].notnull()].copy()
+
+    @staticmethod
+    def _load_from_supabase():
+        """Attempt to load all historical DDR events from Supabase."""
+        try:
+            import sys
+            from pathlib import Path
+            repo_root = Path(__file__).resolve().parent.parent
+            src_dir = repo_root / "src"
+            if str(src_dir) not in sys.path:
+                sys.path.insert(0, str(src_dir))
+
+            from ertmac.auth.supabase_client import get_supabase_admin
+            db = get_supabase_admin()
+            if not db:
+                return None
+
+            res = db.table("historical_ddr_events").select("*").execute()
+            if not res.data or len(res.data) == 0:
+                logger.info("No historical_ddr_events found in Supabase (table may be empty).")
+                return None
+
+            rows = res.data
+            # Map DB column names to the DataFrame schema expected by existing code
+            mapped_rows = []
+            for r in rows:
+                mapped_rows.append({
+                    "event_episode_id": r.get("id", ""),
+                    "event_type": r.get("event_type", "Unknown"),
+                    "event_domain": r.get("event_domain", "DRILLING_OPERATIONS"),
+                    "well_id": r.get("wellbore_id", ""),
+                    "wellbore_id": r.get("wellbore_id", ""),
+                    "onset_timestamp": r.get("onset_timestamp"),
+                    "onset_md": r.get("onset_md"),
+                    "onset_tvd": r.get("onset_tvd"),
+                    "primary_source_record": r.get("primary_source_record", "N/A"),
+                    "primary_evidence": r.get("primary_evidence", "No evidence recorded"),
+                    "mitigation_text": r.get("mitigation_text"),
+                    "resolution_text": r.get("resolution_text"),
+                    "is_verified_positive": r.get("is_verified", True),
+                })
+
+            df = pd.DataFrame(mapped_rows)
+            logger.info(f"Loaded {len(df)} historical events from Supabase.")
+            return df
+
+        except Exception as e:
+            logger.warning(f"Failed to load events from Supabase (will use CSV fallback): {e}")
+            return None
         
     def get_intelligence_by_depth(self, active_well_id: str, current_md: float, radius: float = 100.0, event_type: str = None):
         """

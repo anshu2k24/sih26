@@ -32,20 +32,79 @@ class GeospatialIntelligence:
         self._load_coordinates()
 
     def _load_coordinates(self) -> None:
-        path = self.well_metadata_path
-        if not path:
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent
-            path = str(repo_root / "data" / "processed" / "usrop" / "well_coordinates.json")
+        # If explicit path provided by caller/test harness, load directly
+        if self.well_metadata_path:
+            file_path = Path(self.well_metadata_path)
+            if file_path.exists():
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        self.coords = json.load(f)
+                    if self.coords:
+                        self.coordinates_available = True
+                        return
+                except Exception as e:
+                    logger.error(f"Error loading well coordinates from {self.well_metadata_path}: {e}")
 
-        file_path = Path(path)
-        if file_path.exists():
+        import os
+        is_prod = os.getenv("ENVIRONMENT", "").lower() == "production"
+
+        # Priority 1: Load from Supabase wellbores table
+        if self._load_from_supabase():
+            return
+
+        # In production, NEVER fall back to local files
+        if is_prod:
+            logger.error("[PRODUCTION] Failed to load well coordinates from Supabase wellbores table. Local JSON fallback is disabled in production.")
+            return
+
+        # Priority 2: Fallback to local JSON file (development only)
+        repo_root = Path(__file__).resolve().parent.parent.parent.parent
+        path = repo_root / "data" / "processed" / "usrop" / "well_coordinates.json"
+
+        if path.exists():
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(path, "r", encoding="utf-8") as f:
                     self.coords = json.load(f)
                 if self.coords:
                     self.coordinates_available = True
+                    logger.info(f"Loaded {len(self.coords)} well coordinates from local JSON fallback (development only).")
             except Exception as e:
                 logger.error(f"Error loading well coordinates from {path}: {e}")
+
+    def _load_from_supabase(self) -> bool:
+        """Attempt to load well coordinates from Supabase wellbores table."""
+        try:
+            from ertmac.auth.supabase_client import get_supabase_admin
+            db = get_supabase_admin()
+            if not db:
+                return False
+
+            res = db.table("wellbores").select("*").execute()
+            if not res.data or len(res.data) == 0:
+                return False
+
+            for row in res.data:
+                well_id = row.get("id", "")
+                self.coords[well_id] = {
+                    "well_id": well_id,
+                    "name": row.get("name", well_id),
+                    "field": row.get("field", "Volve"),
+                    "operator": row.get("operator", "Equinor"),
+                    "status": row.get("status", "Historical"),
+                    "latitude": row.get("latitude"),
+                    "longitude": row.get("longitude"),
+                    "water_depth_m": row.get("water_depth_m", 84.0),
+                    "slot_name": row.get("slot_name"),
+                }
+
+            if self.coords:
+                self.coordinates_available = True
+                logger.info(f"Loaded {len(self.coords)} well coordinates from Supabase.")
+            return True
+
+        except Exception as e:
+            logger.warning(f"Failed to load coordinates from Supabase (will use JSON fallback): {e}")
+            return False
 
     def find_nearby_wells(self, active_well_id: str, radius_km: float = 5.0) -> List[Dict[str, Any]]:
         if not self.coordinates_available or active_well_id not in self.coords:

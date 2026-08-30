@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: ertmac-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn ertmac.api.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHONPATH
+        value: src
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTH_REQUIRED
+        value: "true"
+      - key: STREAM_IN_PROCESS
+        value: "true"
+      - key: CORS_ORIGINS
+        value: "https://ertmac-nwis.vercel.app,https://*.vercel.app"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        value: alerts@ertmac-nwis.org

@@ -15,13 +15,33 @@ logger = logging.getLogger("ertmac.documents.extractor")
 
 def extract_text_from_file(file_path: str, doc_type: str) -> Tuple[str, str, Optional[str]]:
     """
-    Extracts text content from local file.
+    Extracts text content from local file or Supabase Storage.
 
     Returns:
         (text_content, extraction_status, error_message)
         where extraction_status is 'EXTRACTED', 'OCR_REQUIRED', 'OCR_UNAVAILABLE', or 'FAILED'.
     """
     path = Path(file_path)
+    temp_download = None
+
+    if not path.exists():
+        # Attempt download from Supabase Storage
+        try:
+            from ertmac.auth.supabase_client import get_supabase_admin
+            import tempfile
+            db = get_supabase_admin()
+            if db:
+                clean_path = file_path.replace("documents/", "")
+                data = db.storage.from_("documents").download(clean_path)
+                if data:
+                    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=f".{doc_type.lower()}")
+                    tfile.write(data)
+                    tfile.close()
+                    path = Path(tfile.name)
+                    temp_download = path
+        except Exception as e:
+            logger.debug(f"Storage download attempt failed: {e}")
+
     if not path.exists():
         return "", "FAILED", f"File not found at {file_path}"
 
