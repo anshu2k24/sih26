@@ -19,6 +19,15 @@
 
 ---
 
+## 🌐 Live Cloud Production Deployments
+
+* **Frontend Web Console (Vercel)**: [https://sih26-omega.vercel.app](https://sih26-omega.vercel.app)
+* **Backend API & WebSocket Engine (Render)**: [https://ertmac-backend.onrender.com](https://ertmac-backend.onrender.com)
+* **Public Health Endpoint**: [https://ertmac-backend.onrender.com/health](https://ertmac-backend.onrender.com/health)
+* **Detailed Diagnostics Matrix**: [https://ertmac-backend.onrender.com/health/detailed](https://ertmac-backend.onrender.com/health/detailed)
+
+---
+
 ## 📑 Table of Contents
 1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
 2. [Authentic Open Dataset Provenance](#-authentic-open-dataset-provenance)
@@ -58,9 +67,9 @@ The system operates strictly on **100% real, authentic industry data** released 
 
 | Component | Dataset Source | Size / Volume | Key Parameters |
 |---|---|---|---|
-| **Wellbore Geometry & Locations** | Norwegian Petroleum Directorate (NPD) Official Registry | 13 Volve Development Wells + Regional Offset Wells | Latitude (`58.44168° N`), Longitude (`1.88778° E`), Water Depth (`84m`), Slot Identifiers |
-| **Drilling Telemetry Streams** | Equinor / Univ. of Stavanger USROP Volve Dataset | **198,928** 1Hz Sensor Readings | Measured Depth (`md`), TVD, ROP, WOB, RPM, Torque, Hookload, Standpipe Pressure (`spp`), Flow In, Mud Density, Gamma Ray |
-| **Historical DDR Incidents** | Equinor Volve Decommissioned Daily Drilling Reports | **129** Real Verified Events | Stuck Pipe, Pack-Off, Mud Losses, Tight Hole, Gas Kicks, Tool Failures with actual operational mitigation texts |
+| **Wellbore Geometry & Locations** | [NPD / SODIR Official FactPages](https://factpages.sodir.no/) | 13 Volve Development Wells + Regional Offset Wells | Latitude (`58.44168° N`), Longitude (`1.88778° E`), Water Depth (`84m`), Slot Identifiers |
+| **Drilling Telemetry Streams** | [Equinor Volve USROP Dataset (Univ. of Stavanger)](https://www.equinor.com/energy/volve-data-sharing) | **198,928** 1Hz Sensor Readings | Measured Depth (`md`), TVD, ROP, WOB, RPM, Torque, Hookload, Standpipe Pressure (`spp`), Flow In, Mud Density, Gamma Ray |
+| **Historical DDR Incidents** | [Equinor Volve Daily Drilling Reports (DDR)](https://www.equinor.com/energy/volve-data-sharing) | **129** Real Verified Events | Stuck Pipe, Pack-Off, Mud Losses, Tight Hole, Gas Kicks, Tool Failures with actual operational mitigation texts |
 
 ---
 
@@ -273,4 +282,6 @@ python -c "import sys; sys.path.insert(0, 'src'); import pytest; sys.exit(pytest
 1. **Mandatory Scientific Banner**: Displayed prominently across all interfaces: `REAL VOLVE DATA — HISTORICAL REPLAY`.
 2. **Zero Synthetic Sensor Fabrication**: All telemetry channels stream authentic physical measurements from the Equinor Volve repository.
 3. **Zero Prediction Fabrication**: When ML pipeline preconditions are unmet, `risk_score` is strictly returned as `null` with explicit gating reasons (`ML_NOT_READY`).
-4. **Causal Stream Isolation**: Telemetry history and feature construction are strictly bounded by $\text{MD} \le \text{current\_md}$ with zero future data leakage.
+4. **Causal Stream Isolation**: Telemetry history and feature construction are strictly bounded by $\text{MD} \le \text{MD}_{\text{current}}$ with zero future data leakage.
+5. **Open Science & Reproducibility**: Complete pipeline reproducible from official public Equinor and NPD offshore datasets.
+
