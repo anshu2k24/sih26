@@ -110,7 +110,10 @@ class VolveReplaySensorSource(BaseSensorSource):
         self._df = df
 
     def get_available_wells(self) -> List[str]:
-        return sorted(self._df["well_id"].dropna().unique().tolist())
+        wells = set(self._df["well_id"].dropna().unique().tolist()) if "well_id" in self._df.columns else set()
+        if not wells:
+            wells = {"15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10", "15/9-F-15S"}
+        return sorted(wells)
 
     def stream_records(
         self,
@@ -118,18 +121,23 @@ class VolveReplaySensorSource(BaseSensorSource):
         start_md: Optional[float] = None,
         end_md: Optional[float] = None
     ) -> Iterator[SensorRecord]:
-        wells = self.get_available_wells()
-        if well_id not in wells:
-            raise ValueError(
-                f"Invalid well_id '{well_id}'. Available Volve wells: {wells}"
-            )
+        well_df = self._df[self._df["well_id"] == well_id].copy() if "well_id" in self._df.columns else pd.DataFrame()
 
-        well_df = self._df[self._df["well_id"] == well_id].copy()
-
-        if start_md is not None:
-            well_df = well_df[well_df["md"] >= start_md]
-        if end_md is not None:
-            well_df = well_df[well_df["md"] <= end_md]
+        # If not present in preloaded memory dataframe, query Supabase for this specific well
+        if len(well_df) == 0:
+            try:
+                from ertmac.auth.supabase_client import get_supabase_admin
+                db = get_supabase_admin()
+                if db:
+                    res = db.table("telemetry_readings").select("*").eq("well_id", well_id).order("md").limit(20000).execute()
+                    if res.data and len(res.data) > 0:
+                        df_well = pd.DataFrame(res.data)
+                        cols_lower = {col: col.lower().strip() for col in df_well.columns}
+                        df_well = df_well.rename(columns=cols_lower)
+                        df_well = df_well.rename(columns=self.COLUMN_MAPPING)
+                        well_df = df_well.sort_values(by=["md"]).reset_index(drop=True)
+            except Exception:
+                pass
 
         if len(well_df) == 0:
             raise ValueError(

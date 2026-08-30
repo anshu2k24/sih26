@@ -57,10 +57,16 @@ class ApplicationStateManager:
             except Exception:
                 pass
 
-        # Ensure wells are always populated from coordinates or defaults
-        well_keys = self.available_wells or list(self.coords_metadata.keys()) or ["15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-15S"]
+        # Return all known wells from geospatial metadata and known Volve wellbores
+        known_wells = set(self.coords_metadata.keys()) if self.coords_metadata else set()
+        if hasattr(self, "available_wells") and self.available_wells:
+            known_wells.update(self.available_wells)
+
+        if not known_wells:
+            known_wells = {"15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10", "15/9-F-15S"}
+
         results = []
-        for w in well_keys:
+        for w in sorted(known_wells):
             meta = self.coords_metadata.get(w, {})
             item = {
                 "well_id": w,
