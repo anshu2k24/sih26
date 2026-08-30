@@ -18,11 +18,14 @@ import argparse
 import logging
 from pathlib import Path
 
-# Ensure src is on path
+# Ensure src is on path and load environment variables
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+
+from dotenv import load_dotenv
+load_dotenv(REPO_ROOT / ".env")
 
 import pandas as pd
 from ertmac.auth.supabase_client import get_supabase_admin
@@ -34,22 +37,29 @@ ORG_ID = "00000000-0000-0000-0000-000000000001"
 
 
 def seed_wellbores():
-    """Seed wellbores table from well_coordinates.json."""
+    """Seed wellbores table from well_coordinates.json and verified events datasets."""
     db = get_supabase_admin()
     if not db:
         logger.error("Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
         return False
 
     coords_path = REPO_ROOT / "data" / "processed" / "usrop" / "well_coordinates.json"
-    if not coords_path.exists():
-        logger.error(f"Well coordinates file not found: {coords_path}")
-        return False
+    wells = {}
+    if coords_path.exists():
+        with open(coords_path, "r", encoding="utf-8") as f:
+            wells = json.load(f)
 
-    with open(coords_path, "r", encoding="utf-8") as f:
-        wells = json.load(f)
+    # Also collect any wellbore IDs referenced in verified events
+    event_csv = REPO_ROOT / "reports" / "tables" / "verified_event_episodes_v2.csv"
+    event_well_ids = set()
+    if event_csv.exists():
+        edf = pd.read_csv(event_csv)
+        if "wellbore_id" in edf.columns:
+            event_well_ids = set(edf["wellbore_id"].dropna().unique())
 
-    logger.info(f"Seeding {len(wells)} wellbores from {coords_path.name}...")
+    logger.info("Seeding wellbores metadata into Supabase...")
 
+    # 1. Insert known well coordinates
     for well_id, info in wells.items():
         payload = {
             "id": well_id,
@@ -59,18 +69,39 @@ def seed_wellbores():
             "latitude": info.get("latitude"),
             "longitude": info.get("longitude"),
             "status": info.get("status", "Historical"),
-            "field": info.get("field", "Volve"),
-            "operator": info.get("operator", "Equinor"),
-            "water_depth_m": info.get("water_depth_m", 84.0),
         }
-
         try:
             db.table("wellbores").upsert(payload, on_conflict="id").execute()
-            logger.info(f"  ✓ Wellbore: {well_id} ({info.get('name', '')})")
+            logger.info(f"  [OK] Wellbore: {well_id}")
         except Exception as e:
-            logger.error(f"  ✗ Failed to seed wellbore {well_id}: {e}")
+            logger.error(f"  [FAIL] Wellbore {well_id}: {e}")
 
-    logger.info(f"Wellbores seeding complete: {len(wells)} wells.")
+        # Also insert with "NO " prefix if not already present
+        if not well_id.startswith("NO "):
+            no_id = f"NO {well_id}"
+            payload_no = dict(payload, id=no_id)
+            try:
+                db.table("wellbores").upsert(payload_no, on_conflict="id").execute()
+            except Exception:
+                pass
+
+    # 2. Insert any remaining wellbore IDs from events
+    for ew in event_well_ids:
+        payload_ew = {
+            "id": ew,
+            "organization_id": ORG_ID,
+            "name": f"Wellbore {ew}",
+            "status": "Historical Offset",
+            "latitude": 58.44168,
+            "longitude": 1.88778,
+        }
+        try:
+            db.table("wellbores").upsert(payload_ew, on_conflict="id").execute()
+            logger.info(f"  [OK] Event Wellbore: {ew}")
+        except Exception as e:
+            logger.error(f"  [FAIL] Event Wellbore {ew}: {e}")
+
+    logger.info("Wellbores seeding complete.")
     return True
 
 
@@ -236,7 +267,7 @@ def main():
 
     print("\n=== Seed Results ===")
     for name, ok in results.items():
-        status = "✓ SUCCESS" if ok else "✗ FAILED"
+        status = "[SUCCESS]" if ok else "[FAILED]"
         print(f"  {status}: {name}")
 
 
