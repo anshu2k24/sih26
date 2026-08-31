@@ -61,6 +61,8 @@ class Permission(str, Enum):
     VIEW_REPORTS        = "VIEW_REPORTS"
     UPLOAD_DOCUMENTS    = "UPLOAD_DOCUMENTS"
     VERIFY_KNOWLEDGE    = "VERIFY_KNOWLEDGE"
+    UPLOAD_NOTES        = "UPLOAD_NOTES"
+    VERIFY_NOTES        = "VERIFY_NOTES"
     VIEW_NOTIFICATIONS  = "VIEW_NOTIFICATIONS"
     MANAGE_NOTIFICATIONS = "MANAGE_NOTIFICATIONS"
 
@@ -86,6 +88,8 @@ ROLE_PERMISSIONS: Dict[Role, Set[Permission]] = {
         Permission.VIEW_REPORTS,
         Permission.UPLOAD_DOCUMENTS,
         Permission.VERIFY_KNOWLEDGE,
+        Permission.UPLOAD_NOTES,
+        Permission.VERIFY_NOTES,
         Permission.VIEW_NOTIFICATIONS,
         Permission.MANAGE_NOTIFICATIONS,
     },
@@ -103,6 +107,8 @@ ROLE_PERMISSIONS: Dict[Role, Set[Permission]] = {
         Permission.GENERATE_REPORTS,
         Permission.VIEW_REPORTS,
         Permission.UPLOAD_DOCUMENTS,
+        Permission.UPLOAD_NOTES,
+        Permission.VERIFY_NOTES,
         Permission.VIEW_NOTIFICATIONS,
     },
 
@@ -116,6 +122,7 @@ ROLE_PERMISSIONS: Dict[Role, Set[Permission]] = {
         Permission.VIEW_AUDIT,
         Permission.GENERATE_REPORTS,
         Permission.VIEW_REPORTS,
+        Permission.UPLOAD_NOTES,
         Permission.VIEW_NOTIFICATIONS,
     },
 

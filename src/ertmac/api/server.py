@@ -81,6 +81,10 @@ app.include_router(health_router)
 from ertmac.api.analytics_router import router as analytics_router
 app.include_router(analytics_router)
 
+# Register PS121 Handwritten Notes OCR router
+from ertmac.api.notes_router import router as notes_router
+app.include_router(notes_router)
+
 VERIFIED_EVENTS_PATH = REPO_ROOT / "reports" / "tables" / "verified_event_episodes_v2.csv"
 nwis_historical_api: Optional[NWISHistoricalAPI] = None
 if VERIFIED_EVENTS_PATH.exists():

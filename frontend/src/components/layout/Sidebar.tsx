@@ -38,6 +38,7 @@ export const Sidebar: React.FC = () => {
     { to: `/wells/${encodeURIComponent(selectedWell)}`, label: "INTELLIGENCE", icon: FileText },
     { to: "/knowledge", label: "KNOWLEDGE BASE", icon: BookOpen },
     { to: "/documents", label: "DOCUMENTS", icon: Folder },
+    { to: "/notes", label: "OCR", icon: FileText },
     { to: "/alerts", label: "ALERTS", icon: ShieldAlert },
     { to: "/risk", label: "ML RISK", icon: AlertCircle },
     { to: "/audit", label: "AUDIT LOGS", icon: ShieldCheck },

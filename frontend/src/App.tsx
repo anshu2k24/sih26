@@ -16,6 +16,10 @@ import { WellsPage } from "./pages/WellsPage";
 import { WellIntelligencePage } from "./pages/WellIntelligencePage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
+import { HandwrittenNotesPage } from "./pages/HandwrittenNotesPage";
+import { NoteUploadPage } from "./pages/NoteUploadPage";
+import { NoteReviewPage } from "./pages/NoteReviewPage";
+import { NoteDetailPage } from "./pages/NoteDetailPage";
 import { EventEvidencePage } from "./pages/EventEvidencePage";
 import { AlertsPage } from "./pages/AlertsPage";
 import { PredictionsPage } from "./pages/PredictionsPage";
@@ -76,6 +80,10 @@ export function App() {
             <Route path="/events/:eventId" element={<EventEvidencePage />} />
             <Route path="/knowledge" element={<KnowledgePage />} />
             <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/notes" element={<HandwrittenNotesPage />} />
+            <Route path="/notes/upload" element={<NoteUploadPage />} />
+            <Route path="/notes/:noteId/review" element={<NoteReviewPage />} />
+            <Route path="/notes/:noteId" element={<NoteDetailPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
             <Route path="/risk" element={<PredictionsPage />} />
