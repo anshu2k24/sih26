@@ -26,7 +26,7 @@
 * **Public Health Endpoint**: [https://ertmac-backend.onrender.com/health](https://ertmac-backend.onrender.com/health)
 * **Detailed Diagnostics Matrix**: [https://ertmac-backend.onrender.com/health/detailed](https://ertmac-backend.onrender.com/health/detailed)
 
----
+----
 
 ## 📑 Table of Contents
 1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
