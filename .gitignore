@@ -30,6 +30,8 @@ data/reports/
 .env.local
 frontend/.env
 frontend/.env.local
+frontend/.env.production
+
 
 # OS generated files
 .DS_Store

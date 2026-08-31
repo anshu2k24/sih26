@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import "../styles/Login.css";
-import heroImage from "../assets/hero.png";
+
 
 type Mode = "LOGIN" | "SIGNUP" | "FORGOT";
 

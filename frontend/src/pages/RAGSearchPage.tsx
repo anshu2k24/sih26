@@ -18,7 +18,6 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   Search,
   Brain,
-  FileText,
   Tag,
   Calendar,
   Fingerprint,
@@ -42,10 +41,10 @@ import {
   ragSearch,
   ragQuery,
   getRAGHealth,
-  SearchResult,
-  SourceCitation,
-  SearchFilters,
-  RAGHealth,
+  type SearchResult,
+  type SourceCitation,
+  type SearchFilters,
+  type RAGHealth,
 } from "../services/ragApi";
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -78,6 +77,7 @@ interface QAState {
   llm_used: boolean;
   insufficient: boolean;
   duration_ms: number | null;
+  retrieval_count: number;
 }
 
 // ── Sub-Components ────────────────────────────────────────────────────────
@@ -300,6 +300,7 @@ export const RAGSearchPage: React.FC = () => {
     llm_used: false,
     insufficient: false,
     duration_ms: null,
+    retrieval_count: 0,
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -372,6 +373,7 @@ export const RAGSearchPage: React.FC = () => {
         llm_used: res.llm_used,
         insufficient: res.insufficient_information,
         duration_ms: res.duration_ms,
+        retrieval_count: res.retrieval_count ?? res.sources.length,
       }));
     } catch (e) {
       setError((e as Error).message);
