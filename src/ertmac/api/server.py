@@ -100,6 +100,10 @@ app.include_router(analytics_router)
 from ertmac.api.notes_router import router as notes_router
 app.include_router(notes_router)
 
+# Register ML Prediction router (Public Endpoints)
+from ertmac.api.ml_predict_router import router as ml_predict_router
+app.include_router(ml_predict_router)
+
 VERIFIED_EVENTS_PATH = REPO_ROOT / "reports" / "tables" / "verified_event_episodes_v2.csv"
 if not is_production and VERIFIED_EVENTS_PATH.exists():
     nwis_historical_api: NWISHistoricalAPI = NWISHistoricalAPI(str(VERIFIED_EVENTS_PATH))
