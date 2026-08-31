@@ -48,19 +48,51 @@ class VolveReplaySensorSource(BaseSensorSource):
     }
 
     def __init__(self, parquet_path: Optional[Path] = None):
-        if parquet_path is None:
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent
-            parquet_path = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
+        import os
+        is_prod = os.getenv("ENVIRONMENT", "").lower() == "production"
 
-        if not parquet_path.exists():
-            raise FileNotFoundError(
-                f"Source Volve Parquet missing at: {parquet_path}. "
-                f"Run audit or verification scripts to prepare dataset."
-            )
-
+        self._df = pd.DataFrame()
         self.parquet_path = parquet_path
-        self._df = pd.read_parquet(self.parquet_path)
-        self._prepare_dataset()
+
+        # If a specific parquet path was provided (e.g. test harness / script), load it directly
+        if parquet_path is not None:
+            if parquet_path.exists():
+                self._df = pd.read_parquet(self.parquet_path)
+                self._prepare_dataset()
+                return
+
+        # Priority 1 (Production default): Load from Supabase telemetry_readings
+        self._df = self._load_from_supabase()
+
+        # Priority 2: Fallback to local Parquet file (development only)
+        if (self._df is None or len(self._df) == 0) and not is_prod:
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent
+            default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
+            if default_parquet.exists():
+                self.parquet_path = default_parquet
+                self._df = pd.read_parquet(self.parquet_path)
+                self._prepare_dataset()
+            else:
+                self._df = pd.DataFrame(columns=list(self.COLUMN_MAPPING.values()))
+        elif self._df is not None and len(self._df) > 0:
+            self._prepare_dataset()
+        else:
+            self._df = pd.DataFrame(columns=list(self.COLUMN_MAPPING.values()))
+
+    @staticmethod
+    def _load_from_supabase() -> Optional[pd.DataFrame]:
+        """Attempt to load sensor telemetry from Supabase telemetry_readings."""
+        try:
+            from ertmac.auth.supabase_client import get_supabase_admin
+            db = get_supabase_admin()
+            if not db:
+                return None
+            res = db.table("telemetry_readings").select("*").order("md").limit(20000).execute()
+            if res.data and len(res.data) > 0:
+                return pd.DataFrame(res.data)
+            return None
+        except Exception:
+            return None
 
     def _prepare_dataset(self) -> None:
         """Standardize column names to canonical schema without modifying values."""
@@ -78,7 +110,10 @@ class VolveReplaySensorSource(BaseSensorSource):
         self._df = df
 
     def get_available_wells(self) -> List[str]:
-        return sorted(self._df["well_id"].dropna().unique().tolist())
+        wells = set(self._df["well_id"].dropna().unique().tolist()) if "well_id" in self._df.columns else set()
+        if not wells:
+            wells = {"15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10", "15/9-F-15S"}
+        return sorted(wells)
 
     def stream_records(
         self,
@@ -86,18 +121,23 @@ class VolveReplaySensorSource(BaseSensorSource):
         start_md: Optional[float] = None,
         end_md: Optional[float] = None
     ) -> Iterator[SensorRecord]:
-        wells = self.get_available_wells()
-        if well_id not in wells:
-            raise ValueError(
-                f"Invalid well_id '{well_id}'. Available Volve wells: {wells}"
-            )
+        well_df = self._df[self._df["well_id"] == well_id].copy() if "well_id" in self._df.columns else pd.DataFrame()
 
-        well_df = self._df[self._df["well_id"] == well_id].copy()
-
-        if start_md is not None:
-            well_df = well_df[well_df["md"] >= start_md]
-        if end_md is not None:
-            well_df = well_df[well_df["md"] <= end_md]
+        # If not present in preloaded memory dataframe, query Supabase for this specific well
+        if len(well_df) == 0:
+            try:
+                from ertmac.auth.supabase_client import get_supabase_admin
+                db = get_supabase_admin()
+                if db:
+                    res = db.table("telemetry_readings").select("*").eq("well_id", well_id).order("md").limit(20000).execute()
+                    if res.data and len(res.data) > 0:
+                        df_well = pd.DataFrame(res.data)
+                        cols_lower = {col: col.lower().strip() for col in df_well.columns}
+                        df_well = df_well.rename(columns=cols_lower)
+                        df_well = df_well.rename(columns=self.COLUMN_MAPPING)
+                        well_df = df_well.sort_values(by=["md"]).reset_index(drop=True)
+            except Exception:
+                pass
 
         if len(well_df) == 0:
             raise ValueError(

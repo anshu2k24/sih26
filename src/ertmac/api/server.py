@@ -37,10 +37,25 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# CORS — restrict to known frontend origins in production
+# Production Environment Security Validations
+is_production = os.getenv("ENVIRONMENT", "").lower() == "production"
+auth_required = os.getenv("AUTH_REQUIRED", "false").lower() == "true"
+
+if is_production:
+    if not auth_required:
+        raise RuntimeError("FATAL CONFIGURATION ERROR: AUTH_REQUIRED must be set to 'true' in production.")
+    cors_origins_env = os.getenv("CORS_ORIGINS", "")
+    if not cors_origins_env or cors_origins_env == "*":
+        raise RuntimeError("FATAL CONFIGURATION ERROR: Wildcard '*' in CORS_ORIGINS is strictly forbidden in production. Set explicit frontend origins (e.g. https://app.vercel.app).")
+    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+else:
+    cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()] if cors_origins_env != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -86,9 +101,10 @@ from ertmac.api.notes_router import router as notes_router
 app.include_router(notes_router)
 
 VERIFIED_EVENTS_PATH = REPO_ROOT / "reports" / "tables" / "verified_event_episodes_v2.csv"
-nwis_historical_api: Optional[NWISHistoricalAPI] = None
-if VERIFIED_EVENTS_PATH.exists():
-    nwis_historical_api = NWISHistoricalAPI(str(VERIFIED_EVENTS_PATH))
+if not is_production and VERIFIED_EVENTS_PATH.exists():
+    nwis_historical_api: NWISHistoricalAPI = NWISHistoricalAPI(str(VERIFIED_EVENTS_PATH))
+else:
+    nwis_historical_api: NWISHistoricalAPI = NWISHistoricalAPI()
 
 geospatial_engine = GeospatialIntelligence()
 depth_correlation_engine = DepthCorrelationEngine(

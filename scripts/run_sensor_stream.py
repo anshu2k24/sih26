@@ -19,6 +19,7 @@ from ertmac.streaming import (
     SCIENTIFIC_LABEL
 )
 from ertmac.ml.streaming_adapter import StreamInferenceAdapter
+from ertmac.ml.inference import load_production_model
 
 logging.basicConfig(
     level=logging.INFO,
@@ -142,7 +143,15 @@ def main():
         logger.error(f"Invalid well ID '{args.well}'. Available wells: {available_wells}")
         sys.exit(1)
 
-    adapter = StreamInferenceAdapter() if args.inference else None
+    if args.inference:
+        try:
+            model = load_production_model('models/volve_research_v1.joblib')
+            adapter = StreamInferenceAdapter(model=model)
+        except Exception as e:
+            logger.error(f"Failed to load ML model: {e}")
+            sys.exit(1)
+    else:
+        adapter = None
 
     if args.dry_run:
         logger.info(f"Running DRY RUN for well '{args.well}' at {args.speed}x speed...")

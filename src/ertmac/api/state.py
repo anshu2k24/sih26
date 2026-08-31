@@ -30,26 +30,43 @@ class ApplicationStateManager:
             self.source = VolveReplaySensorSource()
             self.available_wells = self.source.get_available_wells()
         except Exception:
-            self.available_wells = ["15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-15S"]
+            self.available_wells = []
 
-        # Load well coordinates metadata
+        # Load well coordinates metadata via GeospatialIntelligence (Supabase-first)
         self.coords_metadata = {}
         try:
-            from pathlib import Path
-            import json
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent
-            coords_path = repo_root / "data" / "processed" / "usrop" / "well_coordinates.json"
-            if coords_path.exists():
-                with open(coords_path, "r", encoding="utf-8") as f:
-                    self.coords_metadata = json.load(f)
+            from ertmac.nwis.geospatial import GeospatialIntelligence
+            geo = GeospatialIntelligence()
+            self.coords_metadata = geo.coords
         except Exception as e:
-            logger.warning(f"Could not load well_coordinates.json: {e}")
+            logger.warning(f"Could not load well metadata: {e}")
+
+        # If source had no records loaded yet, derive available wells from wellbores metadata
+        if not self.available_wells and self.coords_metadata:
+            self.available_wells = list(self.coords_metadata.keys())
+        elif not self.available_wells:
+            self.available_wells = ["15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-15S"]
 
         self._lock = threading.Lock()
 
     def get_available_wells(self) -> List[Dict[str, Any]]:
+        if not self.coords_metadata:
+            try:
+                from ertmac.nwis.geospatial import GeospatialIntelligence
+                self.coords_metadata = GeospatialIntelligence().coords
+            except Exception:
+                pass
+
+        # Return all known wells from geospatial metadata and known Volve wellbores
+        known_wells = set(self.coords_metadata.keys()) if self.coords_metadata else set()
+        if hasattr(self, "available_wells") and self.available_wells:
+            known_wells.update(self.available_wells)
+
+        if not known_wells:
+            known_wells = {"15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10", "15/9-F-15S"}
+
         results = []
-        for w in self.available_wells:
+        for w in sorted(known_wells):
             meta = self.coords_metadata.get(w, {})
             item = {
                 "well_id": w,

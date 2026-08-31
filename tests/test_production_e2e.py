@@ -38,34 +38,47 @@ class TestProductionE2EWorkflow:
         prox_data = res_prox.json()
         assert prox_data["disclaimer"] == "HISTORICAL OFFSET EVENT — NOT A PREDICTION"
 
-        # 5. Fetch Active Alerts
+        # 5. Create / Fetch Active Alert for the journey
+        import time
+        from ertmac.alerts.engine import global_alert_engine, AlertSeverity, AlertSource
+        alt = global_alert_engine.create_alert(
+            well_id=well_id,
+            title=f"E2E Test Proximity Alert {time.time()}",
+            description="Nearby well recorded stuck pipe incident at offset MD 3050m.",
+            severity=AlertSeverity.HIGH,
+            source=AlertSource.HISTORICAL_PROXIMITY,
+            current_md=3050.0,
+            evidence="USROP historical event correlation within 25m depth window.",
+            dedup_key=f"e2e_test_alert_{time.time()}"
+        )
+
         res_alerts = client.get("/api/alerts")
         assert res_alerts.status_code == 200
         alerts = res_alerts.json()["alerts"]
+        assert len(alerts) > 0
 
-        if len(alerts) > 0:
-            target_alert = alerts[0]
-            alert_id = target_alert["alert_id"]
+        target_alert = [a for a in alerts if a["status"] in ("ACTIVE", "ACKNOWLEDGED", "INVESTIGATING")][0]
+        alert_id = target_alert["alert_id"]
 
-            # 6. Acknowledge Alert (if ACTIVE)
-            if target_alert["status"] == "ACTIVE":
-                res_ack = client.post(f"/api/alerts/{alert_id}/acknowledge")
-                assert res_ack.status_code == 200
-                assert res_ack.json()["status"] == "ACKNOWLEDGED"
+        # 6. Acknowledge Alert (if ACTIVE)
+        if target_alert["status"] == "ACTIVE":
+            res_ack = client.post(f"/api/alerts/{alert_id}/acknowledge")
+            assert res_ack.status_code == 200
+            assert res_ack.json()["status"] == "ACKNOWLEDGED"
 
-            # 7. Start Investigation (if ACKNOWLEDGED)
-            res_inv = client.post(f"/api/alerts/{alert_id}/investigate")
-            if res_inv.status_code == 200:
-                assert res_inv.json()["status"] == "INVESTIGATING"
+        # 7. Start Investigation (if ACKNOWLEDGED)
+        res_inv = client.post(f"/api/alerts/{alert_id}/investigate")
+        if res_inv.status_code == 200:
+            assert res_inv.json()["status"] == "INVESTIGATING"
 
-            # 8. Add Note
-            res_note = client.post(f"/api/alerts/{alert_id}/notes?note_text=Inspecting+topdrive+torque")
-            assert res_note.status_code == 200
+        # 8. Add Note
+        res_note = client.post(f"/api/alerts/{alert_id}/notes?note_text=Inspecting+topdrive+torque")
+        assert res_note.status_code == 200
 
-            # 9. Resolve Alert
-            res_res = client.post(f"/api/alerts/{alert_id}/resolve?notes=Parameters+confirmed+safe")
-            assert res_res.status_code == 200
-            assert res_res.json()["status"] == "RESOLVED"
+        # 9. Resolve Alert
+        res_res = client.post(f"/api/alerts/{alert_id}/resolve?notes=Parameters+confirmed+safe")
+        assert res_res.status_code == 200
+        assert res_res.json()["status"] == "RESOLVED"
 
         # 10. Generate DDR Report
         res_rpt = client.get(f"/api/reports/ddr?well_id={well_id}")

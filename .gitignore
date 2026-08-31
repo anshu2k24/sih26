@@ -18,11 +18,12 @@ data/raw/
 data/processed/
 data/features/
 data/uploads/
+data/reports/
 !data/.gitkeep
 
 # Artifacts and Outputs
-reports/
-artifacts/
+/reports/
+/artifacts/
 
 # Secrets — NEVER commit real credentials
 .env

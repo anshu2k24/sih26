@@ -40,13 +40,27 @@ class StreamInferenceAdapter:
         Evaluates the existing ML readiness gate on provided dataset.
         """
         if self.events_df is None or len(self.events_df) == 0:
-            from pathlib import Path
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent
-            ver_path = repo_root / "reports" / "tables" / "verified_event_episodes_v2.csv"
-            if ver_path.exists():
-                self.events_df = pd.read_csv(ver_path)
-            else:
-                return False, "ML_BLOCKED: Verified event episodes table missing for LOWO gate validation.", {}
+            try:
+                from nwis_api import NWISHistoricalAPI
+                nwis = NWISHistoricalAPI()
+                if nwis.df_events is not None and len(nwis.df_events) > 0:
+                    self.events_df = nwis.df_events
+            except Exception:
+                pass
+
+            import os
+            is_prod = os.getenv("ENVIRONMENT", "").lower() == "production"
+
+            if (self.events_df is None or len(self.events_df) == 0) and not is_prod:
+                from pathlib import Path
+                repo_root = Path(__file__).resolve().parent.parent.parent.parent
+                ver_path = repo_root / "reports" / "tables" / "verified_event_episodes_v2.csv"
+                if ver_path.exists():
+                    self.events_df = pd.read_csv(ver_path)
+                else:
+                    return False, "ML_BLOCKED: Verified event episodes dataset missing for LOWO gate validation.", {}
+            elif self.events_df is None or len(self.events_df) == 0:
+                return False, "ML_BLOCKED: Verified historical event dataset unavailable in database.", {}
 
         if len(sensor_df) == 0:
             return False, "ML_BLOCKED: Zero sensor telemetry provided for gate validation.", {}

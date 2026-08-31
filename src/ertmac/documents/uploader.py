@@ -56,18 +56,41 @@ def upload_document(
         if doc.get("checksum") == checksum:
             return doc, True
 
-    # Save file locally
     doc_id = f"DOC_{uuid.uuid4().hex[:8].upper()}"
     saved_filename = f"{doc_id}_{Path(filename).name}"
-    local_path = UPLOAD_DIR / saved_filename
-    local_path.write_bytes(file_bytes)
+    storage_path = f"documents/{organization_id}/{saved_filename}"
+
+    # Try saving locally as cached copy if directory exists/writable
+    local_path = None
+    try:
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        local_target = UPLOAD_DIR / saved_filename
+        local_target.write_bytes(file_bytes)
+        local_path = str(local_target)
+    except Exception as e:
+        logger.debug(f"Local file caching skipped: {e}")
+
+    # Upload to Supabase Storage
+    if db:
+        try:
+            db.storage.from_("documents").upload(
+                path=f"{organization_id}/{saved_filename}",
+                file=file_bytes,
+                file_options={"content-type": "application/octet-stream", "upsert": "true"}
+            )
+            storage_path = f"documents/{organization_id}/{saved_filename}"
+            logger.info(f"Uploaded file to Supabase Storage: {storage_path}")
+        except Exception as e:
+            logger.warning(f"Supabase Storage upload warning (using fallback path): {e}")
+            if local_path:
+                storage_path = local_path
 
     now = datetime.now(timezone.utc).isoformat()
     doc_record = {
         "id": doc_id,
         "organization_id": organization_id,
         "filename": filename,
-        "storage_path": str(local_path),
+        "storage_path": storage_path,
         "document_type": ext,
         "uploaded_by": user_id if len(user_id) == 36 and user_id != "00000000-0000-0000-0000-000000000001" else None,
         "checksum": checksum,
@@ -91,7 +114,7 @@ def upload_document(
             db_payload = {
                 "organization_id": organization_id,
                 "filename": filename,
-                "storage_path": str(local_path),
+                "storage_path": storage_path,
                 "document_type": ext,
                 "checksum": checksum,
                 "processing_status": "COMPLETED",

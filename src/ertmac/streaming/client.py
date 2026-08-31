@@ -70,34 +70,56 @@ class SensorStreamClient:
             loop.close()
 
     async def _connect_and_listen(self) -> None:
+        import os
+        use_in_process = os.getenv("STREAM_IN_PROCESS", "false").lower() == "true"
+
         while self._running:
-            try:
-                logger.debug(f"Connecting to WebSocket stream at {self.uri}...")
-                async with websockets.connect(self.uri, ping_interval=20.0, ping_timeout=20.0) as ws:
+            if not use_in_process:
+                try:
+                    logger.debug(f"Connecting to WebSocket stream at {self.uri}...")
+                    async with websockets.connect(self.uri, ping_interval=20.0, ping_timeout=20.0) as ws:
+                        with self._lock:
+                            self.status = "LIVE"
+                        logger.info("Connected to sensor stream WebSocket.")
+
+                        async for message in ws:
+                            if not self._running:
+                                break
+                            self._process_message(message)
+
+                except Exception as e:
+                    logger.debug(f"Sensor stream disconnected at {self.uri}: {e} (retrying in 2s)...")
+                finally:
+                    with self._lock:
+                        self.status = "STREAM DISCONNECTED"
+                        self.ml_result = {
+                            "status": "ML_NOT_READY",
+                            "is_blocked": True,
+                            "gate_reason": "Stream disconnected or server offline",
+                            "risk_score": None,
+                            "features": {}
+                        }
+            else:
+                # In-process replay fallback for standalone cloud deployment on Render
+                try:
+                    from ertmac.streaming.sources import VolveReplaySensorSource
+                    source = VolveReplaySensorSource()
+                    wells = source.get_available_wells()
+                    active_well = wells[0] if wells else "15/9-F-15"
                     with self._lock:
                         self.status = "LIVE"
-                    logger.info("Connected to sensor stream WebSocket.")
 
-                    async for message in ws:
+                    for record in source.stream_records(active_well):
                         if not self._running:
                             break
-                        self._process_message(message)
+                        self._process_message(json.dumps(record.to_dict()))
+                        await asyncio.sleep(0.08)
 
-            except Exception as e:
-                logger.debug(f"Sensor stream disconnected/offline at {self.uri}: {e} (retrying in 5s)...")
-            finally:
-                with self._lock:
-                    self.status = "STREAM DISCONNECTED"
-                    self.ml_result = {
-                        "status": "ML_NOT_READY",
-                        "is_blocked": True,
-                        "gate_reason": "Stream disconnected or server offline",
-                        "risk_score": None,
-                        "features": {}
-                    }
+                except Exception as e:
+                    logger.debug(f"In-process stream loop ended or errored: {e}")
 
             if self._running:
-                await asyncio.sleep(5.0)
+                await asyncio.sleep(2.0)
 
     def _process_message(self, message_str: str) -> None:
         try:
