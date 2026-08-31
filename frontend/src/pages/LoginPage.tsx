@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Shield, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, UserPlus, KeyRound, LogIn } from "lucide-react";
-
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import "../styles/Login.css";
+import heroImage from "../assets/hero.png";
 
 type Mode = "LOGIN" | "SIGNUP" | "FORGOT";
 
@@ -76,188 +77,147 @@ export const LoginPage: React.FC = () => {
   const displayError = formError || authError;
 
   return (
-    <div className="min-h-screen bg-[#070B14] flex items-center justify-center p-4">
-      {/* Background grid */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
+    <div className="login-page">
+      <div className="login-overlay"></div>
 
-      <div className="relative w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl shadow-lg">
-              <Shield className="w-8 h-8 text-blue-400" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-white font-mono tracking-wider">
-            eRTMAC-NWIS
+      {/* Header */}
+      <header className="login-header">
+        <div className="brand">
+          <span className="brand-dot"></span>
+          eRTMAC-NWIS
+        </div>
+        <div className="secure-text">SECURE ACCESS</div>
+      </header>
+
+      {/* Main section */}
+      <main className="login-main">
+        {/* LEFT SIDE */}
+        <section className="login-intro">
+          <p className="eyebrow">NEARBY WELLS INTELLIGENCE SYSTEM</p>
+          <h1>
+            Smarter decisions.<br />
+            <span>Safer drilling.</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1 font-mono">
-            Real-Time Operational Advisory Platform
+          <p className="intro-text">
+            Real-time monitoring, historical well intelligence
+            and AI-powered decision support for drilling operations.
           </p>
-          <div className="mt-1 text-xs text-slate-500 font-mono">
-            PS26121 — Equinor Volve Operations
-          </div>
-        </div>
+          <div className="orange-line"></div>
+        </section>
 
-        {/* Mode Navigation Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800 mb-4 font-mono text-xs">
-          <button
-            type="button"
-            onClick={() => { setMode("LOGIN"); setFormError(null); setSuccessMsg(null); }}
-            className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
-              mode === "LOGIN"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-            }`}
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            SIGN IN
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setMode("SIGNUP"); setFormError(null); setSuccessMsg(null); }}
-            className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
-              mode === "SIGNUP"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            CREATE
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setMode("FORGOT"); setFormError(null); setSuccessMsg(null); }}
-            className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
-              mode === "FORGOT"
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-            }`}
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            FORGOT
-          </button>
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-slate-900/90 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-7 shadow-2xl space-y-4">
-          <h2 className="text-sm font-bold text-white font-mono tracking-wider uppercase border-b border-slate-800 pb-3 flex items-center justify-between">
+        {/* RIGHT SIDE - LOGIN CARD */}
+        <section className="login-card">
+          <div className="card-heading">
+            <p>
+              {mode === "LOGIN"
+                ? "WELCOME BACK"
+                : mode === "SIGNUP"
+                ? "JOIN NWIS"
+                : "RECOVER ACCESS"}
+            </p>
+            <h2>
+              {mode === "LOGIN" && "Sign in to NWIS"}
+              {mode === "SIGNUP" && "Create an Account"}
+              {mode === "FORGOT" && "Reset Password"}
+            </h2>
             <span>
-              {mode === "LOGIN" && "Operator Authentication"}
-              {mode === "SIGNUP" && "Create New Supabase Account"}
-              {mode === "FORGOT" && "Reset Password Request"}
+              {mode === "LOGIN" && "Access your drilling intelligence dashboard."}
+              {mode === "SIGNUP" && "Sign up to access operational data."}
+              {mode === "FORGOT" && "Enter your email to receive reset instructions."}
             </span>
-            <span className="text-[10px] text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30">
-              SUPABASE DB
-            </span>
-          </h2>
+          </div>
 
-          {/* Messages */}
+          {/* Login / Signup tabs */}
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={mode === "LOGIN" ? "active-tab" : "inactive-tab"}
+              onClick={() => {
+                setMode("LOGIN");
+                setFormError(null);
+                setSuccessMsg(null);
+              }}
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              className={mode === "SIGNUP" ? "active-tab" : "inactive-tab"}
+              onClick={() => {
+                setMode("SIGNUP");
+                setFormError(null);
+                setSuccessMsg(null);
+              }}
+            >
+              Sign Up
+            </button>
+            <button
+              type="button"
+              className={mode === "FORGOT" ? "active-tab" : "inactive-tab"}
+              onClick={() => {
+                setMode("FORGOT");
+                setFormError(null);
+                setSuccessMsg(null);
+              }}
+            >
+              Forgot Password
+            </button>
+          </div>
+
           {displayError && (
-            <div className="flex items-start gap-2.5 bg-rose-950/50 border border-rose-500/40 rounded-xl p-3 text-xs text-rose-300 font-mono">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span>{displayError}</span>
+            <div className="message">
+              <AlertCircle className="w-4 h-4 inline mr-1" />
+              {displayError}
             </div>
           )}
 
           {successMsg && (
-            <div className="flex items-start gap-2.5 bg-emerald-950/50 border border-emerald-500/40 rounded-xl p-3 text-xs text-emerald-300 font-mono">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>{successMsg}</span>
+            <div className="message success">
+              <CheckCircle2 className="w-4 h-4 inline mr-1" />
+              {successMsg}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name for Signup */}
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
             {mode === "SIGNUP" && (
-              <div>
-                <label className="block text-xs text-slate-400 font-mono uppercase tracking-wider mb-1">
-                  Full Name
-                </label>
+              <div className="input-group">
+                <label>Full Name</label>
                 <input
                   type="text"
+                  placeholder="Jayanth (Principal Admin)"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Jayanth (Principal Admin)"
-                  className="w-full bg-slate-950 text-white border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-600"
                 />
               </div>
             )}
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs text-slate-400 font-mono uppercase tracking-wider mb-1">
-                Email Address
-              </label>
+            <div className="input-group">
+              <label>Email</label>
               <input
-                id="login-email"
                 type="email"
-                autoComplete="email"
+                placeholder="engineer@oilindia.in"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="engineer@company.com"
-                className="w-full bg-slate-950 text-white border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-600"
               />
             </div>
 
-            {/* Password (if not forgot) */}
             {mode !== "FORGOT" && (
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs text-slate-400 font-mono uppercase tracking-wider">
-                    Password
-                  </label>
-                  {mode === "LOGIN" && (
-                    <button
-                      type="button"
-                      onClick={() => setMode("FORGOT")}
-                      className="text-[11px] text-cyan-400 hover:text-cyan-300 font-mono"
-                    >
-                      Forgot password?
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete={mode === "LOGIN" ? "current-password" : "new-password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full bg-slate-950 text-white border border-slate-700 rounded-xl px-3.5 py-2.5 pr-10 text-sm font-mono focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-600"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+              <div className="input-group">
+                <label>Password</label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
             )}
 
-            {/* Role Selection for Signup */}
             {mode === "SIGNUP" && (
-              <div>
-                <label className="block text-xs text-slate-400 font-mono uppercase tracking-wider mb-1">
-                  Privilege Role Assignment
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-950 text-white border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-blue-500"
-                >
+              <div className="input-group">
+                <label>Privilege Role Assignment</label>
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
                   <option value="ADMIN">ADMIN (Full High Privilege Access)</option>
                   <option value="DRILLING_ENGINEER">DRILLING_ENGINEER</option>
                   <option value="OPERATIONS_ENGINEER">OPERATIONS_ENGINEER</option>
@@ -267,34 +227,43 @@ export const LoginPage: React.FC = () => {
               </div>
             )}
 
-            {/* Submit Button */}
-            <button
-              id="login-submit"
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-mono font-bold py-3 rounded-xl text-xs tracking-wider uppercase transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 mt-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  PROCESSING...
-                </>
-              ) : mode === "LOGIN" ? (
-                "SIGN IN TO CONSOLE"
-              ) : mode === "SIGNUP" ? (
-                "CREATE SUPABASE ACCOUNT"
-              ) : (
-                "SEND RESET LINK"
+            <div className="form-options">
+              {mode !== "FORGOT" && (
+                <label className="remember">
+                  <input
+                    type="checkbox"
+                    onChange={() => setShowPassword(!showPassword)}
+                    checked={showPassword}
+                  />
+                  Show Password
+                </label>
               )}
+            </div>
+
+            <button type="submit" className="login-submit" disabled={loading}>
+              <span>
+                {loading
+                  ? "PROCESSING..."
+                  : mode === "LOGIN"
+                  ? "Sign In"
+                  : mode === "SIGNUP"
+                  ? "Create Account"
+                  : "Send Reset Link"}
+              </span>
+              <span>→</span>
             </button>
           </form>
-        </div>
 
-        {/* Footer */}
-        <p className="text-center text-[11px] text-slate-600 mt-4 font-mono">
-          Volve USROP Telemetry Replay — Equinor Volve Field Dataset
-        </p>
-      </div>
+          <p className="demo-text">
+            Volve USROP Telemetry Replay — Equinor Volve Field Dataset
+          </p>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="login-footer">
+        eRTMAC-NWIS · Drilling Intelligence Platform
+      </footer>
     </div>
   );
 };
