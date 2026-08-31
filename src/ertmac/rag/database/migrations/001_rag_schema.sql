@@ -95,15 +95,9 @@ CREATE INDEX IF NOT EXISTS idx_rag_chunks_metadata
     ON rag_chunks USING GIN(metadata);
 
 -- ============================================================
--- OPTIONAL: HNSW vector index for production performance
--- (requires pgvector >= 0.5.0)
--- Uncomment for large-scale deployments (>100k chunks):
+-- HNSW vector index for production performance (cosine search)
 -- ============================================================
--- CREATE INDEX IF NOT EXISTS idx_rag_chunks_embedding_hnsw
---     ON rag_chunks USING hnsw (embedding vector_cosine_ops)
---     WITH (m = 16, ef_construction = 64);
+CREATE INDEX IF NOT EXISTS idx_rag_chunks_embedding_hnsw
+    ON rag_chunks USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 64);
 
--- For smaller datasets, IVFFlat is sufficient:
--- CREATE INDEX IF NOT EXISTS idx_rag_chunks_embedding_ivfflat
---     ON rag_chunks USING ivfflat (embedding vector_cosine_ops)
---     WITH (lists = 100);
