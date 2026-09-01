@@ -14,21 +14,21 @@ export const MapPage: React.FC = () => {
       <div
         className="absolute inset-0 z-0 bg-cover bg-no-repeat"
         style={{ 
-          backgroundImage: 'url("/src/assets/rig_vertical.png")',
+          backgroundImage: 'url("/src/assets/sunset_rig.jpg")',
           backgroundPosition: 'center',
         }}
       >
         <div 
           className="absolute inset-0 z-0" 
           style={{
-            background: "linear-gradient(90deg, rgba(3, 8, 18, 0.70) 0%, rgba(3, 8, 18, 0.40) 100%)",
-            backdropFilter: "blur(5px)",
-            WebkitBackdropFilter: "blur(5px)"
+            background: "linear-gradient(90deg, rgba(3, 8, 18, 0.40) 0%, rgba(3, 8, 18, 0.20) 100%)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)"
           }} 
         />
       </div>
 
-      <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
+      <div className="relative z-10 space-y-6">
         {/* Header Banner - Glassmorphism, Orange/Black */}
         <div 
           className="rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]"

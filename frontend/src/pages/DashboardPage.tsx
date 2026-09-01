@@ -6,7 +6,7 @@ import { HistoricalProximityPanel } from "../components/events/HistoricalProximi
 import { NearbyWellsMap } from "../components/map/NearbyWellsMap";
 import { TelemetryCards } from "../components/telemetry/TelemetryCards";
 import { SystemStatus } from "../components/system/SystemStatus";
-import { Map, ArrowRight, X } from "lucide-react";
+import { Map, ArrowRight, X, Sparkles } from "lucide-react";
 import type { HistoricalEventEpisode } from "../types/api";
 
 export const DashboardPage: React.FC = () => {
@@ -33,68 +33,111 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 p-4 sm:p-6 overflow-hidden">
-      {/* Background Image scoped only to this page */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-[#02050A]"
-        style={{ backgroundImage: 'url("/src/assets/hero.png")' }}
-      >
-        <div className="absolute inset-0 bg-[#070B14]/85 backdrop-blur-[2px]" />
+    <div className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 bg-[#02050A]">
+      {/* 1. HERO / COMMAND CENTER INTRODUCTION */}
+      <div className="relative w-full pt-12 pb-28 px-6 sm:px-8 overflow-hidden">
+        {/* Dark Oil Rig Background scoped to Hero */}
+        <div 
+          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url("/src/assets/hero_sunset.png")' }}
+        >
+          {/* Clean, dark overlay without any blur filters */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#02050A]/20 via-[#070B14]/40 to-[#02050A]/95" />
+        </div>
+        
+        <div className="relative z-10 w-full space-y-6 px-4 lg:px-10">
+          <div className="flex items-center gap-2 text-amber-500 font-bold tracking-widest text-xs uppercase font-mono">
+            <Sparkles className="w-4 h-4" />
+            Drilling Telemetry & Geological Risk Mitigation
+          </div>
+          
+          <h1 
+            className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[0.9] uppercase tracking-normal"
+            style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+          >
+            Real-Time Drilling <br/>
+            Intelligence & Telemetry <br/>
+            <span className="text-amber-500">Command Center</span>
+          </h1>
+          
+          <p className="text-slate-400 text-sm md:text-base max-w-2xl font-mono leading-relaxed">
+            Continuous offset well correlation, downhole pressure anomaly detection, and automated geological risk mitigation across active production assets.
+          </p>
+
+
+        </div>
       </div>
 
-      <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
-        {/* 1. Current Drilling Position Banner */}
-      <CurrentDrillingState
-        wellId={selectedWell}
-        currentMd={currentMd}
-        tvd={tvd}
-        lastTimestamp={lastTimestamp}
-        samplesReceived={samplesReceived}
-      />
+      {/* EXISTING DASHBOARD CONTENT (Shifted Below Hero) */}
+      <div className="relative z-10 w-full px-6 sm:px-8 pb-12 space-y-8 -mt-12">
+        
+        {/* 2. Key Operational Summary */}
+        <div className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+          <CurrentDrillingState
+            wellId={selectedWell}
+            currentMd={currentMd}
+            tvd={tvd}
+            lastTimestamp={lastTimestamp}
+            samplesReceived={samplesReceived}
+          />
+        </div>
 
-      {/* 2. Hero Proactive Historical Proximity Alerts */}
-      <HistoricalProximityPanel
-        activeWellId={selectedWell}
-        currentMd={currentMd}
-        onOpenWellIntelligence={(wellId) => navigate(`/wells/${encodeURIComponent(wellId)}`)}
-        onOpenEventDetail={(ev) => setSelectedEventModal(ev)}
-      />
+        {/* 3. Historical Offset / Risk Information */}
+        <div className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+          <HistoricalProximityPanel
+            activeWellId={selectedWell}
+            currentMd={currentMd}
+            onOpenWellIntelligence={(wellId) => navigate(`/wells/${encodeURIComponent(wellId)}`)}
+            onOpenEventDetail={(ev) => setSelectedEventModal(ev)}
+          />
+        </div>
 
-      {/* 3. Map & Live Telemetry Grid Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Map Preview (1/3) */}
-        <div className="bg-[#070B14]/60 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-5 shadow-2xl space-y-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-slate-800/60 pb-3 font-mono">
-            <div className="flex items-center gap-2">
-              <Map className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-white text-xs uppercase tracking-wider">Field Map Preview</span>
+        {/* 4. Map & Drilling Parameters */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Map Preview (1/3) */}
+          <div 
+            className="rounded-2xl p-5 shadow-2xl space-y-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)]"
+            style={{
+              background: "rgba(7, 15, 29, 0.70)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid rgba(100, 150, 220, 0.18)"
+            }}
+          >
+            <div className="flex items-center justify-between border-b border-[rgba(100,150,220,0.18)] pb-3 font-mono">
+              <div className="flex items-center gap-2">
+                <Map className="w-4 h-4 text-emerald-400" />
+                <span className="font-bold text-white text-xs uppercase tracking-wider">Field Map Preview</span>
+              </div>
+              <Link
+                to="/map"
+                className="text-xs text-blue-400 hover:text-orange-400 font-bold flex items-center gap-1 hover:underline transition-colors"
+              >
+                FULL MAP <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link
-              to="/map"
-              className="text-xs text-blue-400 hover:text-orange-400 font-bold flex items-center gap-1 hover:underline transition-colors"
-            >
-              FULL MAP <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+
+            <div className="h-[280px] rounded-xl overflow-hidden border border-slate-800/50 shadow-inner">
+              <NearbyWellsMap
+                wells={wells}
+                selectedWell={selectedWell}
+                onSelectWell={(wId) => setSelectedWell(wId)}
+                onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
+              />
+            </div>
           </div>
 
-          <div className="h-[280px] rounded-xl overflow-hidden border border-slate-800/50 shadow-inner">
-            <NearbyWellsMap
-              wells={wells}
-              selectedWell={selectedWell}
-              onSelectWell={(wId) => setSelectedWell(wId)}
-              onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
-            />
+          {/* Real-time Telemetry Grid (2/3) */}
+          <div className="lg:col-span-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+            <TelemetryCards latestSensor={latestSensor} />
           </div>
         </div>
 
-        {/* Real-time Telemetry Grid (2/3) */}
-        <div className="lg:col-span-2">
-          <TelemetryCards latestSensor={latestSensor} />
+        {/* 5. System Status */}
+        <div className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+          <SystemStatus streamStatus={status} mlState={mlState} />
         </div>
       </div>
-
-      {/* 4. System & Stream Health Status */}
-      <SystemStatus streamStatus={status} mlState={mlState} />
 
       {/* Event Detail Modal */}
       {selectedEventModal && (
@@ -166,7 +209,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 };
