@@ -33,19 +33,20 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 bg-[#02050A]">
+    <div 
+      className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 bg-cover bg-no-repeat bg-fixed"
+      style={{ 
+        backgroundImage: 'url("/src/assets/hero_sunset.png")',
+        backgroundPosition: 'center bottom'
+      }}
+    >
+      {/* Subtle overlay to ensure text remains readable without dulling the image */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#02050A]/70 via-transparent to-[#02050A]/30 z-0" />
+      
       {/* 1. HERO / COMMAND CENTER INTRODUCTION */}
-      <div className="relative w-full pt-12 pb-28 px-6 sm:px-8 overflow-hidden">
-        {/* Dark Oil Rig Background scoped to Hero */}
-        <div 
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url("/src/assets/hero_sunset.png")' }}
-        >
-          {/* Clean, dark overlay without any blur filters */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#02050A]/20 via-[#070B14]/40 to-[#02050A]/95" />
-        </div>
+      <div className="relative w-full pt-12 pb-28 px-6 sm:px-8 overflow-hidden z-10">
         
-        <div className="relative z-10 w-full space-y-6 px-4 lg:px-10">
+        <div className="relative w-full space-y-6 px-4 lg:px-10">
           <div className="flex items-center gap-2 text-amber-500 font-bold tracking-widest text-xs uppercase font-mono">
             <Sparkles className="w-4 h-4" />
             Drilling Telemetry & Geological Risk Mitigation
