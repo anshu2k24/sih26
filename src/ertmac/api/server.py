@@ -675,6 +675,8 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
 
             if current_count != last_count and st["latest_sensor"] is not None:
                 last_count = current_count
+                ml = st["ml"]
+                current_md = st["current_md"]
 
                 await websocket.send_json({
                     "type": "sensor_update",
@@ -683,17 +685,41 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
 
                 await websocket.send_json({
                     "type": "ml_update",
-                    "data": st["ml"]
+                    "data": ml
                 })
 
                 await websocket.send_json({
                     "type": "stream_status",
                     "data": {
                         "status": st["stream_status"],
-                        "current_md": st["current_md"],
+                        "current_md": current_md,
                         "samples_received": current_count
                     }
                 })
+
+                # Fire alert if Isolation Forest detects anomaly (risk_score == 1.0)
+                if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
+                    new_alert = global_alert_engine.create_alert(
+                        well_id=well_id,
+                        title="Isolation Forest: Anomaly Detected",
+                        description=f"Unsupervised anomaly model flagged abnormal telemetry at MD {current_md:.1f}m.",
+                        severity=AlertSeverity.HIGH,
+                        source=AlertSource.ML_PREDICTION,
+                        current_md=current_md,
+                        evidence=(
+                            f"IsolationForest (100 estimators, 2% contamination) scored this sample "
+                            f"as an ANOMALY at MD={current_md:.1f}m. "
+                            f"This is a real unsupervised signal — not a fabricated prediction."
+                        ),
+                        source_record="UNSUPERVISED ML ANOMALY — HUMAN VERIFICATION REQUIRED",
+                        dedup_key=f"iso_forest:{well_id}:{round(current_md / 50.0)}"
+                    )
+                    if new_alert:
+                        logger.info(f"ML Anomaly Alert created: {new_alert.alert_id} at MD={current_md:.1f}m")
+                        await websocket.send_json({
+                            "type": "alert_created",
+                            "data": new_alert.to_dict()
+                        })
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket client disconnected for well '{well_id}'")

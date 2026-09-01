@@ -33,6 +33,8 @@ import { SettingsPage } from "./pages/SettingsPage";
 
 
 import { Sidebar } from "./components/layout/Sidebar";
+import { ToastContainer } from "./components/ToastContainer";
+import { RiskPage } from "./pages/RiskPage";
 
 // Protected app shell (sidebar + header + content via Outlet)
 function AppShell() {
@@ -47,6 +49,8 @@ function AppShell() {
           </main>
         </div>
       </div>
+      {/* Global ML anomaly toast notifications */}
+      <ToastContainer />
     </ActiveWellProvider>
   );
 }
@@ -86,7 +90,7 @@ export function App() {
             <Route path="/notes/:noteId" element={<NoteDetailPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
-            <Route path="/risk" element={<PredictionsPage />} />
+            <Route path="/risk" element={<RiskPage />} />
             <Route path="/audit" element={<AuditPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/reports" element={<ReportsPage />} />

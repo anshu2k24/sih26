@@ -53,6 +53,20 @@ export const AlertsPage: React.FC = () => {
     loadAlerts();
   }, [selectedWell]);
 
+  // Listen for real-time ML-generated alerts over WS bridge
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const alert = (e as CustomEvent).detail as AlertItem;
+      if (!alert) return;
+      setAlerts((prev) => {
+        if (prev.some((a) => a.alert_id === alert.alert_id)) return prev;
+        return [alert, ...prev];
+      });
+    };
+    window.addEventListener("ertmac:alert_created", handler);
+    return () => window.removeEventListener("ertmac:alert_created", handler);
+  }, []);
+
   useEffect(() => {
     if (selectedAlertModal) {
       setNotesLoading(true);
