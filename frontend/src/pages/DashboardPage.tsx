@@ -33,8 +33,17 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. Current Drilling Position Banner */}
+    <div className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 p-4 sm:p-6 overflow-hidden">
+      {/* Background Image scoped only to this page */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-[#02050A]"
+        style={{ backgroundImage: 'url("/src/assets/hero.png")' }}
+      >
+        <div className="absolute inset-0 bg-[#070B14]/85 backdrop-blur-[2px]" />
+      </div>
+
+      <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
+        {/* 1. Current Drilling Position Banner */}
       <CurrentDrillingState
         wellId={selectedWell}
         currentMd={currentMd}
@@ -54,21 +63,21 @@ export const DashboardPage: React.FC = () => {
       {/* 3. Map & Live Telemetry Grid Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Map Preview (1/3) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3 font-mono">
+        <div className="bg-[#070B14]/60 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-5 shadow-2xl space-y-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-slate-800/60 pb-3 font-mono">
             <div className="flex items-center gap-2">
               <Map className="w-4 h-4 text-emerald-400" />
               <span className="font-bold text-white text-xs uppercase tracking-wider">Field Map Preview</span>
             </div>
             <Link
               to="/map"
-              className="text-xs text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 hover:underline"
+              className="text-xs text-blue-400 hover:text-orange-400 font-bold flex items-center gap-1 hover:underline transition-colors"
             >
               FULL MAP <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="h-[280px] rounded-lg overflow-hidden border border-slate-800">
+          <div className="h-[280px] rounded-xl overflow-hidden border border-slate-800/50 shadow-inner">
             <NearbyWellsMap
               wells={wells}
               selectedWell={selectedWell}
@@ -157,6 +166,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

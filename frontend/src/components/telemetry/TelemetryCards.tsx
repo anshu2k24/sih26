@@ -83,26 +83,35 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ latestSensor }) 
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-      <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+    <div 
+      className="rounded-3xl p-6 h-full flex flex-col justify-between"
+      style={{
+        background: "linear-gradient(145deg, rgba(20, 27, 42, 0.72), rgba(9, 14, 25, 0.60))",
+        border: "1px solid rgba(255, 255, 255, 0.12)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        boxShadow: "0 25px 70px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+      }}
+    >
+      <h2 className="text-sm font-bold text-slate-200 uppercase tracking-widest mb-5 flex items-center gap-2">
         <Gauge className="w-4 h-4 text-emerald-400" />
         Real-Time Drilling Parameters
       </h2>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
         {cards.map((c, idx) => {
           const IconComponent = c.icon;
           return (
-            <div key={idx} className={`p-3 rounded-lg border ${c.bg} flex flex-col justify-between`}>
-              <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                <span className="truncate text-[11px] font-medium" title={c.label}>
+            <div key={idx} className={`p-3.5 rounded-xl border ${c.bg} bg-[#0B101E]/80 backdrop-blur-sm flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(255,140,0,0.2)] hover:bg-[#0B101E]`}>
+              <div className="flex items-center justify-between text-xs text-slate-400 mb-2.5">
+                <span className="truncate text-[11px] font-semibold tracking-wider" title={c.label}>
                   {c.label.split(" ")[0]}
                 </span>
-                <IconComponent className={`w-3.5 h-3.5 ${c.color}`} />
+                <IconComponent className={`w-4 h-4 ${c.color}`} />
               </div>
               <div>
-                <div className={`text-base font-bold font-mono ${c.color}`}>{c.value}</div>
-                <div className="text-[10px] text-slate-400 font-mono">{c.unit}</div>
+                <div className={`text-xl font-bold font-mono tracking-wider ${c.color}`}>{c.value}</div>
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5 font-semibold">{c.unit}</div>
               </div>
             </div>
           );

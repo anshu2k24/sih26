@@ -9,46 +9,83 @@ export const MapPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono">
-        <div>
-          <div className="flex items-center gap-3">
-            <Compass className="w-5 h-5 text-emerald-400 animate-spin-slow" />
-            <h1 className="text-lg font-bold text-white uppercase tracking-wider">
-              GEOSPATIAL INTELLIGENCE MAP
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 font-bold">
-              AUTOFOCUSED VOLVE CLUSTER
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Surface coordinates ingested from Norwegian Offshore Directorate (NPD). Distances labeled as Surface Platform Slot Distance.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 text-xs bg-slate-950 px-3.5 py-2 rounded-lg border border-slate-800">
-          <MapPin className="w-4 h-4 text-emerald-400" />
-          <span className="text-slate-400">Active Well Context:</span>
-          <span className="font-bold text-white">{selectedWell}</span>
-        </div>
+    <div className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 p-4 sm:p-6 overflow-hidden">
+      {/* Background Image scoped only to this page */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-no-repeat"
+        style={{ 
+          backgroundImage: 'url("/src/assets/rig_vertical.png")',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div 
+          className="absolute inset-0 z-0" 
+          style={{
+            background: "linear-gradient(90deg, rgba(3, 8, 18, 0.70) 0%, rgba(3, 8, 18, 0.40) 100%)",
+            backdropFilter: "blur(5px)",
+            WebkitBackdropFilter: "blur(5px)"
+          }} 
+        />
       </div>
 
-      {/* Main Full-Size Map Component */}
-      <NearbyWellsMap
-        wells={wells}
-        selectedWell={selectedWell}
-        onSelectWell={(wId) => setSelectedWell(wId)}
-        onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
-      />
+      <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
+        {/* Header Banner - Glassmorphism, Orange/Black */}
+        <div 
+          className="rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+          style={{
+            background: "linear-gradient(145deg, rgba(20, 20, 20, 0.72), rgba(10, 10, 10, 0.60))",
+            border: "1px solid rgba(245, 158, 11, 0.2)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            boxShadow: "0 25px 70px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+          }}
+        >
+          <div>
+            <div className="flex items-center gap-3">
+              <Compass className="w-5 h-5 text-amber-500 animate-spin-slow" />
+              <h1 className="text-lg font-bold text-white uppercase tracking-wider">
+                GEOSPATIAL INTELLIGENCE MAP
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded bg-amber-950/80 text-amber-500 border border-amber-500/30 font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                AUTOFOCUSED VOLVE CLUSTER
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              Surface coordinates ingested from Norwegian Offshore Directorate (NPD). Distances labeled as Surface Platform Slot Distance.
+            </p>
+          </div>
 
-      {/* Scientific Provenance Callout Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-400 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>Surface Slot Distance represents platform slot header separation on the Volve Platform Complex deck.</span>
+          <div className="flex items-center gap-3 text-xs bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-lg border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+            <MapPin className="w-4 h-4 text-amber-500" />
+            <span className="text-slate-300">Active Well Context:</span>
+            <span className="font-bold text-white">{selectedWell}</span>
+          </div>
         </div>
-        <span className="text-slate-500">NPD Verified Coordinates</span>
+
+        {/* Main Full-Size Map Component */}
+        <NearbyWellsMap
+          wells={wells}
+          selectedWell={selectedWell}
+          onSelectWell={(wId) => setSelectedWell(wId)}
+          onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
+        />
+
+        {/* Scientific Provenance Callout Banner */}
+        <div 
+          className="rounded-xl p-4 text-xs font-mono text-slate-300 flex items-center justify-between transition-all duration-300 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+          style={{
+            background: "rgba(10, 10, 10, 0.6)",
+            border: "1px solid rgba(245, 158, 11, 0.2)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>Surface Slot Distance represents platform slot header separation on the Volve Platform Complex deck.</span>
+          </div>
+          <span className="text-amber-500/70 font-bold">NPD Verified Coordinates</span>
+        </div>
       </div>
     </div>
   );

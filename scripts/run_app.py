@@ -13,6 +13,12 @@ FRONTEND_DIR = REPO_ROOT / "frontend"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(REPO_ROOT / ".env")
+except ImportError:
+    pass
+
 from ertmac.streaming import SCIENTIFIC_LABEL
 
 def get_env():

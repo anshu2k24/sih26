@@ -58,28 +58,28 @@ export const SystemStatus: React.FC<SystemStatusProps> = ({ streamStatus, mlStat
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-      <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+    <div className="bg-[#070B14]/60 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-5 shadow-2xl">
+      <h2 className="text-sm font-bold text-slate-200 uppercase tracking-widest mb-5 flex items-center gap-2">
         <Server className="w-4 h-4 text-indigo-400" />
         System Infrastructure & Health Status
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item, idx) => {
           const IconComp = item.icon;
           const isOk = item.status === "CONNECTED" || item.status === "READY";
           return (
             <div
               key={idx}
-              className="p-3.5 rounded-lg bg-slate-850/60 border border-slate-800 flex items-center justify-between"
+              className="p-3.5 rounded-xl bg-[#0B101E]/80 backdrop-blur-sm border border-slate-800/50 shadow-sm flex items-center justify-between hover:-translate-y-0.5 hover:border-slate-700 hover:bg-[#0B101E] hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                <div className="p-2 rounded-lg bg-[#070B14] text-slate-300 border border-slate-800/60 shadow-inner">
                   <IconComp className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-slate-200">{item.name}</div>
-                  <div className="text-[11px] font-mono text-slate-400">{item.url}</div>
+                  <div className="text-xs font-bold text-slate-200 tracking-wide">{item.name}</div>
+                  <div className="text-[11px] font-mono text-slate-400 mt-0.5">{item.url}</div>
                 </div>
               </div>
 

@@ -25,5 +25,4 @@ export const supabase = createClient(
   supabaseAnonKey || "placeholder-anon-key"
 );
 
-export const isSupabaseConfigured =
-  !!supabaseUrl && supabaseAnonKey !== "placeholder-anon-key";
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);

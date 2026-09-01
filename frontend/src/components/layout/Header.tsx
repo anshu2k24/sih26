@@ -21,7 +21,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-3 sticky top-0 z-30 shadow-md">
+    <header className="bg-[#070B14]/70 backdrop-blur-xl border-b border-slate-800/60 px-6 py-3 sticky top-0 z-30 shadow-md">
       <div className="flex items-center justify-between gap-4 font-mono text-xs">
         {/* Left Side: Active Well Context Indicator */}
         <div className="flex items-center gap-3">

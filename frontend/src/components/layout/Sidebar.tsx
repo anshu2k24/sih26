@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState<boolean>(false);
 
   const navLinks = [
-    { to: "/dashboard", label: "COMMAND CENTER", icon: LayoutDashboard },
+    { to: "/dashboard", label: "DASHBOARD", icon: LayoutDashboard },
     { to: "/live", label: "LIVE TELEMETRY", icon: Radio },
     { to: "/map", label: "GEOSPATIAL MAP", icon: Map },
     { to: "/wells", label: "WELLS", icon: Database },
@@ -54,7 +54,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className={`bg-slate-900 border-r border-slate-800 flex flex-col justify-between transition-all duration-300 z-40 sticky top-0 h-screen ${
+      className={`bg-[#070B14]/80 backdrop-blur-xl border-r border-slate-800/60 flex flex-col justify-between transition-all duration-300 z-40 sticky top-0 h-screen ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
@@ -102,7 +102,7 @@ export const Sidebar: React.FC = () => {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl font-mono text-xs font-bold transition-all ${
                     isActive
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 border border-blue-400/40"
+                      ? "bg-orange-950/40 text-orange-400 border border-orange-500/40 shadow-[0_0_15px_rgba(255,140,0,0.15)]"
                       : "text-slate-400 hover:text-white hover:bg-slate-800/60"
                   } ${collapsed ? "justify-center px-0" : ""}`
                 }

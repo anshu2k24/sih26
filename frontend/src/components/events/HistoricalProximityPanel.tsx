@@ -67,7 +67,7 @@ export const HistoricalProximityPanel: React.FC<HistoricalProximityPanelProps> =
   const displayDepth = currentMd > 0 ? currentMd : 1509.1;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-5">
+    <div className="bg-[#070B14]/60 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-5 shadow-2xl space-y-5">
       {/* Header & Control Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4 font-mono">
         <div>
@@ -144,7 +144,7 @@ export const HistoricalProximityPanel: React.FC<HistoricalProximityPanelProps> =
           {matches.map((m: HistoricalProximityMatch, idx: number) => (
             <div
               key={m.event_episode_id || idx}
-              className="bg-slate-950 border border-amber-500/30 rounded-xl p-4 shadow-lg space-y-3 relative overflow-hidden group hover:border-amber-400/60 transition-all"
+              className="bg-[#0B101E]/80 backdrop-blur-md border border-amber-500/30 rounded-xl p-4 shadow-lg space-y-3 relative overflow-hidden group hover:-translate-y-1 hover:border-orange-500/60 hover:shadow-[0_0_20px_rgba(255,140,0,0.2)] hover:bg-[#0B101E] transition-all duration-300"
             >
               {/* Card Top Banner */}
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
