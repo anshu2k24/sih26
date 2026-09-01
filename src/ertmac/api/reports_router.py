@@ -38,7 +38,7 @@ def list_reports(
     user: UserSession = Depends(require_permission(Permission.VIEW_REPORTS)),
 ):
     """Lists generated reports."""
-    reports = ReportGenerator.get_reports(well_id=well_id, limit=limit)
+    reports = ReportGenerator.get_reports(organization_id=user.organization_id, well_id=well_id, limit=limit)
     return {"count": len(reports), "reports": reports}
 
 
@@ -92,7 +92,7 @@ def export_report_file(
     user: UserSession = Depends(require_permission(Permission.VIEW_REPORTS)),
 ):
     """Downloads the generated report Markdown file."""
-    reports = ReportGenerator.get_reports(limit=200)
+    reports = ReportGenerator.get_reports(organization_id=user.organization_id, limit=200)
     rep = next((r for r in reports if str(r.get("id")) == report_id or str(r.get("report_id")) == report_id), None)
     if not rep or not rep.get("file_path"):
         raise HTTPException(status_code=404, detail="Report file not found.")

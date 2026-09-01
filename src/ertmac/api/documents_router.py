@@ -65,7 +65,7 @@ async def upload_and_process_document(
             organization_id=user.organization_id,
             payload={"filename": filename, "checksum": doc_record.get("checksum")},
         )
-        events = DocumentVerificationEngine.get_events_for_document(doc_id)
+        events = DocumentVerificationEngine.get_events_for_document(doc_id, organization_id=user.organization_id)
         return {
             "status": "DUPLICATE",
             "message": "Document with identical SHA-256 checksum has already been uploaded.",
@@ -124,7 +124,7 @@ def list_uploaded_documents(
     user: UserSession = Depends(require_permission(Permission.VIEW_HISTORICAL_DATA)),
 ):
     """Lists all uploaded documents."""
-    docs = get_documents(limit=limit)
+    docs = get_documents(organization_id=user.organization_id, limit=limit)
     return {"count": len(docs), "documents": docs}
 
 
@@ -134,10 +134,10 @@ def get_document_details(
     user: UserSession = Depends(require_permission(Permission.VIEW_HISTORICAL_DATA)),
 ):
     """Returns details for a single uploaded document."""
-    doc = get_document_by_id(doc_id)
+    doc = get_document_by_id(doc_id, organization_id=user.organization_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
-    events = DocumentVerificationEngine.get_events_for_document(doc_id)
+    events = DocumentVerificationEngine.get_events_for_document(doc_id, organization_id=user.organization_id)
     return {"document": doc, "extracted_events": events}
 
 
@@ -147,7 +147,7 @@ def get_document_extracted_events(
     user: UserSession = Depends(require_permission(Permission.VIEW_HISTORICAL_DATA)),
 ):
     """Returns extracted events for a specific document."""
-    events = DocumentVerificationEngine.get_events_for_document(doc_id)
+    events = DocumentVerificationEngine.get_events_for_document(doc_id, organization_id=user.organization_id)
     return {"document_id": doc_id, "count": len(events), "events": events}
 
 
@@ -165,6 +165,7 @@ def verify_extracted_event_endpoint(
         event_id=event_id,
         verifier_user_id=user.user_id,
         verifier_role=user.role.value,
+        organization_id=user.organization_id,
     )
     if not evt:
         raise HTTPException(status_code=404, detail="Extracted event not found.")
@@ -182,6 +183,7 @@ def reject_extracted_event_endpoint(
         event_id=event_id,
         verifier_user_id=user.user_id,
         verifier_role=user.role.value,
+        organization_id=user.organization_id,
     )
     if not evt:
         raise HTTPException(status_code=404, detail="Extracted event not found.")

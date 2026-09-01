@@ -55,7 +55,6 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,6 +114,83 @@ depth_correlation_engine = DepthCorrelationEngine(
     geospatial_engine=geospatial_engine,
     nwis_historical_api=nwis_historical_api
 )
+
+from collections import defaultdict
+from ertmac.alerts.hazard_classifier import evaluate_telemetry_hazards
+
+class BroadcastManager:
+    def __init__(self):
+        self.queues: Dict[str, List[asyncio.Queue]] = defaultdict(list)
+        self.running = False
+        self._task = None
+
+    def subscribe(self, well_id: str) -> asyncio.Queue:
+        q = asyncio.Queue()
+        self.queues[well_id].append(q)
+        return q
+
+    def unsubscribe(self, well_id: str, q: asyncio.Queue):
+        if well_id in self.queues and q in self.queues[well_id]:
+            self.queues[well_id].remove(q)
+
+    async def start(self):
+        if self.running:
+            return
+        self.running = True
+        self._task = asyncio.create_task(self._broadcast_loop())
+
+    async def _broadcast_loop(self):
+        state_mgr = get_app_state()
+        last_counts = {}
+        while self.running:
+            await asyncio.sleep(0.5)
+            for well_id, queues in list(self.queues.items()):
+                if not queues:
+                    continue
+                st = state_mgr.get_well_state(well_id)
+                current_count = st["samples_received"]
+                last_count = last_counts.get(well_id, -1)
+                
+                if current_count != last_count and st["latest_sensor"] is not None:
+                    last_counts[well_id] = current_count
+                    ml = st["ml"]
+                    
+                    if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
+                        meta = state_mgr.coords_metadata.get(well_id, {})
+                        org_id = meta.get("organization_id", "00000000-0000-0000-0000-000000000001")
+                        alert = evaluate_telemetry_hazards(
+                            sensor=st["latest_sensor"] or {},
+                            features=ml.get("features", {}),
+                            current_md=st["current_md"],
+                            well_id=well_id,
+                            organization_id=org_id
+                        )
+                        if alert:
+                            logger.info(f"ML Anomaly Alert created: {alert.alert_id} at MD={st['current_md']:.1f}m")
+                            for q in queues:
+                                q.put_nowait({"type": "alert_created", "data": alert.to_dict()})
+
+                    msg_sensor = {"type": "sensor_update", "data": st["latest_sensor"]}
+                    msg_ml = {"type": "ml_update", "data": ml}
+                    msg_status = {
+                        "type": "stream_status",
+                        "data": {
+                            "status": st["stream_status"],
+                            "current_md": st["current_md"],
+                            "samples_received": current_count
+                        }
+                    }
+                    
+                    for q in queues:
+                        q.put_nowait(msg_sensor)
+                        q.put_nowait(msg_ml)
+                        q.put_nowait(msg_status)
+
+broadcaster = BroadcastManager()
+
+@app.on_event("startup")
+async def on_startup():
+    await broadcaster.start()
 
 
 def validate_well_id(well_id: str, state_mgr: ApplicationStateManager = Depends(get_app_state)):
@@ -202,7 +278,8 @@ def get_offset_events(
         active_well_id=well_id,
         current_md=current_md,
         radius=radius,
-        event_type=event_type
+        event_type=event_type,
+        organization_id=user.organization_id
     )
     return res
 
@@ -224,7 +301,10 @@ def get_nearby_wells(
     user: UserSession = Depends(require_permission(Permission.VIEW_WELLS)),
 ):
     """Returns offset wells within radius_km of active well, sorted by Haversine distance."""
-    nearby = geospatial_engine.find_nearby_wells(well_id, radius_km=radius_km)
+    nearby = geospatial_engine.find_nearby_wells(well_id, organization_id=user.organization_id, radius_km=radius_km)
+    
+    # The geospatial engine natively enforces tenant isolation against its source data
+
     active_meta = geospatial_engine.coords.get(well_id, {})
     return {
         "active_well": well_id,
@@ -245,7 +325,7 @@ def get_well_full_intelligence(
     if not nwis_historical_api:
         raise HTTPException(status_code=503, detail="NWIS Historical API dataset unavailable.")
 
-    res = nwis_historical_api.get_well_full_intelligence(well_id)
+    res = nwis_historical_api.get_well_full_intelligence(well_id, organization_id=user.organization_id)
 
     distance_km = None
     distance_m = None
@@ -306,7 +386,8 @@ def search_knowledge(
         max_md=max_md,
         sort_by=sort_by,
         limit=limit,
-        offset=offset
+        offset=offset,
+        organization_id=user.organization_id
     )
 
 
@@ -344,7 +425,7 @@ def get_alerts(
     user: UserSession = Depends(require_permission(Permission.VIEW_ALERTS)),
 ):
     """Returns active and historical operational drilling alerts."""
-    alerts = global_alert_engine.get_active_alerts(well_id)
+    alerts = global_alert_engine.get_active_alerts(organization_id=user.organization_id, well_id=well_id)
     return {"count": len(alerts), "alerts": alerts}
 
 
@@ -354,7 +435,7 @@ def get_alert_detail(
     user: UserSession = Depends(require_permission(Permission.VIEW_ALERTS)),
 ):
     """Returns a single alert by ID."""
-    alert = global_alert_engine._get_alert_item(alert_id)
+    alert = global_alert_engine._get_alert_item(alert_id, organization_id=user.organization_id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found.")
     return alert.to_dict()
@@ -366,7 +447,7 @@ def acknowledge_alert(
     user: UserSession = Depends(require_permission(Permission.ACKNOWLEDGE_ALERT)),
 ):
     """Acknowledges an active operational alert. Requires ACKNOWLEDGE_ALERT permission."""
-    alt = global_alert_engine.acknowledge_alert(alert_id, user.user_id)
+    alt = global_alert_engine.acknowledge_alert(alert_id, user.user_id, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -387,7 +468,7 @@ def start_investigation(
     user: UserSession = Depends(require_permission(Permission.INVESTIGATE_ALERT)),
 ):
     """Moves alert to INVESTIGATING status."""
-    alt = global_alert_engine.start_investigation(alert_id, user.user_id)
+    alt = global_alert_engine.start_investigation(alert_id, user.user_id, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -409,7 +490,7 @@ def assign_alert(
     user: UserSession = Depends(require_permission(Permission.INVESTIGATE_ALERT)),
 ):
     """Assigns an alert to a team member."""
-    alt = global_alert_engine.assign_alert(alert_id, assignee_id)
+    alt = global_alert_engine.assign_alert(alert_id, assignee_id, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -431,7 +512,7 @@ def get_alert_notes(
     user: UserSession = Depends(require_permission(Permission.VIEW_ALERTS)),
 ):
     """Returns notes added to an alert."""
-    return {"alert_id": alert_id, "notes": global_alert_engine.get_notes(alert_id)}
+    return {"alert_id": alert_id, "notes": global_alert_engine.get_notes(alert_id, organization_id=user.organization_id)}
 
 
 @app.post("/api/alerts/{alert_id}/notes", tags=["Alert Engine"])
@@ -469,7 +550,7 @@ def resolve_alert(
             status_code=400,
             detail="Resolution summary is required. Provide notes query parameter."
         )
-    alt = global_alert_engine.resolve_alert(alert_id, user.user_id, notes)
+    alt = global_alert_engine.resolve_alert(alert_id, user.user_id, notes, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -655,7 +736,6 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
     logger.info(f"WebSocket client connected for well '{well_id}' (User: {session.email}, Org: {session.organization_id})")
     state_mgr = get_app_state()
 
-
     try:
         st = state_mgr.get_well_state(well_id)
         await websocket.send_json({
@@ -667,140 +747,15 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
             }
         })
 
-        last_count = -1
+        q = broadcaster.subscribe(well_id)
         while True:
-            await asyncio.sleep(0.1)
-            st = state_mgr.get_well_state(well_id)
-            current_count = st["samples_received"]
-
-            if current_count != last_count and st["latest_sensor"] is not None:
-                last_count = current_count
-                ml = st["ml"]
-                current_md = st["current_md"]
-
-                await websocket.send_json({
-                    "type": "sensor_update",
-                    "data": st["latest_sensor"]
-                })
-
-                await websocket.send_json({
-                    "type": "ml_update",
-                    "data": ml
-                })
-
-                await websocket.send_json({
-                    "type": "stream_status",
-                    "data": {
-                        "status": st["stream_status"],
-                        "current_md": current_md,
-                        "samples_received": current_count
-                    }
-                })
-
-                # Fire alert if Isolation Forest detects anomaly (risk_score == 1.0)
-                if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
-                    sensor = st["latest_sensor"] or {}
-                    features = ml.get("features", {})
-
-                # ── Helper: safe format ───────────────────────────────────
-                    def _fv(key: str, unit: str = "", fmt: str = ".1f") -> str:
-                        v = sensor.get(key)
-                        return f"{v:{fmt}}{unit}" if v is not None else "N/A"
-
-                    def _fd(key: str):
-                        v = features.get(key)
-                        return float(v) if v is not None else None
-
-                    # ── Domain-rules hazard classifier ───────────────────────
-                    d_torque = _fd("delta_torque")
-                    d_wob    = _fd("delta_wob")
-                    d_rop    = _fd("delta_rop")
-                    d_spp    = _fd("delta_spp")
-                    d_flow   = _fd("delta_flow_in")
-                    mse_val  = _fd("mse")
-                    dxc_val  = _fd("dxc")
-
-                    rop  = float(sensor.get("rop",  0.0) or 0.0)
-                    torq = float(sensor.get("torque", 0.0) or 0.0)
-
-                    hazard_title   = "Drilling Anomaly Detected"
-                    hazard_verdict = "Telemetry has deviated significantly from the normal operational envelope. Verify all channels."
-                    severity_tag   = AlertSeverity.HIGH
-
-                    # Priority-ordered domain rules
-                    if (d_spp is not None and d_flow is not None and d_spp < -15 and d_flow > 50 and rop > 5):
-                        hazard_title   = "⚠ POSSIBLE WELL KICK"
-                        hazard_verdict = (f"SPP dropped {abs(d_spp):.1f} bar while flow-in increased {d_flow:.0f} L/min — classic kick signature. "
-                                          f"Pit volume gain check IMMEDIATELY. ROP={rop:.1f} m/h suggests active influx.")
-                        severity_tag   = AlertSeverity.CRITICAL
-
-                    elif (d_spp is not None and d_flow is not None and d_spp < -10 and d_flow < -80):
-                        hazard_title   = "⚠ POSSIBLE MUD LOSS / LOST CIRCULATION"
-                        hazard_verdict = (f"SPP down {abs(d_spp):.1f} bar AND flow-in down {abs(d_flow):.0f} L/min — thief zone or fracture taking fluid. "
-                                          f"Check return flow and pit levels. Consider LCM pill.")
-                        severity_tag   = AlertSeverity.CRITICAL
-
-                    elif (d_torque is not None and d_wob is not None and d_torque > 5 and d_wob < -10 and rop < 2):
-                        hazard_title   = "⚠ POSSIBLE STUCK PIPE / PACK-OFF"
-                        hazard_verdict = (f"Torque surged +{d_torque:.1f} kNm, WOB dropped {abs(d_wob):.1f} kN, ROP fell to {rop:.1f} m/h — "
-                                          f"differential sticking or pack-off precursor. Reciprocate/rotate string immediately. Do NOT apply excessive overpull.")
-                        severity_tag   = AlertSeverity.CRITICAL
-
-                    elif (mse_val is not None and d_rop is not None and mse_val > 50000 and d_rop < -3):
-                        hazard_title   = "Bit Balling / Hard Formation Change"
-                        hazard_verdict = (f"Mechanical Specific Energy at {mse_val:.0f} kJ/m³ while ROP dropped {abs(d_rop):.1f} m/h — "
-                                          f"bit consuming far more energy per metre. Likely bit balling (clay) or hard stringer. Consider reaming or weight reduction.")
-
-                    elif (d_spp is not None and d_torque is not None and d_spp < -12 and abs(d_torque) < 2 and rop < 3):
-                        hazard_title   = "Possible Bit / String Washout"
-                        hazard_verdict = (f"SPP fell {abs(d_spp):.1f} bar with no torque change — pressure loss without mechanical resistance points to a washout in BHA or bit nozzles. "
-                                          f"Pull to shoe and assess BHA integrity.")
-
-                    elif d_torque is not None and d_torque > 8:
-                        hazard_title   = "Elevated Torque — Tight Hole / Formation Interaction"
-                        hazard_verdict = (f"Torque increased {d_torque:.1f} kNm over the causal window. Possible tight hole, ledge, or reactive formation. "
-                                          f"Reduce WOB, increase RPM, or circulate to condition mud before continuing.")
-
-                    elif dxc_val is not None and dxc_val < 0.8:
-                        hazard_title   = "D-Exponent Pore Pressure Warning"
-                        hazard_verdict = (f"Corrected D-exponent = {dxc_val:.3f} (below 1.0) — formation is drilling faster than normal compaction trend, "
-                                          f"a pore pressure increase signature. Review mud weight and ECD margins immediately.")
-
-                    # Sensor snapshot + top signals
-                    sensor_snapshot = (f"ROP={_fv('rop', ' m/h')} | WOB={_fv('wob', ' kN')} | SPP={_fv('spp', ' bar')} | "
-                                       f"Torque={_fv('torque', ' kNm')} | RPM={_fv('rpm', ' rpm', '.0f')} | "
-                                       f"Flow={_fv('flow_in', ' L/min', '.0f')} | MudDensity={_fv('mud_density', ' g/cc')}")
-
-                    delta_map = {"delta_rop": "ΔROP", "delta_wob": "ΔWOB", "delta_spp": "ΔSPP",
-                                 "delta_torque": "ΔTorque", "delta_flow_in": "ΔFlow", "mse": "MSE", "dxc": "D-exp"}
-                    sig_list = sorted([(lbl, float(features[k])) for k, lbl in delta_map.items() if features.get(k) is not None],
-                                      key=lambda x: abs(x[1]), reverse=True)
-                    top_signals = "  |  ".join(f"{lbl}={v:+.2f}" for lbl, v in sig_list[:5]) or "N/A"
-
-                    evidence = (f"PROBABLE CAUSE: {hazard_verdict}\n\n"
-                                f"SENSOR READINGS @ MD {current_md:.1f}m:\n{sensor_snapshot}\n\n"
-                                f"TOP SIGNALS (30m causal window): {top_signals}\n\n"
-                                f"Model: IsolationForest | Contamination: 2% | Estimators: 100 | Verdict: ANOMALY")
-
-                    new_alert = global_alert_engine.create_alert(
-                        well_id=well_id,
-                        title=hazard_title,
-                        description=f"IsoForest anomaly @ MD {current_md:.1f}m — {hazard_title}",
-                        severity=severity_tag,
-                        source=AlertSource.ML_PREDICTION,
-                        current_md=current_md,
-                        evidence=evidence,
-                        source_record="UNSUPERVISED ML ANOMALY — HUMAN VERIFICATION REQUIRED",
-                        dedup_key=f"iso_forest:{well_id}:{round(current_md / 50.0)}"
-                    )
-                    if new_alert:
-                        logger.info(f"ML Anomaly Alert created: {new_alert.alert_id} at MD={current_md:.1f}m")
-                        await websocket.send_json({
-                            "type": "alert_created",
-                            "data": new_alert.to_dict()
-                        })
+            msg = await q.get()
+            await websocket.send_json(msg)
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket client disconnected for well '{well_id}'")
+        logger.info(f"WebSocket disconnected for well '{well_id}'")
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
+    finally:
+        broadcaster.unsubscribe(well_id, q)
+

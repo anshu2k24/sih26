@@ -51,8 +51,8 @@ class ReportGenerator:
         report_id = f"RPT_DDR_{uuid.uuid4().hex[:8].upper()}"
         now = datetime.now(timezone.utc).isoformat()
 
-        alerts = global_alert_engine.get_active_alerts(well_id=well_id)
-        timeline = OperationalTimelineEngine.get_timeline(well_id=well_id, limit=20)
+        alerts = global_alert_engine.get_active_alerts(organization_id=organization_id, well_id=well_id)
+        timeline = OperationalTimelineEngine.get_timeline(well_id=well_id, organization_id=organization_id, limit=20)
 
         sensor_data = sensor_summary or {
             "avg_rop_mhr": 24.5,
@@ -155,9 +155,9 @@ class ReportGenerator:
         report_id = f"RPT_HND_{uuid.uuid4().hex[:8].upper()}"
         now = datetime.now(timezone.utc).isoformat()
 
-        alerts = global_alert_engine.get_active_alerts(well_id=well_id)
+        alerts = global_alert_engine.get_active_alerts(organization_id=organization_id, well_id=well_id)
         open_alerts = [a for a in alerts if a["status"] in ("ACTIVE", "ACKNOWLEDGED", "INVESTIGATING")]
-        timeline = OperationalTimelineEngine.get_timeline(well_id=well_id, limit=15)
+        timeline = OperationalTimelineEngine.get_timeline(well_id=well_id, organization_id=organization_id, limit=15)
 
         content_md = f"""# DRILLING OPERATIONS — SHIFT HANDOVER REPORT
 **Report ID:** {report_id}
@@ -265,12 +265,13 @@ class ReportGenerator:
                 logger.warning(f"Failed to persist report to DB: {e}")
 
     @staticmethod
-    def get_reports(well_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_reports(organization_id: str, well_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
         db_records: List[Dict[str, Any]] = []
         db = get_supabase_admin()
         if db:
             try:
                 query = db.table("reports").select("*").order("created_at", desc=True).limit(limit)
+                query = query.eq("organization_id", organization_id)
                 if well_id:
                     query = query.eq("well_id", well_id)
                 res = query.execute()
@@ -295,6 +296,8 @@ class ReportGenerator:
 
         combined = list(db_records)
         for r in _in_memory_reports:
+            if r.get("organization_id") != organization_id:
+                continue
             r_id = str(r.get("id") or r.get("report_id"))
             if well_id and r.get("well_id") != well_id:
                 continue
