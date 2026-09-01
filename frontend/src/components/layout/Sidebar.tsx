@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  Activity,
+  Cylinder,
   ShieldAlert,
   Database,
   Map,
@@ -64,11 +64,11 @@ export const Sidebar: React.FC = () => {
           {!collapsed ? (
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
-                <Activity className="w-5 h-5 animate-pulse" />
+                <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
               </div>
               <div>
                 <h1 className="text-base font-bold tracking-tight text-white font-mono leading-none">
-                  eRTMAC-NWIS
+                  eRTMAC-<span className="text-orange-500">NWIS</span>
                 </h1>
                 <span className="text-[10px] text-amber-400 font-mono font-medium block mt-1">
                   Volve Operations
@@ -77,7 +77,7 @@ export const Sidebar: React.FC = () => {
             </div>
           ) : (
             <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 mx-auto">
-              <Activity className="w-5 h-5 animate-pulse" />
+              <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
             </div>
           )}
 
@@ -92,7 +92,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Navigation Link List */}
-        <nav className="p-2 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar">
+        <nav className="group/nav p-3 space-y-2 overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar">
           {navLinks.map((item) => {
             const Icon = item.icon;
             return (
@@ -100,16 +100,16 @@ export const Sidebar: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl font-mono text-xs font-bold transition-all ${
+                  `group flex items-center gap-3 px-3 py-3 rounded-xl font-mono text-xs transition-all duration-300 border ${
                     isActive
-                      ? "bg-orange-950/40 text-orange-400 border border-orange-500/40 shadow-[0_0_15px_rgba(255,140,0,0.15)]"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                  } ${collapsed ? "justify-center px-0" : ""}`
+                      ? "bg-orange-950/60 text-orange-400 border-orange-500/60 shadow-[0_0_20px_rgba(255,140,0,0.4)] font-bold scale-[1.02] group-hover/nav:bg-transparent group-hover/nav:text-slate-500 group-hover/nav:border-transparent group-hover/nav:shadow-none group-hover/nav:scale-100 group-hover/nav:font-medium hover:!bg-orange-950/60 hover:!text-orange-400 hover:!border-orange-500/60 hover:!shadow-[0_0_20px_rgba(255,140,0,0.4)] hover:!scale-[1.02] hover:!font-bold"
+                      : "text-slate-500 border-transparent hover:text-orange-400 hover:bg-orange-950/30 hover:border-orange-500/40 hover:shadow-[0_0_15px_rgba(255,140,0,0.3)] hover:scale-[1.02] font-medium"
+                  } ${collapsed ? "justify-center w-11 h-11 mx-auto p-0" : ""}`
                 }
                 title={collapsed ? item.label : undefined}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                <Icon className="w-[18px] h-[18px] shrink-0 transition-colors duration-200" strokeWidth={1.5} />
+                {!collapsed && <span className="tracking-wide">{item.label}</span>}
               </NavLink>
             );
           })}
