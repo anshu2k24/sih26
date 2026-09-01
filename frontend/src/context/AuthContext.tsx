@@ -204,13 +204,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     async (email: string, password: string): Promise<{ error: string | null }> => {
       setError(null);
 
+      // Enforce the specific email and password
+      if (email !== "jayanthjay751@gmail.com" || password !== "123456") {
+        const msg = "Incorrect email or password.";
+        setError(msg);
+        return { error: msg };
+      }
+
       if (!isSupabaseConfigured) {
-        // Hardcoded credential check
-        if (email !== "jayanthjay751@gmail.com" || password !== "123456") {
-          const msg = "Incorrect email or password.";
-          setError(msg);
-          return { error: msg };
-        }
         setProfile({ ...DEV_PROFILE, email, full_name: "Jayasurya Midde" });
         setStatus("authenticated");
         return { error: null };
