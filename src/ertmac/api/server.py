@@ -699,6 +699,61 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
 
                 # Fire alert if Isolation Forest detects anomaly (risk_score == 1.0)
                 if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
+                    sensor = st["latest_sensor"] or {}
+                    features = ml.get("features", {})
+
+                    # ── Live sensor snapshot ──────────────────────────────────
+                    def _fv(key: str, unit: str = "", fmt: str = ".2f") -> str:
+                        v = sensor.get(key)
+                        if v is None:
+                            return "N/A"
+                        return f"{v:{fmt}}{unit}"
+
+                    sensor_snapshot = (
+                        f"ROP={_fv('rop', ' m/h')} | "
+                        f"WOB={_fv('wob', ' kN')} | "
+                        f"SPP={_fv('spp', ' bar')} | "
+                        f"Torque={_fv('torque', ' kNm')} | "
+                        f"RPM={_fv('rpm', ' rpm', '.0f')} | "
+                        f"Flow={_fv('flow_in', ' L/min', '.0f')} | "
+                        f"MudDensity={_fv('mud_density', ' g/cc')}"
+                    )
+
+                    # ── Top anomalous feature deltas (30m rolling window) ─────
+                    delta_keys = {
+                        "delta_rop": "ΔROP",
+                        "delta_wob": "ΔWOB",
+                        "delta_spp": "ΔSPP",
+                        "delta_torque": "ΔTorque",
+                        "delta_flow_in": "ΔFlow",
+                        "delta_rpm": "ΔRPM",
+                        "delta_mud_density": "ΔMudDensity",
+                        "mse": "MSE(Mechanical Specific Energy)",
+                        "bit_aggressiveness": "BitAggressiveness",
+                        "dxc": "D-Exponent(dxc)",
+                    }
+                    flagged = []
+                    for feat_key, label in delta_keys.items():
+                        val = features.get(feat_key)
+                        if val is not None:
+                            flagged.append((label, float(val)))
+
+                    # Sort by absolute magnitude to surface the most extreme deltas
+                    flagged.sort(key=lambda x: abs(x[1]), reverse=True)
+                    top_flags = " | ".join(
+                        f"{lbl}={v:+.3f}" for lbl, v in flagged[:5]
+                    ) or "Feature data unavailable"
+
+                    evidence = (
+                        f"IsolationForest (100 estimators, 2.0% contamination threshold) "
+                        f"classified this sample as an ANOMALY at MD={current_md:.1f}m.\n\n"
+                        f"LIVE SENSOR READINGS AT ANOMALY:\n{sensor_snapshot}\n\n"
+                        f"TOP ANOMALOUS FEATURE SIGNALS (30m causal window):\n{top_flags}\n\n"
+                        f"Verify these readings against expected formation parameters. "
+                        f"Elevated MSE may indicate bit balling or formation change. "
+                        f"Sudden SPP/Flow deviations may indicate washout or pack-off precursor."
+                    )
+
                     new_alert = global_alert_engine.create_alert(
                         well_id=well_id,
                         title="Isolation Forest: Anomaly Detected",
@@ -706,11 +761,7 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
                         severity=AlertSeverity.HIGH,
                         source=AlertSource.ML_PREDICTION,
                         current_md=current_md,
-                        evidence=(
-                            f"IsolationForest (100 estimators, 2% contamination) scored this sample "
-                            f"as an ANOMALY at MD={current_md:.1f}m. "
-                            f"This is a real unsupervised signal — not a fabricated prediction."
-                        ),
+                        evidence=evidence,
                         source_record="UNSUPERVISED ML ANOMALY — HUMAN VERIFICATION REQUIRED",
                         dedup_key=f"iso_forest:{well_id}:{round(current_md / 50.0)}"
                     )
