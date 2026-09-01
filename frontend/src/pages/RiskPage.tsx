@@ -4,7 +4,7 @@ import { RiskCenter } from "../components/risk/RiskCenter";
 import { Activity, Brain, Radio } from "lucide-react";
 
 export const RiskPage: React.FC = () => {
-  const { mlState, selectedWell } = useActiveWell();
+  const { mlState, selectedWell, latestSensor, currentMd } = useActiveWell();
   const isActive = mlState.status === "SUCCESS" && !mlState.is_blocked;
   const isAnomaly = isActive && mlState.risk_score === 1.0;
 
@@ -68,7 +68,7 @@ export const RiskPage: React.FC = () => {
       </div>
 
       {/* ── Risk Center ── */}
-      <RiskCenter mlState={mlState} />
+      <RiskCenter mlState={mlState} latestSensor={latestSensor} currentMd={currentMd} />
     </div>
   );
 };
