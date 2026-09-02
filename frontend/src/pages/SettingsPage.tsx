@@ -14,6 +14,11 @@ import {
   UserCheck,
   BellRing,
   Shield,
+  AlertTriangle,
+  Activity,
+  Gauge,
+  MapPin,
+  FileText
 } from "lucide-react";
 
 export const SettingsPage: React.FC = () => {
@@ -138,308 +143,691 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 font-mono">
-      {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
-              <Sliders className="w-5 h-5" />
+    <div 
+      className="min-h-screen pb-[48px] relative overflow-hidden font-['Space_Grotesk',sans-serif]"
+      style={{ backgroundColor: "#050607" }}
+    >
+      {/* Ambient Glows */}
+      <div className="absolute top-[5%] left-[50%] -translate-x-1/2 w-[60%] h-[30%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+      <div className="absolute bottom-[10%] left-[20%] w-[50%] h-[40%] rounded-full opacity-[0.02] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+
+      <div className="relative z-10 max-w-[1200px] mx-auto px-[32px] pt-[32px] space-y-[28px]">
+        {/* Header Banner */}
+        <div 
+          className="rounded-[20px] p-[32px] flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden"
+          style={{
+            background: "rgba(18, 16, 13, 0.72)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(255, 138, 0, 0.3)",
+            boxShadow: "0 8px 35px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)"
+          }}
+        >
+          {/* Subtle Orange Glow inside Header */}
+          <div className="absolute top-0 left-0 w-[40%] h-[150%] rounded-full opacity-[0.05] blur-[60px] pointer-events-none" style={{ background: "#FF8A00" }}></div>
+
+          <div className="relative z-10 flex items-center gap-[20px]">
+            <div 
+              className="w-[64px] h-[64px] rounded-[16px] flex items-center justify-center shrink-0 border"
+              style={{ background: "rgba(255, 138, 0, 0.08)", borderColor: "rgba(255, 138, 0, 0.4)", boxShadow: "0 0 20px rgba(255,138,0,0.15)" }}
+            >
+              <Sliders className="w-8 h-8 text-[#FF9D1A] drop-shadow-[0_0_8px_rgba(255,157,26,0.6)]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white uppercase tracking-wider">
-                Operator Configuration & Personal Settings
+              <h1 className="text-[20px] md:text-[24px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
+                OPERATOR CONFIGURATION & PERSONAL SETTINGS
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-[13px] text-[#9AA0A6] font-['Inter',sans-serif] mt-1 max-w-2xl">
                 Per-user settings stored in Supabase PostgreSQL for individual alert delivery & correlation parameters.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* User Identity Pill */}
-        <div className="flex items-center gap-2.5 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 self-start md:self-auto">
-          <UserCheck className="w-4 h-4 text-cyan-400" />
-          <div className="text-xs">
-            <div className="text-slate-300 font-bold">{profile?.full_name || profile?.email || "Operator"}</div>
-            <div className="text-[10px] text-cyan-400">
-              {profile?.email} • <span className="text-emerald-400 font-bold">{profile?.role}</span>
+          {/* User Identity Pill */}
+          <div 
+            className="relative z-10 flex items-center gap-[16px] px-[20px] py-[14px] rounded-[16px] shrink-0 self-start md:self-auto transition-all"
+            style={{
+              background: "rgba(24, 20, 15, 0.60)",
+              border: "1px solid rgba(255, 138, 0, 0.2)",
+            }}
+          >
+            <div className="w-[40px] h-[40px] rounded-[10px] bg-[rgba(255,138,0,0.1)] border border-[rgba(255,138,0,0.3)] flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-[#FF9D1A]" />
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Settings Edit Form */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-cyan-400" />
-            <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-              Supabase Cloud Settings (CRUD)
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 px-3 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              INDIVIDUAL USER ISOLATION
-            </span>
+            <div>
+              <div className="text-[13px] text-white font-[700] tracking-wide">{profile?.full_name || profile?.email || "Operator"}</div>
+              <div className="text-[11px] text-[#FF8A00] font-mono mt-0.5 flex items-center gap-2">
+                {profile?.email} 
+                <span className="text-[#00D084] font-[700] bg-[rgba(0,208,132,0.1)] px-1.5 py-0.5 rounded-[4px] border border-[rgba(0,208,132,0.3)]">• ADMIN</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {saveSuccess && (
-          <div className="flex items-start gap-3 bg-emerald-950/50 border border-emerald-500/40 rounded-xl p-4 text-xs text-emerald-300 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <span>{saveSuccess}</span>
-          </div>
-        )}
-
-        {saveError && (
-          <div className="flex items-start gap-3 bg-rose-950/50 border border-rose-500/40 rounded-xl p-4 text-xs text-rose-300 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{saveError}</span>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
-            <span className="text-xs">Loading user settings from Supabase...</span>
-          </div>
-        ) : (
-          <form onSubmit={handleSave} className="space-y-6">
-            {/* Section 1: Email Target */}
-            <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-cyan-400" />
-                <label className="text-xs text-slate-200 font-bold uppercase tracking-wider">
-                  Personal Alert Dispatch Email
-                </label>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                All drilling alerts, real-time offset events, and shift handovers destined for your account will be dispatched to this email address.
-              </p>
-              <input
-                type="email"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="your.email@company.com"
-                className="w-full max-w-lg bg-slate-900 text-cyan-300 border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-cyan-500 transition-all shadow-inner"
-              />
+        {/* Interactive Settings Edit Form */}
+        <div 
+          className="rounded-[20px] p-[32px] space-y-[28px] relative group"
+          style={{
+            background: "rgba(18, 16, 13, 0.72)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(255, 138, 0, 0.3)",
+            boxShadow: "0 8px 35px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)"
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[rgba(255,138,0,0.2)] pb-[16px]">
+            <div className="flex items-center gap-3">
+              <Database className="w-5 h-5 text-[#FF9D1A] drop-shadow-[0_0_5px_rgba(255,157,26,0.6)]" />
+              <h2 className="text-[15px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
+                SUPABASE CLOUD SETTINGS (CRUD)
+              </h2>
             </div>
-
-            {/* Section 2: Correlation Windows */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-2">
-                <label className="block text-xs text-slate-300 font-bold uppercase tracking-wider">
-                  Default Proximity Search Radius (km)
-                </label>
-                <p className="text-[10px] text-slate-500">
-                  Search radius applied when querying offset historical wells.
-                </p>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  max="100"
-                  value={radiusInput}
-                  onChange={(e) => setRadiusInput(parseFloat(e.target.value) || 5.0)}
-                  className="w-full bg-slate-900 text-white border border-slate-700 rounded-xl px-4 py-2 text-sm font-mono focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-2">
-                <label className="block text-xs text-slate-300 font-bold uppercase tracking-wider">
-                  Default Depth Correlation Window (m)
-                </label>
-                <p className="text-[10px] text-slate-500">
-                  Vertical depth search band (± MD) for finding matching historical DDR events.
-                </p>
-                <input
-                  type="number"
-                  step="5"
-                  min="5"
-                  max="500"
-                  value={depthInput}
-                  onChange={(e) => setDepthInput(parseFloat(e.target.value) || 50.0)}
-                  className="w-full bg-slate-900 text-emerald-400 border border-slate-700 rounded-xl px-4 py-2 text-sm font-mono focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-            </div>
-
-            {/* Section 3: Notification Filtering Matrix */}
-            <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
-              <div className="flex items-center gap-2">
-                <BellRing className="w-4 h-4 text-amber-400" />
-                <label className="text-xs text-slate-200 font-bold uppercase tracking-wider">
-                  Notification Filter Matrix
-                </label>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
-                  <input
-                    type="checkbox"
-                    checked={emailEnabled}
-                    onChange={(e) => setEmailEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-950 border-slate-700"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-white block">Email Dispatch</span>
-                    <span className="text-[10px] text-slate-400">Master email toggle</span>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
-                  <input
-                    type="checkbox"
-                    checked={criticalAlerts}
-                    onChange={(e) => setCriticalAlerts(e.target.checked)}
-                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 bg-slate-950 border-slate-700"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-rose-400 block">Critical Severity</span>
-                    <span className="text-[10px] text-slate-400">Packs, kicks & stuck pipe</span>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
-                  <input
-                    type="checkbox"
-                    checked={highAlerts}
-                    onChange={(e) => setHighAlerts(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 bg-slate-950 border-slate-700"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-amber-400 block">High Severity</span>
-                    <span className="text-[10px] text-slate-400">Losses, tight hole, vibrations</span>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
-                  <input
-                    type="checkbox"
-                    checked={mediumAlerts}
-                    onChange={(e) => setMediumAlerts(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-950 border-slate-700"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-blue-400 block">Medium Severity</span>
-                    <span className="text-[10px] text-slate-400">Parameter drifts & warnings</span>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
-                  <input
-                    type="checkbox"
-                    checked={historicalAlerts}
-                    onChange={(e) => setHistoricalAlerts(e.target.checked)}
-                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-950 border-slate-700"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-purple-400 block">Offset Events</span>
-                    <span className="text-[10px] text-slate-400">Historical proximity matches</span>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl border border-slate-800 hover:border-slate-700 cursor-pointer transition-all">
-                  <input
-                    type="checkbox"
-                    checked={reportNotifications}
-                    onChange={(e) => setReportNotifications(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-slate-950 border-slate-700"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-emerald-400 block">Report Handovers</span>
-                    <span className="text-[10px] text-slate-400">Automated shift summaries</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Action Buttons (Save & Reset) */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleReset}
-                disabled={resetting || saving}
-                className="w-full sm:w-auto bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 font-bold py-2.5 px-5 rounded-xl text-xs tracking-wider uppercase transition-all border border-slate-700 hover:border-rose-700/50 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {resetting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    RESETTING...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    RESET TO DEFAULTS
-                  </>
-                )}
-              </button>
-
-              <button
-                type="submit"
-                disabled={saving || resetting}
-                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-xl text-xs tracking-wider uppercase transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    SAVING TO SUPABASE...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    SAVE SETTINGS TO SUPABASE
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-
-      {/* Cloud & Supabase Sync Metadata */}
-      {settings && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-400" />
-              Active Supabase Cloud Status & Provenance
-            </h2>
-            {settings.updated_at && (
-              <span className="text-[10px] text-slate-400 font-mono">
-                LAST UPDATED: {new Date(settings.updated_at).toLocaleString()}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#00D084] font-[700] font-mono tracking-widest bg-[rgba(0,208,132,0.1)] px-[12px] py-[6px] rounded-[8px] border border-[rgba(0,208,132,0.3)] flex items-center gap-2 shadow-[0_0_10px_rgba(0,208,132,0.1)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00D084] shadow-[0_0_5px_#00D084] animate-pulse" />
+                INDIVIDUAL USER ISOLATION
               </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-              <span className="text-slate-500 block text-[10px] font-bold uppercase">SUPABASE POSTGRES</span>
-              <strong className="text-emerald-400 text-sm block mt-1">CONNECTED (CLOUD)</strong>
-            </div>
-
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-              <span className="text-slate-500 block text-[10px] font-bold uppercase">ACCOUNT ISOLATION</span>
-              <strong className="text-cyan-400 text-sm block mt-1">{profile?.email || "Per-User"}</strong>
-            </div>
-
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-              <span className="text-slate-500 block text-[10px] font-bold uppercase">RESEND NOTIFICATIONS</span>
-              <strong className={settings.resend_notifications_enabled ? "text-emerald-400 text-sm block mt-1" : "text-amber-400 text-sm block mt-1"}>
-                {settings.resend_notifications_enabled ? "ACTIVE (LIVE)" : "STUBBED"}
-              </strong>
-            </div>
-
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-              <span className="text-slate-500 block text-[10px] font-bold uppercase">ML READINESS GATE</span>
-              <strong className="text-emerald-400 text-sm block mt-1">ENFORCED (RL_PROTECTED)</strong>
             </div>
           </div>
+
+          {saveSuccess && (
+            <div className="flex items-center gap-3 bg-[rgba(0,208,132,0.1)] border border-[rgba(0,208,132,0.4)] rounded-[12px] p-[16px] text-[13px] text-[#00D084] shadow-[0_0_15px_rgba(0,208,132,0.15)]">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <span className="font-sans font-[500]">{saveSuccess}</span>
+            </div>
+          )}
+
+          {saveError && (
+            <div className="flex items-center gap-3 bg-[rgba(255,77,95,0.1)] border border-[rgba(255,77,95,0.4)] rounded-[12px] p-[16px] text-[13px] text-[#FF4D5F] shadow-[0_0_15px_rgba(255,77,95,0.15)]">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span className="font-sans font-[500]">{saveError}</span>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="py-[60px] flex flex-col items-center justify-center gap-4 text-[#9AA0A6]">
+              <Loader2 className="w-8 h-8 animate-spin text-[#FF9D1A]" />
+              <span className="text-[12px] uppercase tracking-widest font-[700]">Loading user settings from Supabase...</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSave} className="space-y-[28px]">
+              {/* Section 1: Email Target */}
+              <div 
+                className="p-[24px] rounded-[16px] flex flex-col md:flex-row md:items-center justify-between gap-[24px]"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: "1px solid rgba(255,138,0,0.15)",
+                }}
+              >
+                <div className="flex items-start gap-[16px] max-w-xl">
+                  <div className="w-[44px] h-[44px] shrink-0 rounded-[12px] bg-[rgba(255,138,0,0.1)] border border-[rgba(255,138,0,0.3)] flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-[#FF9D1A]" />
+                  </div>
+                  <div>
+                    <label className="text-[13px] text-white font-[700] uppercase tracking-wider block mb-[8px]">
+                      PERSONAL ALERT DISPATCH EMAIL
+                    </label>
+                    <p className="text-[12px] text-[#9AA0A6] font-sans leading-relaxed">
+                      All drilling alerts, real-time offset events, and shift handovers destined for your account will be dispatched to this email address.
+                    </p>
+                  </div>
+                </div>
+                <div className="w-full md:w-[350px] shrink-0">
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="your.email@company.com"
+                    className="w-full rounded-[12px] px-[20px] py-[16px] text-[13px] font-mono text-[#FF9D1A] transition-all focus:outline-none placeholder:text-[#6B7280]"
+                    style={{
+                      background: "rgba(0,0,0,0.6)",
+                      border: "1px solid rgba(255,138,0,0.3)",
+                      boxShadow: "inset 0 0 15px rgba(0,0,0,0.5)"
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.6)";
+                      e.currentTarget.style.boxShadow = "0 0 20px rgba(255,138,0,0.15), inset 0 0 15px rgba(0,0,0,0.5)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.3)";
+                      e.currentTarget.style.boxShadow = "inset 0 0 15px rgba(0,0,0,0.5)";
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Section 2: Correlation Windows */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
+                <div 
+                  className="p-[24px] rounded-[16px] space-y-[16px]"
+                  style={{
+                    background: "rgba(24, 20, 15, 0.60)",
+                    border: "1px solid rgba(255,138,0,0.15)",
+                  }}
+                >
+                  <div className="flex items-center gap-[12px]">
+                    <Activity className="w-4 h-4 text-[#FF9D1A]" />
+                    <label className="text-[12px] text-white font-[700] uppercase tracking-wider block">
+                      DEFAULT PROXIMITY SEARCH RADIUS (KM)
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-[#9AA0A6] font-sans">
+                    Search radius applied when querying offset historical wells.
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      max="100"
+                      value={radiusInput}
+                      onChange={(e) => setRadiusInput(parseFloat(e.target.value) || 5.0)}
+                      className="w-full rounded-[12px] px-[20px] py-[14px] text-[14px] font-mono font-[700] text-white transition-all focus:outline-none"
+                      style={{
+                        background: "rgba(0,0,0,0.6)",
+                        border: "1px solid rgba(255,138,0,0.3)",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "rgba(255,138,0,0.6)";
+                        e.currentTarget.style.boxShadow = "0 0 20px rgba(255,138,0,0.15)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "rgba(255,138,0,0.3)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    />
+                    <span className="absolute right-[20px] top-[50%] -translate-y-[50%] text-[#9AA0A6] text-[11px] font-[700] font-mono pointer-events-none">
+                      KM
+                    </span>
+                  </div>
+                </div>
+
+                <div 
+                  className="p-[24px] rounded-[16px] space-y-[16px]"
+                  style={{
+                    background: "rgba(24, 20, 15, 0.60)",
+                    border: "1px solid rgba(255,138,0,0.15)",
+                  }}
+                >
+                  <div className="flex items-center gap-[12px]">
+                    <Activity className="w-4 h-4 text-[#FF9D1A]" />
+                    <label className="text-[12px] text-white font-[700] uppercase tracking-wider block">
+                      DEFAULT DEPTH CORRELATION WINDOW (M)
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-[#9AA0A6] font-sans">
+                    Vertical depth search band (± MD) for finding matching historical DDR events.
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="5"
+                      min="5"
+                      max="500"
+                      value={depthInput}
+                      onChange={(e) => setDepthInput(parseFloat(e.target.value) || 50.0)}
+                      className="w-full rounded-[12px] px-[20px] py-[14px] text-[14px] font-mono font-[700] text-white transition-all focus:outline-none"
+                      style={{
+                        background: "rgba(0,0,0,0.6)",
+                        border: "1px solid rgba(255,138,0,0.3)",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "rgba(255,138,0,0.6)";
+                        e.currentTarget.style.boxShadow = "0 0 20px rgba(255,138,0,0.15)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "rgba(255,138,0,0.3)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    />
+                    <span className="absolute right-[20px] top-[50%] -translate-y-[50%] text-[#9AA0A6] text-[11px] font-[700] font-mono pointer-events-none">
+                      M
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Notification Filtering Matrix */}
+              <div 
+                className="p-[28px] rounded-[16px] space-y-[20px]"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: "1px solid rgba(255,138,0,0.15)",
+                }}
+              >
+                <div className="flex items-center gap-[12px]">
+                  <BellRing className="w-5 h-5 text-[#FF9D1A] drop-shadow-[0_0_5px_rgba(255,157,26,0.6)]" />
+                  <h3 className="text-[14px] text-white font-[700] uppercase tracking-wider block">
+                    NOTIFICATION FILTER MATRIX
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px] pt-[8px]">
+                  {/* Email Dispatch - Orange */}
+                  <label 
+                    className="flex items-start gap-[16px] p-[20px] rounded-[16px] cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(255,138,0,0.2)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.5)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(255,138,0,0.15)";
+                      e.currentTarget.style.background = "rgba(255,138,0,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.2)";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={emailEnabled}
+                      onChange={(e) => setEmailEnabled(e.target.checked)}
+                      className="w-[18px] h-[18px] mt-[2px] rounded border-[#FF8A00] text-[#FF8A00] focus:ring-[#FF8A00] bg-transparent transition-colors cursor-pointer"
+                      style={{ accentColor: "#FF8A00" }}
+                    />
+                    <div className="flex-1">
+                      <span className="font-[700] text-white text-[13px] block tracking-wide">Email Dispatch</span>
+                      <span className="text-[11px] text-[#9AA0A6] font-sans mt-[4px] block">Master email toggle</span>
+                    </div>
+                    <Mail className="w-5 h-5 text-[#FF9D1A] opacity-[0.4] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_8px_#FF9D1A] transition-all" />
+                  </label>
+
+                  {/* Critical Severity - Red */}
+                  <label 
+                    className="flex items-start gap-[16px] p-[20px] rounded-[16px] cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(255,77,95,0.2)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.borderColor = "rgba(255,77,95,0.5)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(255,77,95,0.15)";
+                      e.currentTarget.style.background = "rgba(255,77,95,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(255,77,95,0.2)";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={criticalAlerts}
+                      onChange={(e) => setCriticalAlerts(e.target.checked)}
+                      className="w-[18px] h-[18px] mt-[2px] rounded border-[#FF4D5F] text-[#FF4D5F] focus:ring-[#FF4D5F] bg-transparent transition-colors cursor-pointer"
+                      style={{ accentColor: "#FF4D5F" }}
+                    />
+                    <div className="flex-1">
+                      <span className="font-[700] text-[#FF4D5F] text-[13px] block tracking-wide">Critical Severity</span>
+                      <span className="text-[11px] text-[#9AA0A6] font-sans mt-[4px] block">Packs, kicks & stuck pipe</span>
+                    </div>
+                    <AlertTriangle className="w-5 h-5 text-[#FF4D5F] opacity-[0.4] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_8px_#FF4D5F] transition-all" />
+                  </label>
+
+                  {/* High Severity - Yellow/Orange */}
+                  <label 
+                    className="flex items-start gap-[16px] p-[20px] rounded-[16px] cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(255,170,0,0.2)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.borderColor = "rgba(255,170,0,0.5)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(255,170,0,0.15)";
+                      e.currentTarget.style.background = "rgba(255,170,0,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(255,170,0,0.2)";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={highAlerts}
+                      onChange={(e) => setHighAlerts(e.target.checked)}
+                      className="w-[18px] h-[18px] mt-[2px] rounded border-[#FFAA00] text-[#FFAA00] focus:ring-[#FFAA00] bg-transparent transition-colors cursor-pointer"
+                      style={{ accentColor: "#FFAA00" }}
+                    />
+                    <div className="flex-1">
+                      <span className="font-[700] text-[#FFAA00] text-[13px] block tracking-wide">High Severity</span>
+                      <span className="text-[11px] text-[#9AA0A6] font-sans mt-[4px] block">Losses, tight hole, vibrations</span>
+                    </div>
+                    <Activity className="w-5 h-5 text-[#FFAA00] opacity-[0.4] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_8px_#FFAA00] transition-all" />
+                  </label>
+
+                  {/* Medium Severity - Blue */}
+                  <label 
+                    className="flex items-start gap-[16px] p-[20px] rounded-[16px] cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(59,130,246,0.2)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.borderColor = "rgba(59,130,246,0.5)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(59,130,246,0.15)";
+                      e.currentTarget.style.background = "rgba(59,130,246,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(59,130,246,0.2)";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={mediumAlerts}
+                      onChange={(e) => setMediumAlerts(e.target.checked)}
+                      className="w-[18px] h-[18px] mt-[2px] rounded border-[#3B82F6] text-[#3B82F6] focus:ring-[#3B82F6] bg-transparent transition-colors cursor-pointer"
+                      style={{ accentColor: "#3B82F6" }}
+                    />
+                    <div className="flex-1">
+                      <span className="font-[700] text-[#3B82F6] text-[13px] block tracking-wide">Medium Severity</span>
+                      <span className="text-[11px] text-[#9AA0A6] font-sans mt-[4px] block">Parameter drifts & warnings</span>
+                    </div>
+                    <Gauge className="w-5 h-5 text-[#3B82F6] opacity-[0.4] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_8px_#3B82F6] transition-all" />
+                  </label>
+
+                  {/* Offset Events - Purple */}
+                  <label 
+                    className="flex items-start gap-[16px] p-[20px] rounded-[16px] cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(168,85,247,0.2)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.borderColor = "rgba(168,85,247,0.5)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(168,85,247,0.15)";
+                      e.currentTarget.style.background = "rgba(168,85,247,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(168,85,247,0.2)";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={historicalAlerts}
+                      onChange={(e) => setHistoricalAlerts(e.target.checked)}
+                      className="w-[18px] h-[18px] mt-[2px] rounded border-[#A855F7] text-[#A855F7] focus:ring-[#A855F7] bg-transparent transition-colors cursor-pointer"
+                      style={{ accentColor: "#A855F7" }}
+                    />
+                    <div className="flex-1">
+                      <span className="font-[700] text-[#A855F7] text-[13px] block tracking-wide">Offset Events</span>
+                      <span className="text-[11px] text-[#9AA0A6] font-sans mt-[4px] block">Historical proximity matches</span>
+                    </div>
+                    <MapPin className="w-5 h-5 text-[#A855F7] opacity-[0.4] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_8px_#A855F7] transition-all" />
+                  </label>
+
+                  {/* Report Handovers - Green */}
+                  <label 
+                    className="flex items-start gap-[16px] p-[20px] rounded-[16px] cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(0,208,132,0.2)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.borderColor = "rgba(0,208,132,0.5)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(0,208,132,0.15)";
+                      e.currentTarget.style.background = "rgba(0,208,132,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(0,208,132,0.2)";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={reportNotifications}
+                      onChange={(e) => setReportNotifications(e.target.checked)}
+                      className="w-[18px] h-[18px] mt-[2px] rounded border-[#00D084] text-[#00D084] focus:ring-[#00D084] bg-transparent transition-colors cursor-pointer"
+                      style={{ accentColor: "#00D084" }}
+                    />
+                    <div className="flex-1">
+                      <span className="font-[700] text-[#00D084] text-[13px] block tracking-wide">Report Handovers</span>
+                      <span className="text-[11px] text-[#9AA0A6] font-sans mt-[4px] block">Automated shift summaries</span>
+                    </div>
+                    <FileText className="w-5 h-5 text-[#00D084] opacity-[0.4] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_8px_#00D084] transition-all" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Action Buttons (Save & Reset) */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-[16px] pt-[8px]">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={resetting || saving}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-[24px] py-[14px] rounded-[12px] font-[700] text-[13px] text-[#9AA0A6] tracking-wider uppercase transition-all duration-200 cursor-pointer disabled:opacity-50"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,138,0,0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    if(!resetting && !saving) {
+                      e.currentTarget.style.background = "rgba(255,138,0,0.08)";
+                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.5)";
+                      e.currentTarget.style.color = "#FF9D1A";
+                      e.currentTarget.style.boxShadow = "0 0 15px rgba(255,138,0,0.15)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if(!resetting && !saving) {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.2)";
+                      e.currentTarget.style.color = "#9AA0A6";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "none";
+                    }
+                  }}
+                >
+                  {resetting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      RESETTING...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      RESET TO DEFAULTS
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saving || resetting}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-[32px] py-[14px] rounded-[12px] font-[700] text-[14px] tracking-wider uppercase transition-all duration-200 cursor-pointer disabled:opacity-50"
+                  style={{
+                    background: "linear-gradient(90deg, #FF8A00, #FF6A00)",
+                    border: "1px solid rgba(255,170,100,0.5)",
+                    color: "#FFFFFF",
+                    boxShadow: "0 0 20px rgba(255,138,0,0.3), inset 0 0 15px rgba(255,255,255,0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    if(!saving && !resetting) {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(255,138,0,0.3), 0 0 25px rgba(255,138,0,0.5), inset 0 0 15px rgba(255,255,255,0.3)";
+                      e.currentTarget.style.filter = "brightness(1.1)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if(!saving && !resetting) {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.boxShadow = "0 0 20px rgba(255,138,0,0.3), inset 0 0 15px rgba(255,255,255,0.2)";
+                      e.currentTarget.style.filter = "none";
+                    }
+                  }}
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      SAVING...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      SAVE SETTINGS TO SUPABASE
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
-      )}
+
+        {/* Cloud & Supabase Sync Metadata */}
+        {settings && (
+          <div 
+            className="rounded-[20px] p-[32px] space-y-[24px]"
+            style={{
+              background: "rgba(18, 16, 13, 0.72)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid rgba(255, 138, 0, 0.3)",
+              boxShadow: "0 8px 35px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)"
+            }}
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[rgba(255,138,0,0.2)] pb-[16px]">
+              <h2 className="text-[14px] font-[700] text-white uppercase tracking-wider flex items-center gap-3">
+                <Shield className="w-5 h-5 text-[#FF9D1A] drop-shadow-[0_0_5px_rgba(255,157,26,0.6)]" />
+                ACTIVE SUPABASE CLOUD STATUS & PROVENANCE
+              </h2>
+              {settings.updated_at && (
+                <span className="text-[11px] text-[#9AA0A6] font-mono tracking-widest uppercase">
+                  LAST UPDATED: {new Date(settings.updated_at).toLocaleString()}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px]">
+              {/* Supabase Postgres */}
+              <div 
+                className="p-[20px] rounded-[16px] transition-all duration-300 group"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: "1px solid rgba(0,208,132,0.2)"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(0,208,132,0.5)";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(0,208,132,0.15)";
+                  e.currentTarget.style.background = "rgba(0,208,132,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(0,208,132,0.2)";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "rgba(24, 20, 15, 0.60)";
+                }}
+              >
+                <div className="flex items-center gap-[12px] mb-[12px]">
+                  <Database className="w-4 h-4 text-[#00D084] opacity-[0.6] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_5px_#00D084] transition-all" />
+                  <span className="text-[#9AA0A6] text-[10px] font-[700] font-mono tracking-widest uppercase">SUPABASE POSTGRES</span>
+                </div>
+                <strong className="text-[#00D084] text-[13px] font-[700] tracking-wide block drop-shadow-[0_0_5px_rgba(0,208,132,0.3)]">CONNECTED (CLOUD)</strong>
+              </div>
+
+              {/* Account Isolation */}
+              <div 
+                className="p-[20px] rounded-[16px] transition-all duration-300 group"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: "1px solid rgba(56,189,248,0.2)"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(56,189,248,0.5)";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(56,189,248,0.15)";
+                  e.currentTarget.style.background = "rgba(56,189,248,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(56,189,248,0.2)";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "rgba(24, 20, 15, 0.60)";
+                }}
+              >
+                <div className="flex items-center gap-[12px] mb-[12px]">
+                  <UserCheck className="w-4 h-4 text-[#38BDF8] opacity-[0.6] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_5px_#38BDF8] transition-all" />
+                  <span className="text-[#9AA0A6] text-[10px] font-[700] font-mono tracking-widest uppercase">ACCOUNT ISOLATION</span>
+                </div>
+                <strong className="text-[#38BDF8] text-[13px] font-[700] font-mono tracking-wide block truncate drop-shadow-[0_0_5px_rgba(56,189,248,0.3)]" title={profile?.email}>
+                  {profile?.email || "Per-User"}
+                </strong>
+              </div>
+
+              {/* Resend Notifications */}
+              <div 
+                className="p-[20px] rounded-[16px] transition-all duration-300 group"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: `1px solid ${settings.resend_notifications_enabled ? 'rgba(0,208,132,0.2)' : 'rgba(255,138,0,0.2)'}`
+                }}
+                onMouseEnter={(e) => {
+                  const color = settings.resend_notifications_enabled ? '0,208,132' : '255,138,0';
+                  e.currentTarget.style.borderColor = `rgba(${color},0.5)`;
+                  e.currentTarget.style.boxShadow = `0 0 20px rgba(${color},0.15)`;
+                  e.currentTarget.style.background = `rgba(${color},0.05)`;
+                }}
+                onMouseLeave={(e) => {
+                  const color = settings.resend_notifications_enabled ? '0,208,132' : '255,138,0';
+                  e.currentTarget.style.borderColor = `rgba(${color},0.2)`;
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "rgba(24, 20, 15, 0.60)";
+                }}
+              >
+                <div className="flex items-center gap-[12px] mb-[12px]">
+                  <BellRing className={`w-4 h-4 opacity-[0.6] group-hover:opacity-[1] transition-all ${settings.resend_notifications_enabled ? 'text-[#00D084] group-hover:drop-shadow-[0_0_5px_#00D084]' : 'text-[#FF8A00] group-hover:drop-shadow-[0_0_5px_#FF8A00]'}`} />
+                  <span className="text-[#9AA0A6] text-[10px] font-[700] font-mono tracking-widest uppercase">RESEND NOTIFICATIONS</span>
+                </div>
+                <strong className={`text-[13px] font-[700] tracking-wide block ${settings.resend_notifications_enabled ? 'text-[#00D084] drop-shadow-[0_0_5px_rgba(0,208,132,0.3)]' : 'text-[#FF8A00] drop-shadow-[0_0_5px_rgba(255,138,0,0.3)]'}`}>
+                  {settings.resend_notifications_enabled ? "ACTIVE (LIVE)" : "STUBBED"}
+                </strong>
+              </div>
+
+              {/* ML Readiness Gate */}
+              <div 
+                className="p-[20px] rounded-[16px] transition-all duration-300 group"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: "1px solid rgba(0,208,132,0.2)"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(0,208,132,0.5)";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(0,208,132,0.15)";
+                  e.currentTarget.style.background = "rgba(0,208,132,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(0,208,132,0.2)";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "rgba(24, 20, 15, 0.60)";
+                }}
+              >
+                <div className="flex items-center gap-[12px] mb-[12px]">
+                  <Shield className="w-4 h-4 text-[#00D084] opacity-[0.6] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_5px_#00D084] transition-all" />
+                  <span className="text-[#9AA0A6] text-[10px] font-[700] font-mono tracking-widest uppercase">ML READINESS GATE</span>
+                </div>
+                <strong className="text-[#00D084] text-[13px] font-[700] tracking-wide block drop-shadow-[0_0_5px_rgba(0,208,132,0.3)]">ENFORCED (RL_PROTECTED)</strong>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
-
