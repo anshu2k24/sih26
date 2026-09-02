@@ -61,25 +61,9 @@ export const Sidebar: React.FC = () => {
       {/* Top Brand Banner */}
       <div>
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          {!collapsed ? (
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-orange-600/20 text-orange-400 rounded-xl border border-orange-500/30">
-                <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
-              </div>
-              <div>
-                <h1 className="text-base font-bold tracking-tight text-white font-mono leading-none">
-                  eRTMAC-<span className="text-orange-500">NWIS</span>
-                </h1>
-                <span className="text-[10px] text-amber-400 font-mono font-medium block mt-1">
-                  Volve Operations
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="p-2 bg-orange-600/20 text-orange-400 rounded-xl border border-orange-500/30 mx-auto">
-              <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
-            </div>
-          )}
+          <div className={`p-2 bg-orange-600/20 text-orange-400 rounded-xl border border-orange-500/30 ${collapsed ? "mx-auto" : ""}`}>
+            <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
+          </div>
 
           <button
             type="button"
