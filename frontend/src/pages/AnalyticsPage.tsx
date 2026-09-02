@@ -27,61 +27,24 @@ export const AnalyticsPage: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen pb-[48px] relative overflow-hidden font-['Space_Grotesk',sans-serif]"
-      style={{ backgroundColor: "#050607" }}
+      className="min-h-screen pb-[48px] relative font-['Space_Grotesk',sans-serif]"
+      style={{ 
+        backgroundColor: "#050505", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
     >
-      {/* Ambient Background Glows */}
-      <div className="absolute top-[5%] left-[50%] -translate-x-1/2 w-[80%] h-[30%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
-      <div className="absolute bottom-[20%] right-[10%] w-[50%] h-[40%] rounded-full opacity-[0.02] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
-
       <div className="relative z-10 max-w-[1600px] mx-auto px-[32px] pt-[32px] space-y-[24px]">
         {/* Header Banner */}
-        <div 
-          className="rounded-[20px] p-[32px] flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-all duration-300 relative overflow-hidden group"
-          style={{
-            background: "rgba(20, 15, 10, 0.55)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            border: "1px solid rgba(255, 140, 0, 0.25)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 0 20px rgba(255,140,0,0.05)"
-          }}
-        >
-          {/* Subtle Inner Highlight */}
-          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[rgba(255,140,0,0.3)] to-transparent"></div>
-          <div className="absolute top-0 left-0 w-[40%] h-[150%] rounded-full opacity-[0.03] blur-[50px] pointer-events-none" style={{ background: "#FF8A00" }}></div>
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
-            <div 
-              className="w-[60px] h-[60px] rounded-[16px] flex items-center justify-center shrink-0 border transition-all duration-300"
-              style={{ background: "rgba(255, 138, 0, 0.08)", borderColor: "rgba(255, 138, 0, 0.4)", boxShadow: "0 0 20px rgba(255,138,0,0.15)" }}
-            >
-              <BarChart3 className="w-8 h-8 text-[#FF9D1A] drop-shadow-[0_0_8px_rgba(255,157,26,0.6)]" />
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 relative">
+          <div className="relative z-10 flex flex-col gap-[12px]">
+            <div className="flex items-center gap-4 flex-wrap">
+              <h1 className="text-[32px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
+                OPERATIONAL ANALYTICS & DRILLING INTELLIGENCE
+              </h1>
             </div>
-            <div>
-              <div className="flex items-center gap-4 flex-wrap mb-[8px]">
-                <h1 className="text-[20px] md:text-[24px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
-                  OPERATIONAL ANALYTICS & DRILLING INTELLIGENCE
-                </h1>
-                <span 
-                  className="text-[11px] px-[10px] py-[4px] rounded-[6px] font-[700] uppercase tracking-wider flex items-center gap-1.5"
-                  style={{ background: "rgba(255,138,0,0.1)", color: "#FF9D1A", border: "1px solid rgba(255,138,0,0.3)", boxShadow: "0 0 10px rgba(255,138,0,0.15)" }}
-                >
-                  SYSTEM WIDE AGGREGATION
-                </span>
-              </div>
-              <p className="text-[13px] text-[#A1A1AA] font-['Inter',sans-serif] leading-relaxed max-w-4xl">
-                Real-time metric telemetry, hazard frequency distributions, and 30-day operational alert trendlines.
-              </p>
-            </div>
-          </div>
-
-          <div className="relative z-10 flex items-center gap-[12px] px-[20px] py-[12px] rounded-[12px] transition-all duration-300 shrink-0"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.1)"
-            }}>
-            <Database className="w-4 h-4 text-[#FF9D1A]" />
-            <span className="text-[12px] text-[#D4D4D8] font-[700] font-mono tracking-wider">Equinor Volve Semantic Audit Dataset</span>
           </div>
         </div>
 
@@ -319,37 +282,7 @@ export const AnalyticsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Zero-Fabrication Panel */}
-            <div 
-              className="mt-[32px] p-[20px] rounded-[16px] transition-all duration-300 flex items-center justify-between group cursor-default"
-              style={{
-                background: "rgba(0,0,0,0.6)",
-                border: "1px solid rgba(255,140,0,0.2)",
-                boxShadow: "inset 0 0 15px rgba(255,140,0,0.05)"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,140,0,0.5)";
-                e.currentTarget.style.boxShadow = "0 0 20px rgba(255,140,0,0.15), inset 0 0 15px rgba(255,140,0,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,140,0,0.2)";
-                e.currentTarget.style.boxShadow = "inset 0 0 15px rgba(255,140,0,0.05)";
-              }}
-            >
-              <div className="flex items-center gap-[16px]">
-                <Shield className="w-6 h-6 text-[#FF9D1A] drop-shadow-[0_0_5px_rgba(255,157,26,0.6)]" />
-                <div>
-                  <span className="text-[#FF9D1A] font-[700] block text-[13px] tracking-wide mb-[4px]">Zero-Fabrication Data Standard</span>
-                  <span className="text-[11px] text-[#A1A1AA] font-sans">All analytics derived deterministically from Equinor Volve historical logs.</span>
-                </div>
-              </div>
-              <div 
-                className="w-[32px] h-[32px] rounded-lg border flex items-center justify-center transition-all duration-300"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.1)" }}
-              >
-                <ArrowUpRight className="w-4 h-4 text-[#A1A1AA] group-hover:text-[#FF9D1A] group-hover:drop-shadow-[0_0_5px_#FF9D1A]" />
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
