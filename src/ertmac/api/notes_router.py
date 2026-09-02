@@ -178,6 +178,23 @@ async def verify_handwritten_note(
     return {"status": "VERIFIED", "note": verified_note}
 
 
+@router.post("/{note_id}/reject", summary="Reject handwritten note")
+async def reject_handwritten_note(
+    note_id: str,
+    user: UserSession = Depends(require_permission(Permission.VERIFY_NOTES)),
+):
+    """
+    Marks a handwritten note as rejected if OCR is unsalvageable.
+    """
+    rejected_note = await global_handwritten_notes_service.reject_note(
+        note_id=note_id,
+        user_id=user.user_id,
+    )
+    if not rejected_note:
+        raise HTTPException(status_code=404, detail="Handwritten note not found.")
+    return {"status": "REJECTED", "note": rejected_note}
+
+
 @router.post("/{note_id}/retry", summary="Retry OCR processing on existing image")
 async def retry_note_ocr(
     note_id: str,

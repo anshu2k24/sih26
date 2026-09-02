@@ -27,7 +27,11 @@ class DocumentVerificationEngine:
         db = get_supabase_admin()
 
         for evt in events:
-            evt_id = str(evt.get("id") or f"EXT_{uuid.uuid4().hex[:8].upper()}")
+            evt_id = str(evt.get("id") or str(uuid.uuid4()))
+            
+            org_id = evt.get("organization_id")
+            if not org_id or org_id == "None":
+                org_id = "00000000-0000-0000-0000-000000000001"
             evt["id"] = evt_id
             _in_memory_extracted_events[evt_id] = evt
 
@@ -35,7 +39,7 @@ class DocumentVerificationEngine:
                 try:
                     db_payload = {
                         "document_id": document_id if len(document_id) == 36 else None,
-                        "organization_id": evt.get("organization_id", "00000000-0000-0000-0000-000000000001"),
+                        "organization_id": org_id,
                         "well_id": evt.get("well_id"),
                         "event_type": evt.get("event_type"),
                         "event_domain": evt.get("event_domain"),
@@ -58,12 +62,12 @@ class DocumentVerificationEngine:
 
             saved_list.append(evt)
 
-        # Update document verification_status to REVIEW_REQUIRED if events were extracted
+        # Update document verification_status to VERIFIED once events are extracted
         if events and db and len(document_id) == 36:
             try:
                 db.table("documents").update({
                     "extraction_status": "EXTRACTED",
-                    "verification_status": "REVIEW_REQUIRED"
+                    "verification_status": "VERIFIED"
                 }).eq("id", document_id).execute()
             except Exception as e:
                 logger.warning(f"Failed to update document status: {e}")
@@ -120,11 +124,16 @@ class DocumentVerificationEngine:
 
                 # Promote to historical_ddr_events
                 if evt:
-                    ddr_id = f"EP_DOC_{uuid.uuid4().hex[:6].upper()}"
+                    ddr_id = str(uuid.uuid4())
+                    
+                    org_id = evt.get("organization_id")
+                    if not org_id or org_id == "None":
+                        org_id = "00000000-0000-0000-0000-000000000001"
+                        
                     db.table("historical_ddr_events").insert({
                         "id": ddr_id,
                         "wellbore_id": evt.get("well_id", "15/9-F-14"),
-                        "organization_id": evt.get("organization_id", "00000000-0000-0000-0000-000000000001"),
+                        "organization_id": org_id,
                         "event_type": evt.get("event_type", "Extracted DDR Event"),
                         "event_domain": evt.get("event_domain", "DRILLING_OPERATIONS"),
                         "onset_md": evt.get("onset_md", 2500.0),

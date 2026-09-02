@@ -21,7 +21,14 @@ def extract_text_from_file(file_path: str, doc_type: str) -> Tuple[str, str, Opt
         (text_content, extraction_status, error_message)
         where extraction_status is 'EXTRACTED', 'OCR_REQUIRED', 'OCR_UNAVAILABLE', or 'FAILED'.
     """
-    path = Path(file_path)
+    # Normalize path if it contains data/uploads/ but is from a different machine
+    normalized_path = file_path
+    if "data\\uploads\\" in file_path:
+        normalized_path = os.path.join(os.getcwd(), "data", "uploads", file_path.split("data\\uploads\\")[-1])
+    elif "data/uploads/" in file_path:
+        normalized_path = os.path.join(os.getcwd(), "data", "uploads", file_path.split("data/uploads/")[-1])
+        
+    path = Path(normalized_path)
     temp_download = None
 
     if not path.exists():

@@ -28,10 +28,10 @@ class MistralOCRProvider(OCRProvider):
         self,
         api_key: Optional[str] = None,
         default_model: str = "mistral-ocr-latest",
-        timeout_seconds: int = 35,
+        timeout_seconds: int = 15,
         base_url: str = "https://api.mistral.ai/v1",
     ):
-        self._api_key = api_key or os.getenv("MISTRAL_API_KEY") or os.getenv("OCR_API_KEY") or ""
+        self._api_key = api_key if api_key is not None else (os.getenv("MISTRAL_API_KEY") or os.getenv("OCR_API_KEY") or "")
         self._default_model = default_model
         self._timeout_seconds = timeout_seconds
         self._base_url = base_url.rstrip("/")
@@ -157,9 +157,11 @@ class MistralOCRProvider(OCRProvider):
         system_prompt = (
             "You are an expert handwriting transcription OCR system. "
             "Transcribe all handwritten and printed text in the image exactly as written. "
+            "When transcribing tables, pay extremely close attention to every single cell value. "
+            "Do NOT merge cells, do NOT drop numerical values (like depth, measurements, or weights). "
             "Preserve formatting, line breaks, bullet points, numbers, dates, equipment tags, and punctuation. "
             "Do NOT add conversational commentary, do NOT add introductory or concluding remarks. "
-            "Output ONLY the transcribed text."
+            "Output ONLY the transcribed text in valid Markdown."
         )
 
         payload = {

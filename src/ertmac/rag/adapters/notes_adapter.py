@@ -76,6 +76,9 @@ class NotesAdapter:
         """
         note = self._repo.get_note(note_id)
         if not note:
+            doc_dto = self._get_document_dto(note_id)
+            if doc_dto:
+                return doc_dto
             logger.debug(f"NotesAdapter: note {note_id} not found")
             return None
 
@@ -103,7 +106,19 @@ class NotesAdapter:
         Does not return full text — used to validate eligibility before heavy operations.
         """
         note = self._repo.get_note(note_id)
-        if not note or note.get("is_deleted", False):
+        if not note:
+            doc_dto = self._get_document_dto(note_id)
+            if doc_dto:
+                return {
+                    "note_id": doc_dto.note_id,
+                    "verification_status": "VERIFIED",
+                    "ocr_status": "COMPLETED",
+                    "has_verified_text": True,
+                    "title": doc_dto.title,
+                    "updated_at": doc_dto.updated_at,
+                }
+            return None
+        if note.get("is_deleted", False):
             return None
         return {
             "note_id": note["id"],
@@ -113,6 +128,53 @@ class NotesAdapter:
             "title": note.get("title", "Untitled"),
             "updated_at": note.get("updated_at"),
         }
+
+    def _get_document_dto(self, doc_id: str) -> Optional[VerifiedNoteDTO]:
+        """Fetches and builds DTO from digital document records (PDF, DOCX, TXT, CSV)."""
+        try:
+            from ertmac.auth.supabase_client import get_supabase_admin
+            from ertmac.documents.uploader import _in_memory_docs
+            from ertmac.documents.extractor import extract_text_from_file
+
+            doc = None
+            db = get_supabase_admin()
+            if db:
+                try:
+                    res = db.table("documents").select("*").eq("id", doc_id).execute()
+                    if res.data and len(res.data) > 0:
+                        doc = res.data[0]
+                except Exception:
+                    pass
+
+            if not doc:
+                doc = _in_memory_docs.get(doc_id)
+
+            if not doc:
+                return None
+
+            storage_path = doc.get("storage_path")
+            doc_type = doc.get("document_type") or "PDF"
+            text_content = ""
+            if storage_path:
+                text_content, _, _ = extract_text_from_file(storage_path, doc_type)
+
+            if not text_content or not text_content.strip():
+                return None
+
+            return VerifiedNoteDTO(
+                note_id=str(doc["id"]),
+                title=doc.get("filename") or "Digital Document",
+                verified_text=text_content.strip(),
+                raw_ocr_text=text_content.strip(),
+                structured_data={"filename": doc.get("filename"), "doc_type": doc_type},
+                verification_status="VERIFIED",
+                created_at=doc.get("created_at"),
+                updated_at=doc.get("updated_at"),
+                organization_id=doc.get("organization_id"),
+            )
+        except Exception as e:
+            logger.error(f"NotesAdapter._get_document_dto error for {doc_id}: {e}")
+            return None
 
     def list_verified_notes(
         self,

@@ -127,6 +127,16 @@ class NoteRepository:
         search_query: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Lists notes with optional filtering and search."""
+        if is_supabase_configured():
+            try:
+                client = get_supabase_admin()
+                res = client.table("handwritten_notes").select("*").eq("is_deleted", False).order("created_at", desc=True).limit(200).execute()
+                if res.data:
+                    for note in res.data:
+                        self._notes[note["id"]] = note
+            except Exception as e:
+                logger.debug(f"Supabase list_notes sync skipped: {e}")
+
         active = [n for n in self._notes.values() if not n.get("is_deleted", False)]
         
         if status_filter:

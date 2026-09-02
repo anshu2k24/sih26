@@ -20,26 +20,29 @@ def get_llm_provider(force_provider: Optional[str] = None) -> LLMProvider:
     Returns singleton LLM provider.
 
     Supported values for RAG_LLM_PROVIDER:
-        mistral  — Mistral AI chat completions (default)
+        gemini   — Google Gemini API (gemini-1.5-flash, gemini-2.0-flash)
+        mistral  — Mistral AI chat completions
     """
     global _llm_instance
 
     if _llm_instance is not None and force_provider is None:
         return _llm_instance
 
+    default_prov = "gemini" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") else os.getenv("RAG_LLM_PROVIDER", "gemini")
     provider_name = (
-        force_provider or os.getenv("RAG_LLM_PROVIDER", "mistral")
+        force_provider or os.getenv("RAG_LLM_PROVIDER", default_prov)
     ).lower().strip()
 
-    if provider_name == "mistral":
+    if provider_name in ("gemini", "google"):
+        from ertmac.rag.llm.gemini_llm import GeminiLLMProvider
+        instance = GeminiLLMProvider()
+    elif provider_name == "mistral":
         from ertmac.rag.llm.mistral_llm import MistralLLMProvider
         instance = MistralLLMProvider()
     else:
-        logger.warning(
-            f"Unknown RAG_LLM_PROVIDER='{provider_name}'. Defaulting to mistral."
-        )
-        from ertmac.rag.llm.mistral_llm import MistralLLMProvider
-        instance = MistralLLMProvider()
+        logger.info(f"Using Gemini LLM provider for '{provider_name}'")
+        from ertmac.rag.llm.gemini_llm import GeminiLLMProvider
+        instance = GeminiLLMProvider()
 
     logger.info(f"LLM provider initialized: {instance.provider_name}")
 

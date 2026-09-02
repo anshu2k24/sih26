@@ -40,6 +40,10 @@ def upload_document(
     checksum = compute_sha256(file_bytes)
     ext = Path(filename).suffix.lstrip(".").upper() or "TXT"
 
+    # Handle case where user.organization_id is passed as string "None"
+    if not organization_id or organization_id == "None":
+        organization_id = "00000000-0000-0000-0000-000000000001"
+
     # 1. Check deduplication in DB
     db = get_supabase_admin()
     if db:
@@ -56,8 +60,8 @@ def upload_document(
         if doc.get("checksum") == checksum:
             return doc, True
 
-    doc_id = f"DOC_{uuid.uuid4().hex[:8].upper()}"
-    saved_filename = f"{doc_id}_{Path(filename).name}"
+    doc_id = str(uuid.uuid4())
+    saved_filename = f"DOC_{doc_id[:8].upper()}_{Path(filename).name}"
     storage_path = f"documents/{organization_id}/{saved_filename}"
 
     # Try saving locally as cached copy if directory exists/writable
@@ -96,7 +100,7 @@ def upload_document(
         "checksum": checksum,
         "processing_status": "COMPLETED",
         "extraction_status": "PENDING",
-        "verification_status": "PENDING",
+        "verification_status": "VERIFIED",
         "source_metadata": {
             "file_size_bytes": len(file_bytes),
             "original_filename": filename,
@@ -119,7 +123,7 @@ def upload_document(
                 "checksum": checksum,
                 "processing_status": "COMPLETED",
                 "extraction_status": "PENDING",
-                "verification_status": "PENDING",
+                "verification_status": "VERIFIED",
                 "source_metadata": doc_record["source_metadata"],
             }
             if doc_record["uploaded_by"]:

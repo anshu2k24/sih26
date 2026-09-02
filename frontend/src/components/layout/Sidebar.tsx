@@ -12,14 +12,14 @@ import {
   ShieldCheck,
   Sliders,
   BarChart3,
-  BookOpen,
   Folder,
   FileSpreadsheet,
   LogOut,
   ChevronLeft,
   ChevronRight,
   User,
-  Shield
+  Shield,
+  Search
 } from "lucide-react";
 import { useActiveWell } from "../../context/ActiveWellContext";
 import { useAuth } from "../../context/AuthContext";
@@ -36,9 +36,8 @@ export const Sidebar: React.FC = () => {
     { to: "/map", label: "GEOSPATIAL MAP", icon: Map },
     { to: "/wells", label: "WELLS", icon: Database },
     { to: `/wells/${encodeURIComponent(selectedWell)}`, label: "INTELLIGENCE", icon: FileText },
-    { to: "/knowledge", label: "KNOWLEDGE BASE", icon: BookOpen },
     { to: "/documents", label: "DOCUMENTS", icon: Folder },
-    { to: "/notes", label: "OCR", icon: FileText },
+    { to: "/rag", label: "KNOWLEDGE SEARCH", icon: Search },
     { to: "/alerts", label: "ALERTS", icon: ShieldAlert },
     { to: "/risk", label: "ML RISK", icon: AlertCircle },
     { to: "/audit", label: "AUDIT LOGS", icon: ShieldCheck },

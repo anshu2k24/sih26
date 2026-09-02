@@ -8,7 +8,15 @@
  * Base URL: /api/v1/rag
  */
 
-const RAG_BASE_URL = "/api/v1/rag";
+import { supabase } from "../lib/supabase";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== "undefined" && window.location.protocol === "https:"
+    ? `https://${window.location.host}`
+    : "http://localhost:8000");
+
+const RAG_BASE_URL = `${API_BASE_URL}/api/v1/rag`;
 
 // ── Helper ───────────────────────────────────────────────────────────────
 
@@ -16,14 +24,26 @@ async function ragFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem("access_token");
+  const headers = new Headers(options.headers || {});
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.access_token && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${data.session.access_token}`);
+    }
+  } catch (err) {
+    const token = localStorage.getItem("access_token");
+    if (token && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
   const res = await fetch(`${RAG_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
+    headers,
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }));

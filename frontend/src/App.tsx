@@ -14,10 +14,7 @@ import { LivePage } from "./pages/LivePage";
 import { MapPage } from "./pages/MapPage";
 import { WellsPage } from "./pages/WellsPage";
 import { WellIntelligencePage } from "./pages/WellIntelligencePage";
-import { KnowledgePage } from "./pages/KnowledgePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
-import { HandwrittenNotesPage } from "./pages/HandwrittenNotesPage";
-import { NoteUploadPage } from "./pages/NoteUploadPage";
 import { NoteReviewPage } from "./pages/NoteReviewPage";
 import { NoteDetailPage } from "./pages/NoteDetailPage";
 import { EventEvidencePage } from "./pages/EventEvidencePage";
@@ -30,6 +27,7 @@ import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { UsersPage } from "./pages/UsersPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { RAGSearchPage } from "./pages/RAGSearchPage";
 
 
 import { Sidebar } from "./components/layout/Sidebar";
@@ -76,12 +74,12 @@ export function App() {
             <Route path="/map" element={<MapPage />} />
             <Route path="/wells" element={<WellsPage />} />
             <Route path="/wells/:wellId" element={<WellIntelligencePage />} />
-            <Route path="/events" element={<KnowledgePage />} />
+            <Route path="/events" element={<DocumentsPage />} />
             <Route path="/events/:eventId" element={<EventEvidencePage />} />
-            <Route path="/knowledge" element={<KnowledgePage />} />
+            <Route path="/knowledge" element={<Navigate to="/documents" replace />} />
             <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/notes" element={<HandwrittenNotesPage />} />
-            <Route path="/notes/upload" element={<NoteUploadPage />} />
+            <Route path="/notes" element={<Navigate to="/documents" replace />} />
+            <Route path="/notes/upload" element={<Navigate to="/documents" replace />} />
             <Route path="/notes/:noteId/review" element={<NoteReviewPage />} />
             <Route path="/notes/:noteId" element={<NoteDetailPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
@@ -108,6 +106,9 @@ export function App() {
               }
             />
             <Route path="/settings" element={<SettingsPage />} />
+            
+            {/* RAG Search Page */}
+            <Route path="/rag" element={<RAGSearchPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>

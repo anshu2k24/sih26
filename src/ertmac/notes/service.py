@@ -237,6 +237,32 @@ class HandwrittenNotesService:
 
         return updated
 
+    async def reject_note(
+        self,
+        note_id: str,
+        user_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Marks a note as REJECTED when OCR result is unsalvageable.
+        """
+        note = self.repo.get_note(note_id)
+        if not note:
+            return None
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        updates = {
+            "verification_status": "REJECTED",
+            "verified_by": user_id,
+            "verified_at": now_iso,
+        }
+
+        updated = self.repo.update_note(note_id, updates)
+        self.repo.log_audit("note.rejected", note_id, user_id, {
+            "rejected_at": now_iso,
+        })
+
+        return updated
+
     async def retry_ocr(
         self,
         note_id: str,

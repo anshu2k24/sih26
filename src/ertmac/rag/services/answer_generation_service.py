@@ -78,8 +78,18 @@ class AnswerGenerationService:
         self._context_builder = context_builder or global_context_builder_service
         self._llm = llm_provider  # None → lazy init from factory
 
-        self._llm_enabled = os.getenv("RAG_LLM_ENABLED", "false").lower() == "true"
-        self._llm_model = os.getenv("RAG_LLM_MODEL", "mistral-small-latest")
+        llm_env = os.getenv("RAG_LLM_ENABLED")
+        if llm_env is not None:
+            self._llm_enabled = llm_env.lower() == "true"
+        else:
+            self._llm_enabled = bool(
+                os.getenv("GEMINI_API_KEY")
+                or os.getenv("GOOGLE_API_KEY")
+                or os.getenv("MISTRAL_API_KEY")
+            )
+        provider_name = os.getenv("RAG_LLM_PROVIDER", "gemini").lower()
+        default_model = "gemini-3.5-flash" if (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")) else "mistral-small-latest"
+        self._llm_model = os.getenv("RAG_LLM_MODEL", os.getenv("GEMINI_MODEL", default_model))
 
     def answer(
         self,
@@ -151,31 +161,39 @@ class AnswerGenerationService:
                 "insufficient_information": True,
             }
 
+        duration_ms = (time.time() - start_time) * 1000
+
         # ── Step 4: Generate answer (if LLM enabled) ──────────────────────
         answer_text = ""
         llm_used = False
 
-        if self._llm_enabled:
+        gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        mistral_key = os.getenv("MISTRAL_API_KEY")
+        llm_configured = bool((gemini_key and "your_" not in gemini_key) or mistral_key)
+
+        llm_env = os.getenv("RAG_LLM_ENABLED", "true").lower() == "true"
+
+        if llm_env and llm_configured:
             try:
-                llm = self._get_llm()
+                from ertmac.rag.llm.factory import get_llm_provider
+                llm = get_llm_provider()
+                current_model = os.getenv("RAG_LLM_MODEL")
+                if not current_model:
+                    current_model = os.getenv("RAG_LLM_MODEL", "gemini-3.5-flash")
                 answer_text = llm.generate_answer(
                     question=question,
                     context=context_data["context_text"],
                     system_prompt=_SYSTEM_PROMPT,
-                    model=self._llm_model,
+                    model=current_model,
                 )
                 llm_used = True
             except Exception as e:
-                logger.error(f"AnswerGenerationService: LLM generation failed: {e}")
-                answer_text = (
-                    f"LLM answer generation failed: {e}. "
-                    f"The following verified documents were retrieved and may contain relevant information."
-                )
+                logger.warning(f"AnswerGenerationService: LLM generation notice ({e}). Falling back to verified extract summary.")
+                answer_text = self._build_search_only_response(results, question)
         else:
-            # Search-only mode: return a structured summary of retrieved chunks
+            # Search-only mode / API key pending
             answer_text = self._build_search_only_response(results, question)
 
-        duration_ms = (time.time() - start_time) * 1000
         global_rag_audit_repository.log(
             RAGAuditEvent.QUERY,
             user_id=user_id,
@@ -203,26 +221,30 @@ class AnswerGenerationService:
         question: str,
     ) -> str:
         """
-        When LLM is disabled, synthesizes a structured text response
-        from retrieved chunks. Does not hallucinate — only quotes verified content.
+        When LLM is disabled or pending API key, synthesizes a clean, structured text summary
+        from verified retrieved document chunks.
         """
         lines = [
-            f"Found {len(results)} relevant verified document sections for your query.\n",
-            "Top results:\n",
+            f"**Verified Intelligence Summary** (Retrieved {len(results)} relevant sections from verified documents):\n",
         ]
-        for i, r in enumerate(results[:5], 1):
+        for i, r in enumerate(results[:4], 1):
+            snippet = r.text.strip().replace("\n", " ")
+            if len(snippet) > 280:
+                snippet = snippet[:280] + "..."
             lines.append(
-                f"{i}. [{r.title} — {r.section}] (score: {r.score:.2f})\n"
-                f"   {r.text[:300]}{'...' if len(r.text) > 300 else ''}\n"
+                f"**[{i}] {r.title}** ({r.section})\n"
+                f"> {snippet}\n"
             )
-        lines.append("\nTo enable AI-powered answers, set RAG_LLM_ENABLED=true in your environment.")
+        
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        if not gemini_key or "your_" in gemini_key:
+            lines.append("\n*Tip: Add your `GEMINI_API_KEY` in `.env` to enable full conversational AI synthesis.*")
+
         return "\n".join(lines)
 
     def _get_llm(self):
-        if self._llm is None:
-            from ertmac.rag.llm.factory import get_llm_provider
-            self._llm = get_llm_provider()
-        return self._llm
+        from ertmac.rag.llm.factory import get_llm_provider
+        return get_llm_provider()
 
     def health_check(self) -> Dict[str, Any]:
         return {

@@ -29,6 +29,7 @@ from ertmac.api.schemas import (
 from ertmac.streaming import SCIENTIFIC_LABEL
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger("ertmac.api")
 
 app = FastAPI(
@@ -99,6 +100,10 @@ app.include_router(analytics_router)
 # Register PS121 Handwritten Notes OCR router
 from ertmac.api.notes_router import router as notes_router
 app.include_router(notes_router)
+
+# Register PS121 RAG Intelligent Search router
+from ertmac.rag.api.rag_router import router as rag_router
+app.include_router(rag_router)
 
 # Register ML Prediction router (Public Endpoints)
 from ertmac.api.ml_predict_router import router as ml_predict_router
