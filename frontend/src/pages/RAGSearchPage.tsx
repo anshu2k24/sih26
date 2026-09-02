@@ -87,13 +87,14 @@ function HealthBadge({ health }: { health: RAGHealth | null }) {
   const ok = health.status === "HEALTHY";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border ${
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono font-bold border shadow-[0_0_10px_rgba(255,140,0,0.15)] ${
         ok
-          ? "bg-emerald-950/50 text-emerald-300 border-emerald-500/30"
-          : "bg-amber-950/50 text-amber-300 border-amber-500/30"
+          ? "bg-[rgba(10,10,10,0.6)] text-emerald-400 border-emerald-500/30"
+          : "bg-[rgba(10,10,10,0.6)] text-[#FF9D1A] border-[#FF9D1A]/30"
       }`}
+      style={{ backdropFilter: "blur(8px)" }}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${ok ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${ok ? "bg-emerald-400 animate-pulse" : "bg-[#FF9D1A] shadow-[0_0_8px_#FF9D1A]"}`} />
       {health.status}
     </span>
   );
@@ -161,18 +162,26 @@ function ResultCard({ result, index }: { result: SearchResult; index: number }) 
   const displayText = isLong && !expanded ? result.text.slice(0, 280) + "…" : result.text;
 
   const sectionColor: Record<string, string> = {
-    observations: "text-blue-400 bg-blue-950/40 border-blue-500/20",
-    measurements: "text-purple-400 bg-purple-950/40 border-purple-500/20",
+    observations: "text-amber-400 bg-amber-950/40 border-amber-500/20",
+    measurements: "text-[#FF9D1A] bg-[#FF9D1A]/10 border-[#FF9D1A]/20",
     tasks: "text-amber-400 bg-amber-950/40 border-amber-500/20",
-    entities: "text-cyan-400 bg-cyan-950/40 border-cyan-500/20",
-    title: "text-emerald-400 bg-emerald-950/40 border-emerald-500/20",
-    summary: "text-indigo-400 bg-indigo-950/40 border-indigo-500/20",
-    body: "text-slate-400 bg-slate-800/40 border-slate-700/20",
+    entities: "text-amber-500 bg-amber-950/40 border-amber-500/20",
+    title: "text-[#FF9D1A] bg-[#FF9D1A]/10 border-[#FF9D1A]/20",
+    summary: "text-[#FFB000] bg-[#FFB000]/10 border-[#FFB000]/20",
+    body: "text-slate-400 bg-[rgba(10,10,10,0.5)] border-slate-700/20",
   };
   const sectionStyle = sectionColor[result.section] || sectionColor.body;
 
   return (
-    <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 hover:border-slate-700 transition-all group">
+    <div 
+      className="rounded-2xl p-4 transition-all group"
+      style={{ 
+        background: "rgba(15, 10, 5, 0.4)", 
+        border: "1px solid rgba(255, 140, 0, 0.15)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.02)",
+        backdropFilter: "blur(12px)"
+      }}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 min-w-0">
@@ -189,8 +198,8 @@ function ResultCard({ result, index }: { result: SearchResult; index: number }) 
 
         {/* Score badge */}
         <div className="flex-shrink-0 flex flex-col items-end gap-1">
-          <div className="px-2 py-1 bg-blue-950/60 border border-blue-500/30 rounded-lg">
-            <span className="text-blue-300 font-mono font-bold text-sm">
+          <div className="px-2 py-1 rounded-lg" style={{ background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.25)" }}>
+            <span className="text-[#FF9D1A] font-mono font-bold text-sm">
               {(result.score * 100).toFixed(0)}%
             </span>
           </div>
@@ -205,7 +214,7 @@ function ResultCard({ result, index }: { result: SearchResult; index: number }) 
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1 text-[11px] text-blue-400 hover:text-blue-300 font-mono transition-colors"
+          className="mt-1 text-[11px] text-[#FF9D1A] hover:text-[#FFB000] font-mono transition-colors"
         >
           {expanded ? "Show less" : "Show more"}
         </button>
@@ -214,8 +223,8 @@ function ResultCard({ result, index }: { result: SearchResult; index: number }) 
       {/* Score breakdown */}
       {result.score_breakdown && (
         <div className="mt-3 space-y-1">
-          <ScoreBar score={result.score_breakdown.semantic} label="SEMANTIC" color="bg-blue-500" />
-          <ScoreBar score={result.score_breakdown.keyword} label="KEYWORD" color="bg-purple-500" />
+          <ScoreBar score={result.score_breakdown.semantic} label="SEMANTIC" color="bg-[#FF9D1A]" />
+          <ScoreBar score={result.score_breakdown.keyword} label="KEYWORD" color="bg-[#FFB000]" />
         </div>
       )}
 
@@ -240,17 +249,24 @@ function ResultCard({ result, index }: { result: SearchResult; index: number }) 
 
 function QASourceCard({ source }: { source: SourceCitation }) {
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+    <div 
+      className="rounded-xl p-3"
+      style={{
+        background: "rgba(15, 10, 5, 0.4)",
+        border: "1px solid rgba(255, 140, 0, 0.15)",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+      }}
+    >
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-lg bg-blue-950/60 border border-blue-500/30 text-blue-400 text-[10px] font-mono font-bold flex items-center justify-center">
+          <span className="w-5 h-5 rounded-lg text-[#FF9D1A] text-[10px] font-mono font-bold flex items-center justify-center" style={{ background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.25)" }}>
             {source.citation_index}
           </span>
           <span className="text-xs font-bold text-white font-mono truncate max-w-[180px]">
             {source.title}
           </span>
         </div>
-        <span className="text-[10px] font-mono text-blue-300 bg-blue-950/40 px-1.5 py-0.5 rounded-md border border-blue-500/20">
+        <span className="text-[10px] font-mono text-[#FF9D1A] px-1.5 py-0.5 rounded-md" style={{ background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.2)" }}>
           {(source.relevance_score * 100).toFixed(0)}%
         </span>
       </div>
@@ -397,69 +413,75 @@ export const RAGSearchPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Header */}
-      <div className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-xl">
-              <Brain className="w-5 h-5 text-blue-400" />
-            </div>
+    <div 
+      className="min-h-screen relative text-white font-mono pb-12"
+      style={{ 
+        backgroundColor: "#050607", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-network-orange.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
+    >
+      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 mb-2">
+          <div className="flex items-start gap-4">
             <div>
-              <h1 className="text-lg font-bold tracking-tight font-mono text-white">
+              <h1 className="text-xl font-bold tracking-tight font-mono text-white mb-1 drop-shadow-sm">
                 RAG INTELLIGENT SEARCH
               </h1>
-              <p className="text-[10px] text-slate-500 font-mono">
-                PS121 · Verified Documents Only · Hybrid Semantic + Keyword
+              <p className="text-[11px] text-slate-400 font-mono tracking-wide drop-shadow-sm">
+                PS121 <span className="text-[#FF9D1A] mx-1">•</span> Verified Documents Only <span className="text-[#FF9D1A] mx-1">•</span> Hybrid Semantic + Keyword
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <HealthBadge health={health} />
-            {health && (
-              <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
-                <Activity className="w-3 h-3" />
-                {health.embedding_provider} · {health.vector_store}
-              </div>
-            )}
+          <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => getRAGHealth().then(setHealth).catch(() => {})}
-              className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 text-[#FF9D1A]/70 hover:text-[#FF9D1A] hover:bg-[#FF9D1A]/10 rounded-lg transition-all"
               title="Refresh health"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Mode Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-3 mb-6">
           {(["search", "qa"] as Mode[]).map((m) => (
             <button
               key={m}
               type="button"
               id={`rag-mode-${m}`}
               onClick={() => setMode(m)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold border transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-mono font-bold border transition-all ${
                 mode === m
-                  ? "bg-blue-600 text-white border-blue-400/40 shadow-lg shadow-blue-500/25"
-                  : "text-slate-400 border-slate-800 hover:border-slate-600 hover:text-white"
+                  ? "bg-[#FF9D1A]/10 text-white border-[#FF9D1A] shadow-[0_0_15px_rgba(255,140,0,0.3)] transform -translate-y-[1px]"
+                  : "bg-transparent text-slate-400 border-slate-700/50 hover:border-[#FF9D1A]/50 hover:text-white hover:bg-[#FF9D1A]/5 hover:shadow-[0_0_10px_rgba(255,140,0,0.1)] hover:-translate-y-[1px]"
               }`}
+              style={{ backdropFilter: mode === m ? "blur(8px)" : "none" }}
             >
               {m === "search" ? (
-                <><Search className="w-3.5 h-3.5" /> HYBRID SEARCH</>
+                <><Search className={`w-4 h-4 ${mode === m ? "text-[#FF9D1A]" : ""}`} /> HYBRID SEARCH</>
               ) : (
-                <><BookOpen className="w-3.5 h-3.5" /> AI Q&A</>
+                <><BookOpen className={`w-4 h-4 ${mode === m ? "text-[#FF9D1A]" : ""}`} /> AI Q&A</>
               )}
             </button>
           ))}
         </div>
 
-        {/* Search / QA Input */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 mb-6 shadow-xl">
+        {/* Search / QA Input Panel */}
+        <div 
+          className="rounded-2xl p-6 mb-8 transition-all"
+          style={{
+            background: "rgba(15, 10, 5, 0.65)",
+            backdropFilter: "blur(18px) saturate(120%)",
+            border: "1px solid rgba(255, 140, 0, 0.3)",
+            boxShadow: "0 8px 35px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.035)",
+          }}
+        >
           {mode === "search" ? (
             <>
               {/* Search mode controls */}
@@ -469,41 +491,36 @@ export const RAGSearchPage: React.FC = () => {
                     key={b.id}
                     type="button"
                     id={`rag-search-mode-${b.id}`}
-                    onClick={() =>
-                      setSearchState((s) => ({ ...s, mode: b.id }))
-                    }
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold border transition-all ${
+                    onClick={() => setSearchState((s) => ({ ...s, mode: b.id }))}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-mono font-bold border transition-all ${
                       searchState.mode === b.id
-                        ? "bg-blue-950/60 text-blue-300 border-blue-500/40"
-                        : "text-slate-500 border-slate-800 hover:border-slate-600 hover:text-slate-300"
+                        ? "bg-[rgba(255,140,0,0.1)] text-white border-[#FF9D1A] shadow-[0_0_15px_rgba(255,140,0,0.25)]"
+                        : "text-slate-500 border-slate-700/50 hover:border-[#FF9D1A]/50 hover:text-[#FF9D1A] hover:shadow-[0_0_10px_rgba(255,140,0,0.15)] bg-[rgba(10,10,10,0.4)]"
                     }`}
                   >
-                    {b.icon}
+                    {React.cloneElement(b.icon as React.ReactElement, { className: `w-3.5 h-3.5 ${searchState.mode === b.id ? "text-[#FF9D1A]" : ""}` })}
                     {b.label}
                   </button>
                 ))}
               </div>
 
-              {/* Query input */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9D1A] transition-all group-focus-within:text-[#FFB000]" />
                 <input
                   ref={inputRef}
                   id="rag-search-input"
                   type="text"
                   placeholder="Search verified documents... e.g. 'pump vibration above threshold'"
                   value={searchState.query}
-                  onChange={(e) =>
-                    setSearchState((s) => ({ ...s, query: e.target.value }))
-                  }
+                  onChange={(e) => setSearchState((s) => ({ ...s, query: e.target.value }))}
                   onKeyDown={handleKeyDown}
-                  className="w-full bg-slate-800/60 border border-slate-700 rounded-xl pl-11 pr-4 py-3.5 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
+                  className="w-full bg-[rgba(5,5,5,0.5)] border border-[#FF9D1A]/40 rounded-xl pl-12 pr-4 py-4 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-[#FF9D1A] focus:shadow-[0_0_20px_rgba(255,140,0,0.3)] transition-all"
                 />
                 {searchState.query && (
                   <button
                     type="button"
                     onClick={() => setSearchState((s) => ({ ...s, query: "" }))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#FF9D1A]"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -511,23 +528,20 @@ export const RAGSearchPage: React.FC = () => {
               </div>
             </>
           ) : (
-            /* Q&A mode */
-            <div className="relative">
-              <Brain className="absolute left-4 top-4 w-4 h-4 text-slate-500" />
+            <div className="relative group">
+              <Brain className="absolute left-4 top-4 w-5 h-5 text-[#FF9D1A] transition-all group-focus-within:text-[#FFB000]" />
               <textarea
                 ref={qaRef}
                 id="rag-qa-input"
                 placeholder="Ask a question about verified documents... e.g. 'What vibration issues were reported in August 2026?'"
                 value={qa.question}
-                onChange={(e) =>
-                  setQA((prev) => ({ ...prev, question: e.target.value }))
-                }
+                onChange={(e) => setQA((prev) => ({ ...prev, question: e.target.value }))}
                 onKeyDown={handleKeyDown}
                 rows={3}
-                className="w-full bg-slate-800/60 border border-slate-700 rounded-xl pl-11 pr-12 py-3.5 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all resize-none"
+                className="w-full bg-[rgba(5,5,5,0.5)] border border-[#FF9D1A]/40 rounded-xl pl-12 pr-12 py-4 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-[#FF9D1A] focus:shadow-[0_0_20px_rgba(255,140,0,0.3)] transition-all resize-none"
               />
               {!health?.llm_enabled && (
-                <div className="mt-2 flex items-center gap-2 text-[11px] font-mono text-amber-500">
+                <div className="mt-2 flex items-center gap-2 text-[11px] font-mono text-[#FF9D1A]">
                   <Info className="w-3 h-3 shrink-0" />
                   LLM disabled — search-only mode. Set RAG_LLM_ENABLED=true to enable AI answers.
                 </div>
@@ -541,19 +555,16 @@ export const RAGSearchPage: React.FC = () => {
               type="button"
               id="rag-filters-toggle"
               onClick={() => setShowFilters((v) => !v)}
-              className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-mono text-[#FF9D1A]/70 hover:text-[#FF9D1A] transition-colors"
             >
+              FILTERS
               {showFilters ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (
                 <ChevronDown className="w-3.5 h-3.5" />
               )}
-              FILTERS
-              {(searchState.dateFrom ||
-                searchState.dateTo ||
-                searchState.tags ||
-                searchState.identifiers) && (
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              {(searchState.dateFrom || searchState.dateTo || searchState.tags || searchState.identifiers) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF9D1A]" />
               )}
             </button>
 
@@ -627,16 +638,14 @@ export const RAGSearchPage: React.FC = () => {
           {/* Action button */}
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <label className="text-[11px] font-mono text-slate-500">
+              <label className="text-[11px] font-mono text-[#FF9D1A]/70">
                 TOP K:
               </label>
               <select
                 id="rag-top-k"
                 value={searchState.topK}
-                onChange={(e) =>
-                  setSearchState((s) => ({ ...s, topK: Number(e.target.value) }))
-                }
-                className="bg-slate-800/60 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono text-white focus:outline-none"
+                onChange={(e) => setSearchState((s) => ({ ...s, topK: Number(e.target.value) }))}
+                className="bg-[rgba(10,10,10,0.5)] border border-[#FF9D1A]/30 rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none hover:border-[#FF9D1A]/50 transition-colors cursor-pointer"
               >
                 {[5, 10, 20, 50].map((n) => (
                   <option key={n} value={n}>{n}</option>
@@ -647,13 +656,8 @@ export const RAGSearchPage: React.FC = () => {
               id="rag-submit-btn"
               type="button"
               onClick={mode === "search" ? handleSearch : handleQA}
-              disabled={
-                loading ||
-                (mode === "search"
-                  ? !searchState.query.trim()
-                  : !qa.question.trim())
-              }
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-mono text-sm font-bold transition-all shadow-lg shadow-blue-500/20"
+              disabled={loading || (mode === "search" ? !searchState.query.trim() : !qa.question.trim())}
+              className="flex items-center gap-2 px-8 py-3 bg-[linear-gradient(135deg,rgba(255,140,0,0.95),rgba(255,100,0,1))] hover:bg-[linear-gradient(135deg,rgba(255,160,0,1),rgba(255,120,0,1))] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-mono text-sm font-bold transition-all shadow-[0_0_25px_rgba(255,140,0,0.65)] hover:shadow-[0_0_40px_rgba(255,140,0,0.9)] hover:-translate-y-[1px] hover:scale-[1.02] active:scale-95 border border-[#FF9D1A]"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -662,11 +666,7 @@ export const RAGSearchPage: React.FC = () => {
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              {loading
-                ? "PROCESSING..."
-                : mode === "search"
-                ? "SEARCH"
-                : "ASK"}
+              {loading ? "PROCESSING..." : mode === "search" ? "SEARCH" : "ASK"}
             </button>
           </div>
         </div>
@@ -688,7 +688,7 @@ export const RAGSearchPage: React.FC = () => {
                 <span className="text-sm font-mono text-slate-400">
                   <span className="text-white font-bold">{results.results.length}</span>{" "}
                   results for{" "}
-                  <span className="text-blue-400">"{results.query}"</span>
+                  <span className="text-[#FF9D1A]">"{results.query}"</span>
                 </span>
                 <span className="text-[10px] font-mono text-slate-600 uppercase">
                   {results.mode}
@@ -703,8 +703,8 @@ export const RAGSearchPage: React.FC = () => {
 
             {results.results.length === 0 ? (
               <div className="text-center py-16 text-slate-500 font-mono">
-                <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No results found.</p>
+                <Search className="w-10 h-10 mx-auto mb-3 opacity-30 text-[#FF9D1A]" />
+                <p className="text-sm text-slate-300">No results found.</p>
                 <p className="text-xs mt-1 text-slate-600">
                   Try different keywords or verify the note has been indexed.
                 </p>
@@ -724,28 +724,29 @@ export const RAGSearchPage: React.FC = () => {
           <div className="space-y-6">
             {/* Answer Panel */}
             <div
-              className={`rounded-2xl border p-6 ${
-                qa.insufficient
-                  ? "bg-amber-950/20 border-amber-500/20"
-                  : "bg-slate-900/60 border-slate-800"
-              }`}
+              className="rounded-2xl p-6"
+              style={{
+                background: qa.insufficient ? "rgba(255,140,0,0.05)" : "rgba(10,10,10,0.6)",
+                border: qa.insufficient ? "1px solid rgba(255,140,0,0.3)" : "1px solid rgba(255,140,0,0.15)",
+                backdropFilter: "blur(12px)"
+              }}
             >
               <div className="flex items-center gap-2 mb-4">
                 {qa.insufficient ? (
-                  <AlertCircle className="w-4 h-4 text-amber-400" />
+                  <AlertCircle className="w-4 h-4 text-[#FF9D1A]" />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-[#FF9D1A]" />
                 )}
-                <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
                   {qa.llm_used ? "AI ANSWER" : "SEARCH SUMMARY"}
                 </span>
                 {qa.llm_used && (
-                  <span className="px-2 py-0.5 bg-purple-950/50 border border-purple-500/30 rounded-full text-[10px] font-mono text-purple-300">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono text-[#FF9D1A]" style={{ background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.3)" }}>
                     LLM
                   </span>
                 )}
                 {qa.duration_ms && (
-                  <span className="ml-auto text-[10px] font-mono text-slate-600">
+                  <span className="ml-auto text-[10px] font-mono text-slate-500">
                     {qa.duration_ms.toFixed(0)}ms
                   </span>
                 )}
@@ -754,8 +755,8 @@ export const RAGSearchPage: React.FC = () => {
                 {qa.answer}
               </p>
               {!qa.insufficient && (
-                <div className="mt-3 flex items-center gap-2 text-[11px] font-mono text-slate-600">
-                  <Shield className="w-3 h-3 text-emerald-500" />
+                <div className="mt-3 flex items-center gap-2 text-[11px] font-mono text-slate-500">
+                  <Shield className="w-3 h-3 text-[#FF9D1A]" />
                   Answer derived from {qa.retrieval_count} verified document
                   {qa.retrieval_count !== 1 ? "s" : ""}
                 </div>
@@ -782,17 +783,9 @@ export const RAGSearchPage: React.FC = () => {
         {/* Empty state */}
         {!loading && !error && !results && qa.answer === null && (
           <div className="text-center py-20">
-            <div className="w-16 h-16 mx-auto mb-4 bg-blue-950/30 border border-blue-500/20 rounded-2xl flex items-center justify-center">
-              <Brain className="w-8 h-8 text-blue-500/60" />
+            <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center transition-all" style={{ background: "rgba(255,140,0,0.05)", border: "1px solid rgba(255,140,0,0.2)", boxShadow: "0 0 20px rgba(255,140,0,0.1)" }}>
+              <Brain className="w-8 h-8 text-[#FF9D1A]" />
             </div>
-            <p className="text-slate-500 font-mono text-sm">
-              {mode === "search"
-                ? "Enter a query to search verified handwritten notes"
-                : "Ask a question about the verified document corpus"}
-            </p>
-            <p className="text-slate-700 font-mono text-xs mt-2">
-              Only VERIFIED documents are indexed and searchable
-            </p>
           </div>
         )}
       </div>

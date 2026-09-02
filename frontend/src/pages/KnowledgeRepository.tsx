@@ -174,7 +174,14 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
   return (
     <div 
       className="min-h-screen text-[#F2F2F2] pb-24 relative overflow-hidden"
-      style={{ backgroundColor: "#050607", fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+      style={{ 
+        backgroundColor: "#050607", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-network-orange.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        fontFamily: "'Space Grotesk', 'Inter', sans-serif" 
+      }}
     >
       {/* Subtle Ambient Glows */}
       <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full opacity-[0.08] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF7A00 0%, transparent 70%)" }}></div>
