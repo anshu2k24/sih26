@@ -40,11 +40,15 @@ def upload_document(
     checksum = compute_sha256(file_bytes)
     ext = Path(filename).suffix.lstrip(".").upper() or "TXT"
 
+    # Handle case where user.organization_id is passed as string "None"
+    if not organization_id or organization_id == "None":
+        organization_id = "00000000-0000-0000-0000-000000000001"
+
     # 1. Check deduplication in DB
     db = get_supabase_admin()
     if db:
         try:
-            res = db.table("documents").select("*").eq("checksum", checksum).execute()
+            res = db.table("documents").select("*").eq("checksum", checksum).eq("organization_id", organization_id).execute()
             if res.data and len(res.data) > 0:
                 logger.info(f"Duplicate document upload detected via SHA-256 checksum: {checksum}")
                 return res.data[0], True
@@ -53,11 +57,11 @@ def upload_document(
 
     # Check in-memory deduplication
     for doc in _in_memory_docs.values():
-        if doc.get("checksum") == checksum:
+        if doc.get("checksum") == checksum and doc.get("organization_id") == organization_id:
             return doc, True
 
-    doc_id = f"DOC_{uuid.uuid4().hex[:8].upper()}"
-    saved_filename = f"{doc_id}_{Path(filename).name}"
+    doc_id = str(uuid.uuid4())
+    saved_filename = f"DOC_{doc_id[:8].upper()}_{Path(filename).name}"
     storage_path = f"documents/{organization_id}/{saved_filename}"
 
     # Try saving locally as cached copy if directory exists/writable
@@ -96,7 +100,7 @@ def upload_document(
         "checksum": checksum,
         "processing_status": "COMPLETED",
         "extraction_status": "PENDING",
-        "verification_status": "PENDING",
+        "verification_status": "VERIFIED",
         "source_metadata": {
             "file_size_bytes": len(file_bytes),
             "original_filename": filename,
@@ -119,7 +123,7 @@ def upload_document(
                 "checksum": checksum,
                 "processing_status": "COMPLETED",
                 "extraction_status": "PENDING",
-                "verification_status": "PENDING",
+                "verification_status": "VERIFIED",
                 "source_metadata": doc_record["source_metadata"],
             }
             if doc_record["uploaded_by"]:
@@ -136,29 +140,29 @@ def upload_document(
     return doc_record, False
 
 
-def get_documents(limit: int = 50) -> List[Dict[str, Any]]:
+def get_documents(organization_id: str, limit: int = 50) -> List[Dict[str, Any]]:
     """Returns list of uploaded documents."""
     db = get_supabase_admin()
     if db:
         try:
-            res = db.table("documents").select("*").order("created_at", desc=True).limit(limit).execute()
+            res = db.table("documents").select("*").eq("organization_id", organization_id).order("created_at", desc=True).limit(limit).execute()
             if res.data is not None:
                 return res.data
         except Exception as e:
             logger.warning(f"Failed to fetch documents from DB: {e}")
 
-    return list(reversed(list(_in_memory_docs.values())))[:limit]
+    return [d for d in reversed(list(_in_memory_docs.values())) if d.get("organization_id") == organization_id][:limit]
 
 
-def get_document_by_id(doc_id: str) -> Optional[Dict[str, Any]]:
+def get_document_by_id(doc_id: str, organization_id: str) -> Optional[Dict[str, Any]]:
     """Fetches single document by ID."""
-    if doc_id in _in_memory_docs:
+    if doc_id in _in_memory_docs and _in_memory_docs[doc_id].get("organization_id") == organization_id:
         return _in_memory_docs[doc_id]
 
     db = get_supabase_admin()
     if db:
         try:
-            res = db.table("documents").select("*").eq("id", doc_id).single().execute()
+            res = db.table("documents").select("*").eq("id", doc_id).eq("organization_id", organization_id).single().execute()
             if res.data:
                 return res.data
         except Exception as e:

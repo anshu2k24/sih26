@@ -172,6 +172,33 @@ class StructuredExtractor:
         if len(summary) > 250:
             summary = summary[:247] + "..."
 
+        # Specific form fields extraction (Highly permissive for OCR table scrambling)
+        well_id_match = re.search(r"(?i)well\s*(?:id|name)[^\n]*?([A-Za-z0-9\-\/]{5,})", text)
+        depth_match = re.search(r"(?i)current\s*depth[^\d\n]*?([0-9]{2,}\.[0-9]+)", text)
+        water_depth_match = re.search(r"(?i)water\s*depth[^\d\n]*?([0-9]{1,}\.[0-9]+)", text)
+        current_op_match = re.search(r"(?i)(?:current\s*operation|operation\s*/\s*activity)[^\n|A-Za-z]*([A-Za-z0-9\s\.\-]+)", text)
+        # Extract reporting period (handle single line, multi-line, and From... To... blocks)
+        report_period_match = (
+            re.search(r"(?is)(?:reporting\s*period|report\s*period)[\s\:\-\|]*(From[\s\S]*?To[\s\S]*?\d{4})", text)
+            or re.search(r"(?is)(From\s*:\s*0?6:00[\s\S]*?To\s*:\s*0?6:00[\s\S]*?\d{4})", text)
+            or re.search(r"(?is)(From\s*:\s*\d{1,2}:\d{2}[\s\S]*?To\s*:\s*\d{1,2}:\d{2}[^\n\|]*)", text)
+            or re.search(r"(?i)reporting\s*period[^\n\|]*[:\-\|]\s*([^\n\|]+)", text)
+            or re.search(r"(?is)4\.\s*REPORTING\s*PERIOD[\s\:\-\|]*([^\n\#\|]+)", text)
+        )
+        
+        extracted_report_period = None
+        if report_period_match:
+            extracted_report_period = re.sub(r"\s+", " ", report_period_match.group(1)).strip()
+
+        # Look for Summary/Remarks in the bottom section (e.g., 19. DAILY SUMMARY, ABNORMAL REMARKS)
+        abnormal_remarks_match = (
+            re.search(r"(?is)(?:19\.\s*DAILY\s*SUMMARY|DAILY\s*SUMMARY|abnormal\s*remarks|SUMMARY:)\s*[:\-]?\s*([^\n\#\|]+)", text)
+            or re.search(r"(?i)(?:abnormal\s*remarks|remarks|summary)\s*[:\-]?\s*(.*?)(?:\n|$)", text)
+        )
+        extracted_remarks = None
+        if abnormal_remarks_match:
+            extracted_remarks = re.sub(r"\s+", " ", abnormal_remarks_match.group(1)).strip()
+
         return {
             "title": title,
             "date": dates[0] if dates else None,
@@ -183,4 +210,9 @@ class StructuredExtractor:
             "tasks": tasks[:8],
             "entities": entities + people,
             "tags": list(set(tags)),
+            "well_id": well_id_match.group(1).strip() if well_id_match else None,
+            "depth": depth_match.group(1).strip() if depth_match else None,
+            "water_depth": water_depth_match.group(1).strip() if water_depth_match else None,
+            "report_period": extracted_report_period,
+            "abnormal_remarks": extracted_remarks or "None",
         }

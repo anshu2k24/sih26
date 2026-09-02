@@ -37,7 +37,7 @@ export interface WellsResponse {
 }
 
 export interface WSEventMessage {
-  type: "sensor_update" | "ml_update" | "stream_status" | "error";
+  type: "sensor_update" | "ml_update" | "stream_status" | "error" | "alert_created";
   data: any;
 }
 

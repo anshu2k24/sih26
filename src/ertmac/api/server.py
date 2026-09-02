@@ -29,6 +29,7 @@ from ertmac.api.schemas import (
 from ertmac.streaming import SCIENTIFIC_LABEL
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger("ertmac.api")
 
 app = FastAPI(
@@ -55,7 +56,6 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,6 +100,10 @@ app.include_router(analytics_router)
 from ertmac.api.notes_router import router as notes_router
 app.include_router(notes_router)
 
+# Register PS121 RAG Intelligent Search router
+from ertmac.rag.api.rag_router import router as rag_router
+app.include_router(rag_router)
+
 # Register ML Prediction router (Public Endpoints)
 from ertmac.api.ml_predict_router import router as ml_predict_router
 app.include_router(ml_predict_router)
@@ -115,6 +119,83 @@ depth_correlation_engine = DepthCorrelationEngine(
     geospatial_engine=geospatial_engine,
     nwis_historical_api=nwis_historical_api
 )
+
+from collections import defaultdict
+from ertmac.alerts.hazard_classifier import evaluate_telemetry_hazards
+
+class BroadcastManager:
+    def __init__(self):
+        self.queues: Dict[str, List[asyncio.Queue]] = defaultdict(list)
+        self.running = False
+        self._task = None
+
+    def subscribe(self, well_id: str) -> asyncio.Queue:
+        q = asyncio.Queue()
+        self.queues[well_id].append(q)
+        return q
+
+    def unsubscribe(self, well_id: str, q: asyncio.Queue):
+        if well_id in self.queues and q in self.queues[well_id]:
+            self.queues[well_id].remove(q)
+
+    async def start(self):
+        if self.running:
+            return
+        self.running = True
+        self._task = asyncio.create_task(self._broadcast_loop())
+
+    async def _broadcast_loop(self):
+        state_mgr = get_app_state()
+        last_counts = {}
+        while self.running:
+            await asyncio.sleep(0.5)
+            for well_id, queues in list(self.queues.items()):
+                if not queues:
+                    continue
+                st = state_mgr.get_well_state(well_id)
+                current_count = st["samples_received"]
+                last_count = last_counts.get(well_id, -1)
+                
+                if current_count != last_count and st["latest_sensor"] is not None:
+                    last_counts[well_id] = current_count
+                    ml = st["ml"]
+                    
+                    if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
+                        meta = state_mgr.coords_metadata.get(well_id, {})
+                        org_id = meta.get("organization_id", "00000000-0000-0000-0000-000000000001")
+                        alert = evaluate_telemetry_hazards(
+                            sensor=st["latest_sensor"] or {},
+                            features=ml.get("features", {}),
+                            current_md=st["current_md"],
+                            well_id=well_id,
+                            organization_id=org_id
+                        )
+                        if alert:
+                            logger.info(f"ML Anomaly Alert created: {alert.alert_id} at MD={st['current_md']:.1f}m")
+                            for q in queues:
+                                q.put_nowait({"type": "alert_created", "data": alert.to_dict()})
+
+                    msg_sensor = {"type": "sensor_update", "data": st["latest_sensor"]}
+                    msg_ml = {"type": "ml_update", "data": ml}
+                    msg_status = {
+                        "type": "stream_status",
+                        "data": {
+                            "status": st["stream_status"],
+                            "current_md": st["current_md"],
+                            "samples_received": current_count
+                        }
+                    }
+                    
+                    for q in queues:
+                        q.put_nowait(msg_sensor)
+                        q.put_nowait(msg_ml)
+                        q.put_nowait(msg_status)
+
+broadcaster = BroadcastManager()
+
+@app.on_event("startup")
+async def on_startup():
+    await broadcaster.start()
 
 
 def validate_well_id(well_id: str, state_mgr: ApplicationStateManager = Depends(get_app_state)):
@@ -202,7 +283,8 @@ def get_offset_events(
         active_well_id=well_id,
         current_md=current_md,
         radius=radius,
-        event_type=event_type
+        event_type=event_type,
+        organization_id=user.organization_id
     )
     return res
 
@@ -224,7 +306,10 @@ def get_nearby_wells(
     user: UserSession = Depends(require_permission(Permission.VIEW_WELLS)),
 ):
     """Returns offset wells within radius_km of active well, sorted by Haversine distance."""
-    nearby = geospatial_engine.find_nearby_wells(well_id, radius_km=radius_km)
+    nearby = geospatial_engine.find_nearby_wells(well_id, organization_id=user.organization_id, radius_km=radius_km)
+    
+    # The geospatial engine natively enforces tenant isolation against its source data
+
     active_meta = geospatial_engine.coords.get(well_id, {})
     return {
         "active_well": well_id,
@@ -245,7 +330,7 @@ def get_well_full_intelligence(
     if not nwis_historical_api:
         raise HTTPException(status_code=503, detail="NWIS Historical API dataset unavailable.")
 
-    res = nwis_historical_api.get_well_full_intelligence(well_id)
+    res = nwis_historical_api.get_well_full_intelligence(well_id, organization_id=user.organization_id)
 
     distance_km = None
     distance_m = None
@@ -306,7 +391,8 @@ def search_knowledge(
         max_md=max_md,
         sort_by=sort_by,
         limit=limit,
-        offset=offset
+        offset=offset,
+        organization_id=user.organization_id
     )
 
 
@@ -344,7 +430,7 @@ def get_alerts(
     user: UserSession = Depends(require_permission(Permission.VIEW_ALERTS)),
 ):
     """Returns active and historical operational drilling alerts."""
-    alerts = global_alert_engine.get_active_alerts(well_id)
+    alerts = global_alert_engine.get_active_alerts(organization_id=user.organization_id, well_id=well_id)
     return {"count": len(alerts), "alerts": alerts}
 
 
@@ -354,7 +440,7 @@ def get_alert_detail(
     user: UserSession = Depends(require_permission(Permission.VIEW_ALERTS)),
 ):
     """Returns a single alert by ID."""
-    alert = global_alert_engine._get_alert_item(alert_id)
+    alert = global_alert_engine._get_alert_item(alert_id, organization_id=user.organization_id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found.")
     return alert.to_dict()
@@ -366,7 +452,7 @@ def acknowledge_alert(
     user: UserSession = Depends(require_permission(Permission.ACKNOWLEDGE_ALERT)),
 ):
     """Acknowledges an active operational alert. Requires ACKNOWLEDGE_ALERT permission."""
-    alt = global_alert_engine.acknowledge_alert(alert_id, user.user_id)
+    alt = global_alert_engine.acknowledge_alert(alert_id, user.user_id, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -387,7 +473,7 @@ def start_investigation(
     user: UserSession = Depends(require_permission(Permission.INVESTIGATE_ALERT)),
 ):
     """Moves alert to INVESTIGATING status."""
-    alt = global_alert_engine.start_investigation(alert_id, user.user_id)
+    alt = global_alert_engine.start_investigation(alert_id, user.user_id, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -409,7 +495,7 @@ def assign_alert(
     user: UserSession = Depends(require_permission(Permission.INVESTIGATE_ALERT)),
 ):
     """Assigns an alert to a team member."""
-    alt = global_alert_engine.assign_alert(alert_id, assignee_id)
+    alt = global_alert_engine.assign_alert(alert_id, assignee_id, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -431,7 +517,7 @@ def get_alert_notes(
     user: UserSession = Depends(require_permission(Permission.VIEW_ALERTS)),
 ):
     """Returns notes added to an alert."""
-    return {"alert_id": alert_id, "notes": global_alert_engine.get_notes(alert_id)}
+    return {"alert_id": alert_id, "notes": global_alert_engine.get_notes(alert_id, organization_id=user.organization_id)}
 
 
 @app.post("/api/alerts/{alert_id}/notes", tags=["Alert Engine"])
@@ -469,7 +555,7 @@ def resolve_alert(
             status_code=400,
             detail="Resolution summary is required. Provide notes query parameter."
         )
-    alt = global_alert_engine.resolve_alert(alert_id, user.user_id, notes)
+    alt = global_alert_engine.resolve_alert(alert_id, user.user_id, notes, organization_id=user.organization_id)
     if not alt:
         raise HTTPException(status_code=404, detail="Alert not found.")
     global_audit_service.log_event(
@@ -655,7 +741,6 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
     logger.info(f"WebSocket client connected for well '{well_id}' (User: {session.email}, Org: {session.organization_id})")
     state_mgr = get_app_state()
 
-
     try:
         st = state_mgr.get_well_state(well_id)
         await websocket.send_json({
@@ -667,35 +752,15 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
             }
         })
 
-        last_count = -1
+        q = broadcaster.subscribe(well_id)
         while True:
-            await asyncio.sleep(0.1)
-            st = state_mgr.get_well_state(well_id)
-            current_count = st["samples_received"]
-
-            if current_count != last_count and st["latest_sensor"] is not None:
-                last_count = current_count
-
-                await websocket.send_json({
-                    "type": "sensor_update",
-                    "data": st["latest_sensor"]
-                })
-
-                await websocket.send_json({
-                    "type": "ml_update",
-                    "data": st["ml"]
-                })
-
-                await websocket.send_json({
-                    "type": "stream_status",
-                    "data": {
-                        "status": st["stream_status"],
-                        "current_md": st["current_md"],
-                        "samples_received": current_count
-                    }
-                })
+            msg = await q.get()
+            await websocket.send_json(msg)
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket client disconnected for well '{well_id}'")
+        logger.info(f"WebSocket disconnected for well '{well_id}'")
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
+    finally:
+        broadcaster.unsubscribe(well_id, q)
+

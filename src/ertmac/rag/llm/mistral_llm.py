@@ -20,33 +20,19 @@ from ertmac.rag.llm.base import LLMProvider
 logger = logging.getLogger("ertmac.rag.llm.mistral")
 
 
+import requests
+
 class MistralLLMProvider(LLMProvider):
     """Mistral AI chat completion provider for RAG Q&A."""
 
     def __init__(self, api_key: str = None, default_model: str = None):
         self._api_key = api_key or os.getenv("MISTRAL_API_KEY", "")
         self._default_model = default_model or os.getenv("RAG_LLM_MODEL", "mistral-small-latest")
-        self._client = None
+        self._base_url = "https://api.mistral.ai/v1"
 
     @property
     def provider_name(self) -> str:
         return f"mistral/{self._default_model}"
-
-    def _get_client(self):
-        if self._client is None:
-            if not self._api_key:
-                raise RuntimeError(
-                    "MISTRAL_API_KEY is not set. Cannot use Mistral LLM. "
-                    "Set RAG_LLM_ENABLED=false to disable answer generation."
-                )
-            try:
-                from mistralai import Mistral
-                self._client = Mistral(api_key=self._api_key)
-            except ImportError:
-                raise RuntimeError(
-                    "mistralai package not installed. Run: pip install mistralai"
-                )
-        return self._client
 
     def generate_answer(
         self,
@@ -58,8 +44,14 @@ class MistralLLMProvider(LLMProvider):
         temperature: float = 0.1,
     ) -> str:
         """Generates a grounded answer using Mistral chat completion."""
-        client = self._get_client()
+        if not self._api_key:
+            raise RuntimeError(
+                "MISTRAL_API_KEY is not set. Cannot use Mistral LLM."
+            )
+
         use_model = model or self._default_model
+        if "gemini" in use_model.lower():
+            use_model = "mistral-small-latest"
 
         messages = [
             {"role": "system", "content": system_prompt or "You are a helpful assistant."},
@@ -73,27 +65,41 @@ class MistralLLMProvider(LLMProvider):
             },
         ]
 
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": use_model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+
         try:
-            response = client.chat.complete(
-                model=use_model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
+            resp = requests.post(
+                f"{self._base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=45,
             )
-            return response.choices[0].message.content.strip()
+            if resp.status_code != 200:
+                raise RuntimeError(f"Mistral API error ({resp.status_code}): {resp.text}")
+            data = resp.json()
+            return data["choices"][0]["message"]["content"].strip()
         except Exception as e:
             raise RuntimeError(f"Mistral LLM generation failed: {e}") from e
 
     def health_check(self) -> bool:
+        if not self._api_key:
+            return False
         try:
-            client = self._get_client()
-            # Minimal probe
-            client.chat.complete(
-                model=self._default_model,
-                messages=[{"role": "user", "content": "hi"}],
-                max_tokens=1,
+            resp = requests.get(
+                f"{self._base_url}/models",
+                headers={"Authorization": f"Bearer {self._api_key}"},
+                timeout=8,
             )
-            return True
+            return resp.status_code == 200
         except Exception as e:
             logger.warning(f"Mistral LLM health check failed: {e}")
             return False

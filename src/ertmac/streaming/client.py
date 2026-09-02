@@ -36,7 +36,37 @@ class SensorStreamClient:
         self.current_record: Optional[Dict[str, Any]] = None
         self.history: deque = deque(maxlen=max_history)
 
-        self.ml_adapter = StreamInferenceAdapter()
+        import joblib
+        import os
+        import numpy as np
+        from ertmac.ml.models import BaseModel
+        
+        class IsoForestWrapper(BaseModel):
+            def __init__(self, model_path, features_path):
+                self.model = joblib.load(model_path)
+                self.features = joblib.load(features_path)
+            
+            def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+                df = X.copy()
+                for col in self.features:
+                    if col not in df.columns:
+                        df[col] = 0.0
+                df = df[self.features]
+                # Isolation Forest predict returns -1 for anomaly, 1 for normal
+                preds = self.model.predict(df)
+                probs = np.where(preds == -1, 1.0, 0.0)
+                return probs
+
+        try:
+            iso_model = IsoForestWrapper(
+                'ml_prediction_dir/saved_models/volve_iso_forest.joblib',
+                'ml_prediction_dir/saved_models/volve_iso_features.joblib'
+            )
+        except Exception as e:
+            logger.error(f"Could not load IsoForest model: {e}")
+            iso_model = None
+
+        self.ml_adapter = StreamInferenceAdapter(model=iso_model)
         self.ml_result: Dict[str, Any] = {
             "status": "ML_NOT_READY",
             "is_blocked": True,
