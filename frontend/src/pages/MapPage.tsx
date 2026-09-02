@@ -9,55 +9,63 @@ export const MapPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="group relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 p-4 sm:p-6 overflow-hidden transition-all duration-500 hover:shadow-[0_0_80px_rgba(249,115,22,0.6)] rounded-xl">
-      {/* Background Gradient */}
-      <div
-        className="absolute inset-0 z-0 transition-all duration-500 group-hover:opacity-90"
-        style={{ 
-          background: "linear-gradient(135deg, rgba(249, 115, 22, 0.8) 0%, rgba(234, 179, 8, 0.8) 100%)",
-        }}
-      >
-        <div 
-          className="absolute inset-0 z-0 transition-all duration-500 group-hover:bg-white/10" 
-          style={{
-            background: "rgba(255, 255, 255, 0.05)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)"
-          }} 
-        />
-      </div>
+    <div 
+      className="min-h-screen pb-[48px] relative overflow-hidden"
+      style={{ backgroundColor: "#050607", fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+    >
+      {/* Absolute Ambient Background Lights */}
+      <div className="absolute top-[10%] left-[10%] w-[50%] h-[40%] rounded-full opacity-[0.04] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
 
-      <div className="relative z-10 space-y-6">
-        {/* Header Banner - Glassmorphism, Orange/Black */}
+      <div className="relative z-10 max-w-[1600px] mx-auto px-[32px] pt-[32px] space-y-[24px]">
+        {/* Header Banner - Premium Dark Glassmorphism */}
         <div 
-          className="rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+          className="rounded-[20px] p-[28px] flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 relative overflow-hidden"
           style={{
-            background: "linear-gradient(145deg, rgba(20, 20, 20, 0.72), rgba(10, 10, 10, 0.60))",
-            border: "1px solid rgba(245, 158, 11, 0.2)",
+            background: "rgba(18, 16, 14, 0.75)",
             backdropFilter: "blur(18px)",
             WebkitBackdropFilter: "blur(18px)",
-            boxShadow: "0 25px 70px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+            border: "1px solid rgba(255, 138, 0, 0.25)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,138,0,0.05)"
           }}
         >
-          <div>
-            <div className="flex items-center gap-3">
-              <Compass className="w-5 h-5 text-amber-500 animate-spin-slow" />
-              <h1 className="text-lg font-bold text-white uppercase tracking-wider">
+          {/* Header internal glow */}
+          <div className="absolute top-0 left-0 w-full h-[150%] rounded-full opacity-[0.04] blur-[60px] pointer-events-none" style={{ background: "#FF8A00" }}></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div 
+                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                style={{ border: "1px solid rgba(255, 138, 0, 0.6)", background: "rgba(255, 138, 0, 0.1)", boxShadow: "0 0 15px rgba(255, 138, 0, 0.2)" }}
+              >
+                <Compass className="w-5 h-5 text-[#FF9D1A] animate-spin-slow" />
+              </div>
+              <h1 className="text-[20px] sm:text-[24px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
                 GEOSPATIAL INTELLIGENCE MAP
               </h1>
-              <span className="text-xs px-2.5 py-0.5 rounded bg-amber-950/80 text-amber-500 border border-amber-500/30 font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+              <span 
+                className="text-[10px] px-[10px] py-[4px] rounded-[6px] font-[700] uppercase tracking-wider whitespace-nowrap"
+                style={{ background: "rgba(18, 16, 14, 0.8)", color: "#FF8A00", border: "1px solid rgba(255, 138, 0, 0.4)", boxShadow: "0 0 10px rgba(255, 138, 0, 0.15)" }}
+              >
                 AUTOFOCUSED VOLVE CLUSTER
               </span>
             </div>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-[13px] text-[#A1A1AA] mt-3 font-['Inter',sans-serif] max-w-3xl leading-relaxed">
               Surface coordinates ingested from Norwegian Offshore Directorate (NPD). Distances labeled as Surface Platform Slot Distance.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 text-xs bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-lg border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]">
-            <MapPin className="w-4 h-4 text-amber-500" />
-            <span className="text-slate-300">Active Well Context:</span>
-            <span className="font-bold text-white">{selectedWell}</span>
+          <div 
+            className="relative z-10 flex items-center gap-3 px-[16px] py-[12px] rounded-[12px] transition-all duration-200"
+            style={{
+              background: "rgba(18, 16, 14, 0.8)",
+              border: "1px solid rgba(255, 138, 0, 0.4)",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.3), inset 0 0 15px rgba(255,138,0,0.1)"
+            }}
+          >
+            <MapPin className="w-4 h-4 text-[#FF8A00]" />
+            <span className="text-[12px] text-[#A1A1AA] font-[700] tracking-wider uppercase">Active Well Context:</span>
+            <span className="font-[700] text-white text-[14px] drop-shadow-[0_0_5px_rgba(255,138,0,0.5)]">{selectedWell}</span>
           </div>
         </div>
 
@@ -71,19 +79,29 @@ export const MapPage: React.FC = () => {
 
         {/* Scientific Provenance Callout Banner */}
         <div 
-          className="rounded-xl p-4 text-xs font-mono text-slate-300 flex items-center justify-between transition-all duration-300 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+          className="rounded-[16px] p-[20px] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300"
           style={{
-            background: "rgba(10, 10, 10, 0.6)",
-            border: "1px solid rgba(245, 158, 11, 0.2)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            background: "rgba(18, 16, 14, 0.75)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            border: "1px solid rgba(255, 138, 0, 0.15)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
           }}
         >
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>Surface Slot Distance represents platform slot header separation on the Volve Platform Complex deck.</span>
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.4)" }}
+            >
+              <ShieldAlert className="w-4 h-4 text-[#60A5FA]" />
+            </div>
+            <span className="text-[13px] text-[#E2E2E2] font-mono leading-relaxed">
+              Surface Slot Distance represents platform slot header separation on the Volve Platform Complex deck.
+            </span>
           </div>
-          <span className="text-amber-500/70 font-bold">NPD Verified Coordinates</span>
+          <span className="text-[#60A5FA] font-[700] text-[12px] uppercase tracking-widest font-mono whitespace-nowrap bg-[rgba(59,130,246,0.1)] px-[10px] py-[6px] rounded-[6px] border border-[rgba(59,130,246,0.2)]">
+            NPD Verified Coordinates
+          </span>
         </div>
       </div>
     </div>
