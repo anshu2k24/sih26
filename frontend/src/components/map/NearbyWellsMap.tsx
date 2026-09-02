@@ -215,7 +215,14 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
   }, []);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+    <div 
+      className="rounded-xl p-5 shadow-2xl space-y-4 border border-slate-700/50"
+      style={{
+        background: "rgba(15, 23, 42, 0.65)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
+    >
       {/* Header Controls Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
@@ -467,12 +474,12 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                            mapRef.current.flyTo({ center: [nw.longitude, nw.latitude], zoom: 15 });
                         }
                       }}
-                      className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                      className={`p-3 rounded-lg border transition-all duration-300 cursor-pointer ${
                         isSelected
-                          ? "bg-emerald-950/40 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                          ? "bg-emerald-950/60 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] transform scale-[1.02]"
                           : hasAlert
-                            ? "bg-slate-900 border-amber-500/40 hover:border-amber-500/80"
-                            : "bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50"
+                            ? "bg-slate-900/80 border-amber-500/40 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-1"
+                            : "bg-slate-900/80 border-slate-700/50 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:-translate-y-1 hover:bg-slate-800"
                       }`}
                     >
                       <div className="flex items-center justify-between font-mono">
@@ -543,13 +550,6 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
             )}
           </div>
 
-          <div className="pt-3 border-t border-slate-850 text-[10px] text-slate-400 font-mono flex items-center justify-between">
-            <span className="flex items-center gap-1">
-              <Shield className="w-3 h-3 text-emerald-400" />
-              Haversine Proximity Engine
-            </span>
-            <span>NPD Verified Coordinates</span>
-          </div>
         </div>
       </div>
       

@@ -20,36 +20,28 @@ export const WellsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-[24px] font-mono px-4 sm:px-8 py-2">
-      {/* Header Banner */}
-      <div 
-        className="rounded-[24px] p-[24px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,122,0,0.1)]"
-        style={{
-          background: "rgba(20, 20, 20, 0.65)",
-          border: "1px solid rgba(249, 115, 22, 0.25)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          minHeight: "130px"
-        }}
-      >
-        <div>
-          <div className="flex items-center gap-5">
-            <div 
-              className="p-4 rounded-[16px] text-[#FF7A00]" 
-              style={{ background: "rgba(255,122,0,0.08)", border: "1px solid rgba(255,122,0,0.3)" }}
-            >
-              <Database className="w-8 h-8" strokeWidth={1.5} />
-            </div>
-            <div>
-              <h1 className="text-[22px] font-bold text-white uppercase tracking-wider" style={{ fontFamily: "Space Grotesk, system-ui, sans-serif" }}>
-                VOLVE FIELD WELL INVENTORY & STREAM CONTROLLER
-              </h1>
-              <p className="text-[14px] text-slate-400 mt-1">
-                Select any wellbore to initiate real-time telemetry streaming, spatial correlation, or deep intelligence.
-              </p>
-            </div>
+    <div 
+      className="min-h-[calc(100vh-6rem)] relative overflow-hidden font-mono px-4 sm:px-8 py-6 -m-4 sm:-m-6"
+      style={{
+        backgroundColor: "#050505", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* Absolute Ambient Background Lights */}
+      <div className="absolute top-[10%] left-[10%] w-[50%] h-[40%] rounded-full opacity-[0.04] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+
+      <div className="relative z-10 space-y-[24px]">
+        {/* Header - Transparent */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
+          <div>
+            <h1 className="text-[22px] font-bold text-white uppercase tracking-wider" style={{ fontFamily: "Space Grotesk, system-ui, sans-serif" }}>
+              VOLVE FIELD WELL INVENTORY & STREAM CONTROLLER
+            </h1>
           </div>
-        </div>
 
         {/* Active Well Status Pill */}
         <div 
@@ -194,6 +186,7 @@ export const WellsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

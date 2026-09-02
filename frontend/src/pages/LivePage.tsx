@@ -28,17 +28,8 @@ export const LivePage: React.FC = () => {
       </div>
 
       <div className="relative z-10 space-y-6 max-w-7xl mx-auto font-mono">
-        {/* Top Banner */}
-        <div 
-          className="rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
-          style={{
-            background: "linear-gradient(145deg, rgba(20, 27, 42, 0.72), rgba(9, 14, 25, 0.60))",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            boxShadow: "0 25px 70px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
-          }}
-        >
+        {/* Top Header - Transparent */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
           <div className="flex items-center gap-3">
             <Radio className="w-5 h-5 text-emerald-400 animate-pulse" />

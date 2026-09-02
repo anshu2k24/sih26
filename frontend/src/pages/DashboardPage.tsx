@@ -129,7 +129,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Real-time Telemetry Grid (2/3) */}
-          <div className="lg:col-span-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+          <div className="lg:col-span-2 self-start transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
             <TelemetryCards latestSensor={latestSensor} />
           </div>
         </div>

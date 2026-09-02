@@ -84,7 +84,7 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ latestSensor }) 
 
   return (
     <div 
-      className="rounded-3xl p-6 h-full flex flex-col justify-between"
+      className="rounded-3xl p-6 flex flex-col justify-start"
       style={{
         background: "linear-gradient(145deg, rgba(20, 27, 42, 0.72), rgba(9, 14, 25, 0.60))",
         border: "1px solid rgba(255, 255, 255, 0.12)",

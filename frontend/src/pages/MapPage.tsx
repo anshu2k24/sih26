@@ -11,35 +11,24 @@ export const MapPage: React.FC = () => {
   return (
     <div 
       className="min-h-screen pb-[48px] relative overflow-hidden"
-      style={{ backgroundColor: "#050607", fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+      style={{ 
+        backgroundColor: "#050505", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        fontFamily: "'Space Grotesk', 'Inter', sans-serif" 
+      }}
     >
       {/* Absolute Ambient Background Lights */}
       <div className="absolute top-[10%] left-[10%] w-[50%] h-[40%] rounded-full opacity-[0.04] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
       <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
 
       <div className="relative z-10 max-w-[1600px] mx-auto px-[32px] pt-[32px] space-y-[24px]">
-        {/* Header Banner - Premium Dark Glassmorphism */}
-        <div 
-          className="rounded-[20px] p-[28px] flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 relative overflow-hidden"
-          style={{
-            background: "rgba(18, 16, 14, 0.75)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            border: "1px solid rgba(255, 138, 0, 0.25)",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,138,0,0.05)"
-          }}
-        >
-          {/* Header internal glow */}
-          <div className="absolute top-0 left-0 w-full h-[150%] rounded-full opacity-[0.04] blur-[60px] pointer-events-none" style={{ background: "#FF8A00" }}></div>
-          
+        {/* Header - Transparent */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
           <div className="relative z-10">
             <div className="flex items-center gap-4 flex-wrap">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ border: "1px solid rgba(255, 138, 0, 0.6)", background: "rgba(255, 138, 0, 0.1)", boxShadow: "0 0 15px rgba(255, 138, 0, 0.2)" }}
-              >
-                <Compass className="w-5 h-5 text-[#FF9D1A] animate-spin-slow" />
-              </div>
               <h1 className="text-[20px] sm:text-[24px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
                 GEOSPATIAL INTELLIGENCE MAP
               </h1>
@@ -50,9 +39,6 @@ export const MapPage: React.FC = () => {
                 AUTOFOCUSED VOLVE CLUSTER
               </span>
             </div>
-            <p className="text-[13px] text-[#A1A1AA] mt-3 font-['Inter',sans-serif] max-w-3xl leading-relaxed">
-              Surface coordinates ingested from Norwegian Offshore Directorate (NPD). Distances labeled as Surface Platform Slot Distance.
-            </p>
           </div>
 
           <div 
@@ -76,33 +62,6 @@ export const MapPage: React.FC = () => {
           onSelectWell={(wId) => setSelectedWell(wId)}
           onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
         />
-
-        {/* Scientific Provenance Callout Banner */}
-        <div 
-          className="rounded-[16px] p-[20px] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300"
-          style={{
-            background: "rgba(18, 16, 14, 0.75)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            border: "1px solid rgba(255, 138, 0, 0.15)",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.4)" }}
-            >
-              <ShieldAlert className="w-4 h-4 text-[#60A5FA]" />
-            </div>
-            <span className="text-[13px] text-[#E2E2E2] font-mono leading-relaxed">
-              Surface Slot Distance represents platform slot header separation on the Volve Platform Complex deck.
-            </span>
-          </div>
-          <span className="text-[#60A5FA] font-[700] text-[12px] uppercase tracking-widest font-mono whitespace-nowrap bg-[rgba(59,130,246,0.1)] px-[10px] py-[6px] rounded-[6px] border border-[rgba(59,130,246,0.2)]">
-            NPD Verified Coordinates
-          </span>
-        </div>
       </div>
     </div>
   );
