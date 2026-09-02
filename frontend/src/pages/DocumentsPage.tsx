@@ -491,63 +491,90 @@ export const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 font-mono pb-16">
-      {/* Top Header Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              eRTMAC DOCUMENT & KNOWLEDGE HUB
-            </span>
-            <span className="text-xs text-slate-500">• Unified OCR, Ingestion & RAG</span>
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <FileText className="w-6 h-6 text-cyan-400" />
-            Documents Repository
-          </h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Unified console for typed technical reports (PDF/DOCX), handwritten shift log OCR, human verification, and Gemini-powered RAG knowledge intelligence.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadAllData}
-            className="p-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700/60 transition-all shadow-sm"
-            title="Refresh documents list"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-cyan-400" : ""}`} />
-          </button>
-
-          <button
-            onClick={() => {
-              setUploadMsg(null);
-              setShowUploadModal(true);
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all transform active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>NEW DOCUMENT</span>
-          </button>
-        </div>
+    <>
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "url('/bg-map.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.15,
+        }}
+      />
+      {/* Ambient Lights */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[20%] right-[10%] w-[600px] h-[600px] bg-[#FF8A00] rounded-full mix-blend-screen filter blur-[150px] opacity-10" />
+        <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-[#FF8A00] rounded-full mix-blend-screen filter blur-[120px] opacity-[0.05]" />
       </div>
+      <div className="space-y-6 font-mono pb-16 relative z-10">
+        {/* Top Header Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider text-[#FF9D1A] border" style={{ background: "rgba(255,140,0,0.10)", borderColor: "rgba(255,140,0,0.3)" }}>
+                eRTMAC DOCUMENT & KNOWLEDGE HUB
+              </span>
+              <span className="text-xs text-slate-500">• Unified OCR, Ingestion & RAG</span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+              DOCUMENTS REPOSITORY
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadAllData}
+              className="p-2.5 rounded-xl transition-all shadow-sm group hover:-translate-y-[1px]"
+              style={{ background: "rgba(10, 10, 10, 0.5)", border: "1px solid rgba(255, 145, 0, 0.2)" }}
+              title="Refresh documents list"
+            >
+              <RefreshCw className={`w-4 h-4 text-slate-400 group-hover:text-[#FF9D1A] ${loading ? "animate-spin text-[#FF9D1A]" : ""}`} />
+            </button>
+
+            <button
+              onClick={() => {
+                setUploadMsg(null);
+                setShowUploadModal(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-[#FF9D1A] transition-all transform active:scale-95 group hover:-translate-y-[1px] hover:text-[#FFF]"
+              style={{ 
+                background: "rgba(255,140,0,0.10)", 
+                border: "1px solid rgba(255, 145, 0, 0.4)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,140,0,0.20)";
+                e.currentTarget.style.boxShadow = "0 0 22px rgba(255,140,0,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,140,0,0.10)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <Plus className="w-4 h-4 group-hover:text-[#FFF]" />
+              <span>NEW DOCUMENT</span>
+            </button>
+          </div>
+        </div>
 
       {/* Search Bar & Ask AI Button Row */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {/* Search Bar */}
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#FF9D1A] transition-colors" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search documents by filename, note title, well ID, or keywords..."
-            className="w-full bg-slate-900/90 border border-slate-800 hover:border-slate-700 focus:border-cyan-500/80 rounded-xl pl-11 pr-4 py-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none transition-all shadow-inner"
+            className="w-full rounded-xl pl-11 pr-4 py-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none transition-all focus:shadow-[0_0_15px_rgba(255,140,0,0.2)]"
+            style={{ background: "rgba(10, 10, 10, 0.72)", border: "1px solid rgba(255, 145, 0, 0.15)", backdropFilter: "blur(14px)" }}
+            onFocus={(e) => e.target.style.borderColor = "rgba(255, 145, 0, 0.5)"}
+            onBlur={(e) => e.target.style.borderColor = "rgba(255, 145, 0, 0.15)"}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#FF9D1A]"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -557,27 +584,40 @@ export const DocumentsPage: React.FC = () => {
         {/* ASK AI (Gemini RAG Chat) Button */}
         <button
           onClick={() => setShowChatDrawer(true)}
-          className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900/90 border border-cyan-500/40 hover:border-cyan-400 shadow-lg shadow-cyan-950/50 transition-all group shrink-0"
+          className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs text-[#FF9D1A] transition-all group shrink-0 hover:-translate-y-[1px]"
+          style={{ background: "rgba(10, 10, 10, 0.72)", border: "1px solid rgba(255, 145, 0, 0.3)", backdropFilter: "blur(14px)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = "0 0 20px rgba(255,140,0,0.3)";
+            e.currentTarget.style.borderColor = "rgba(255, 145, 0, 0.6)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "none";
+            e.currentTarget.style.borderColor = "rgba(255, 145, 0, 0.3)";
+          }}
         >
-          <Sparkles className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
-          <span className="tracking-wider">ASK AI (GEMINI RAG)</span>
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <Sparkles className="w-4 h-4 text-[#FF9D1A] group-hover:rotate-12 transition-transform group-hover:brightness-125" />
+          <span className="tracking-wider group-hover:brightness-125">ASK AI (GEMINI RAG)</span>
+          <span className="w-2 h-2 rounded-full bg-[#FF9D1A] animate-pulse" />
         </button>
       </div>
 
       {/* Status Segmented Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-[rgba(255,145,0,0.15)] pb-2">
         <button
           onClick={() => setStatusFilter("ALL")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             statusFilter === "ALL"
-              ? "bg-slate-800 text-white border border-slate-700 shadow-md"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              ? "text-[#FFF] shadow-[0_0_15px_rgba(255,140,0,0.2)]"
+              : "text-slate-400 hover:text-[#FF9D1A]"
           }`}
+          style={{
+            background: statusFilter === "ALL" ? "rgba(255,140,0,0.15)" : "rgba(10,10,10,0.5)",
+            border: statusFilter === "ALL" ? "1px solid rgba(255, 145, 0, 0.5)" : "1px solid rgba(255, 145, 0, 0.1)",
+          }}
         >
-          <Layers className="w-3.5 h-3.5 text-blue-400" />
+          <Layers className={`w-3.5 h-3.5 ${statusFilter === "ALL" ? "text-[#FF9D1A]" : "text-slate-500"}`} />
           <span>ALL DOCUMENTS</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950 text-slate-300 border border-slate-800">
+          <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,145,0,0.2)", color: statusFilter === "ALL" ? "#FFF" : "#888" }}>
             {unifiedItems.length}
           </span>
         </button>
@@ -586,13 +626,17 @@ export const DocumentsPage: React.FC = () => {
           onClick={() => setStatusFilter("YET_TO_BE_VERIFIED")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             statusFilter === "YET_TO_BE_VERIFIED"
-              ? "bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-md"
-              : "text-slate-400 hover:text-amber-300 hover:bg-slate-900"
+              ? "text-[#FFF] shadow-[0_0_15px_rgba(255,140,0,0.2)]"
+              : "text-slate-400 hover:text-[#FF9D1A]"
           }`}
+          style={{
+            background: statusFilter === "YET_TO_BE_VERIFIED" ? "rgba(255,140,0,0.15)" : "rgba(10,10,10,0.5)",
+            border: statusFilter === "YET_TO_BE_VERIFIED" ? "1px solid rgba(255, 145, 0, 0.5)" : "1px solid rgba(255, 145, 0, 0.1)",
+          }}
         >
-          <Clock className="w-3.5 h-3.5 text-amber-400" />
+          <Clock className={`w-3.5 h-3.5 ${statusFilter === "YET_TO_BE_VERIFIED" ? "text-[#FF9D1A]" : "text-slate-500"}`} />
           <span>YET TO BE VERIFIED</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-950 text-amber-300 border border-amber-500/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,145,0,0.2)", color: statusFilter === "YET_TO_BE_VERIFIED" ? "#FFF" : "#888" }}>
             {unifiedItems.filter((i) => i.verificationStatus === "YET_TO_BE_VERIFIED").length}
           </span>
         </button>
@@ -601,38 +645,45 @@ export const DocumentsPage: React.FC = () => {
           onClick={() => setStatusFilter("VERIFIED")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             statusFilter === "VERIFIED"
-              ? "bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 shadow-md"
-              : "text-slate-400 hover:text-emerald-300 hover:bg-slate-900"
+              ? "text-[#FFF] shadow-[0_0_15px_rgba(255,140,0,0.2)]"
+              : "text-slate-400 hover:text-[#FF9D1A]"
           }`}
+          style={{
+            background: statusFilter === "VERIFIED" ? "rgba(255,140,0,0.15)" : "rgba(10,10,10,0.5)",
+            border: statusFilter === "VERIFIED" ? "1px solid rgba(255, 145, 0, 0.5)" : "1px solid rgba(255, 145, 0, 0.1)",
+          }}
         >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <ShieldCheck className={`w-3.5 h-3.5 ${statusFilter === "VERIFIED" ? "text-[#FF9D1A]" : "text-slate-500"}`} />
           <span>VERIFIED</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,145,0,0.2)", color: statusFilter === "VERIFIED" ? "#FFF" : "#888" }}>
             {unifiedItems.filter((i) => i.verificationStatus === "VERIFIED").length}
           </span>
         </button>
       </div>
 
       {/* Unified Documents Table List */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between text-xs font-bold text-slate-300 bg-slate-950/40">
-          <span>Documents & OCR Ingestions ({filteredItems.length} records)</span>
-          <span className="text-[11px] text-slate-500">Associated Active Well: <strong className="text-cyan-400">{selectedWell}</strong></span>
+      <div 
+        className="rounded-2xl overflow-hidden shadow-[0_8px_35px_rgba(0,0,0,0.35)]"
+        style={{ background: "rgba(10, 10, 10, 0.72)", backdropFilter: "blur(14px)", border: "1px solid rgba(255, 145, 0, 0.15)", borderTop: "1px solid rgba(255,145,0,0.4)" }}
+      >
+        <div className="p-4 flex items-center justify-between text-xs font-bold text-slate-300" style={{ borderBottom: "1px solid rgba(255,145,0,0.15)", background: "rgba(0,0,0,0.2)" }}>
+          <span className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF9D1A]" /> Documents & OCR Ingestions ({filteredItems.length} records)</span>
+          <span className="text-[11px] text-slate-400">Associated Active Well: <strong className="text-[#FF9D1A]">{selectedWell}</strong></span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 font-bold tracking-wider">
-                <th className="p-3.5">SOURCE / TYPE</th>
-                <th className="p-3.5">DOCUMENT TITLE / FILENAME</th>
-                <th className="p-3.5">UPLOADED AT</th>
-                <th className="p-3.5">STATUS</th>
-                <th className="p-3.5">ENTITIES / EVENTS</th>
-                <th className="p-3.5 text-right">ACTIONS</th>
+              <tr className="text-[#FF9D1A] font-bold tracking-wider" style={{ borderBottom: "1px solid rgba(255,145,0,0.15)", background: "rgba(0,0,0,0.3)" }}>
+                <th className="p-3.5 font-semibold text-[11px]">SOURCE / TYPE</th>
+                <th className="p-3.5 font-semibold text-[11px]">DOCUMENT TITLE / FILENAME</th>
+                <th className="p-3.5 font-semibold text-[11px]">UPLOADED AT</th>
+                <th className="p-3.5 font-semibold text-[11px]">STATUS</th>
+                <th className="p-3.5 font-semibold text-[11px]">ENTITIES / EVENTS</th>
+                <th className="p-3.5 text-right font-semibold text-[11px]">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80">
+            <tbody className="divide-y divide-[rgba(255,145,0,0.05)]">
               {filteredItems.length === 0 && !loading && (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-slate-500">
@@ -647,18 +698,27 @@ export const DocumentsPage: React.FC = () => {
                 <tr
                   key={item.id}
                   onClick={() => openItemDetails(item)}
-                  className="hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                  className="cursor-pointer transition-colors group"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255,145,0,0.05)";
+                    e.currentTarget.style.boxShadow = "inset 2px 0 0 #FF9D1A, inset -2px 0 0 #FF9D1A";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(0,0,0,0.4)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 >
                   {/* Source Type Badge */}
                   <td className="p-3.5">
                     {item.sourceType === "DIGITAL_DOC" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-950/70 text-blue-300 border border-blue-500/30">
-                        <FileCode className="w-3 h-3 text-blue-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all group-hover:brightness-125 group-hover:shadow-[0_0_10px_rgba(255,145,0,0.2)]" style={{ background: "rgba(10,10,10,0.6)", color: "#FF9D1A", border: "1px solid rgba(255,145,0,0.3)" }}>
+                        <FileCode className="w-3 h-3 text-[#FF9D1A]" />
                         DIGITAL {item.fileType}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-950/70 text-indigo-300 border border-indigo-500/30">
-                        <ImageIcon className="w-3 h-3 text-indigo-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all group-hover:brightness-125 group-hover:shadow-[0_0_10px_rgba(255,145,0,0.2)]" style={{ background: "rgba(10,10,10,0.6)", color: "#FF9D1A", border: "1px solid rgba(255,145,0,0.3)" }}>
+                        <ImageIcon className="w-3 h-3 text-[#FF9D1A]" />
                         HANDWRITTEN OCR
                       </span>
                     )}
@@ -666,8 +726,8 @@ export const DocumentsPage: React.FC = () => {
 
                   {/* Document Title / Filename */}
                   <td className="p-3.5">
-                    <div className="font-bold text-slate-100 group-hover:text-cyan-300 transition-colors flex items-center gap-2">
-                      <span className="truncate max-w-xs sm:max-w-md">{item.title}</span>
+                    <div className="font-bold text-slate-100 group-hover:text-white transition-colors flex items-center gap-2">
+                      <span className="truncate max-w-xs sm:max-w-md group-hover:brightness-125">{item.title}</span>
                     </div>
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-2">
                       <span>ID: {item.id.slice(0, 16)}...</span>
@@ -683,20 +743,20 @@ export const DocumentsPage: React.FC = () => {
                   {/* Verification Status */}
                   <td className="p-3.5">
                     {item.verificationStatus === "VERIFIED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all" style={{ background: "rgba(10,10,10,0.6)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.4)", boxShadow: "0 0 10px rgba(16, 185, 129, 0.1)" }}>
+                        <CheckCircle2 className="w-3 h-3 text-[#10b981]" />
                         VERIFIED
                       </span>
                     )}
                     {item.verificationStatus === "YET_TO_BE_VERIFIED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-500/30 animate-pulse">
-                        <Clock className="w-3 h-3 text-amber-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold animate-pulse transition-all" style={{ background: "rgba(10,10,10,0.6)", color: "#f59e0b", border: "1px solid rgba(245, 158, 11, 0.4)", boxShadow: "0 0 10px rgba(245, 158, 11, 0.1)" }}>
+                        <Clock className="w-3 h-3 text-[#f59e0b]" />
                         NEEDS REVIEW
                       </span>
                     )}
                     {item.verificationStatus === "REJECTED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/30">
-                        <XCircle className="w-3 h-3 text-rose-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all" style={{ background: "rgba(10,10,10,0.6)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.4)", boxShadow: "0 0 10px rgba(239, 68, 68, 0.1)" }}>
+                        <XCircle className="w-3 h-3 text-[#ef4444]" />
                         REJECTED
                       </span>
                     )}
@@ -705,11 +765,11 @@ export const DocumentsPage: React.FC = () => {
                   {/* Extracted Entities / Events */}
                   <td className="p-3.5">
                     {item.sourceType === "DIGITAL_DOC" ? (
-                      <span className="text-[11px] text-cyan-400 font-bold">
+                      <span className="text-[11px] text-[#FF9D1A] font-bold opacity-80 group-hover:opacity-100">
                         {item.eventsCount} events parsed
                       </span>
                     ) : (
-                      <span className="text-[11px] text-indigo-400 font-bold">
+                      <span className="text-[11px] text-rose-400 font-bold opacity-80 group-hover:opacity-100">
                         {item.confidenceLevel || "HIGH"} confidence
                       </span>
                     )}
@@ -723,8 +783,17 @@ export const DocumentsPage: React.FC = () => {
                         <button
                           onClick={(e) => handleDirectVerifyNote(item, e)}
                           disabled={verifyingNoteId === item.id}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-[11px] font-bold transition shadow-sm flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-lg disabled:opacity-50 text-[#10b981] text-[11px] font-bold transition shadow-sm flex items-center gap-1 hover:-translate-y-[1px]"
+                          style={{ background: "rgba(10,10,10,0.6)", border: "1px solid rgba(16,185,129,0.3)" }}
                           title="Quick Approve & Verify Note"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(16,185,129,0.6)";
+                            e.currentTarget.style.boxShadow = "0 0 15px rgba(16,185,129,0.3)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(16,185,129,0.3)";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
                         >
                           {verifyingNoteId === item.id ? (
                             <RefreshCw className="w-3 h-3 animate-spin" />
@@ -737,9 +806,20 @@ export const DocumentsPage: React.FC = () => {
 
                       <button
                         onClick={() => openItemDetails(item)}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 transition flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-lg text-[#FF9D1A] text-[11px] font-bold transition flex items-center gap-1 hover:-translate-y-[1px]"
+                        style={{ background: "rgba(10,10,10,0.6)", border: "1px solid rgba(255,145,0,0.3)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = "rgba(255,145,0,0.8)";
+                          e.currentTarget.style.boxShadow = "0 0 18px rgba(255,140,0,0.45)";
+                          e.currentTarget.style.background = "rgba(255,145,0,0.15)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "rgba(255,145,0,0.3)";
+                          e.currentTarget.style.boxShadow = "none";
+                          e.currentTarget.style.background = "rgba(10,10,10,0.6)";
+                        }}
                       >
-                        <Eye className="w-3 h-3 text-cyan-400" />
+                        <Eye className="w-3 h-3 text-[#FF9D1A]" />
                         <span>{item.verificationStatus === "YET_TO_BE_VERIFIED" ? "REVIEW" : "VIEW"}</span>
                       </button>
 
@@ -1307,6 +1387,7 @@ export const DocumentsPage: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
