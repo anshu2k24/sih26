@@ -38,7 +38,7 @@ import { Sidebar } from "./components/layout/Sidebar";
 function AppShell() {
   return (
     <ActiveWellProvider>
-      <div className="min-h-screen bg-[#070B14] text-[#E8EEF7] font-sans flex">
+      <div className="min-h-screen bg-[#050608] text-[#E8EEF7] font-sans flex">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <Header />

@@ -54,8 +54,8 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className={`bg-[#070B14]/80 backdrop-blur-xl border-r border-slate-800/60 flex flex-col justify-between transition-all duration-300 z-40 sticky top-0 h-screen ${
-        collapsed ? "w-16" : "w-64"
+      className={`bg-[#050608]/90 backdrop-blur-xl border-r border-[#FF7A00]/10 flex flex-col justify-between transition-all duration-300 z-40 sticky top-0 h-screen ${
+        collapsed ? "w-[70px]" : "w-64"
       }`}
     >
       {/* Top Brand Banner */}
@@ -63,7 +63,7 @@ export const Sidebar: React.FC = () => {
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           {!collapsed ? (
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+              <div className="p-2 bg-orange-600/20 text-orange-400 rounded-xl border border-orange-500/30">
                 <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
               </div>
               <div>
@@ -76,7 +76,7 @@ export const Sidebar: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 mx-auto">
+            <div className="p-2 bg-orange-600/20 text-orange-400 rounded-xl border border-orange-500/30 mx-auto">
               <Cylinder className="w-5 h-5 animate-pulse" strokeWidth={1.5} />
             </div>
           )}
@@ -100,11 +100,22 @@ export const Sidebar: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `group flex items-center gap-3 px-3 py-3 rounded-xl font-mono text-xs transition-all duration-300 border ${
+                  `group flex items-center gap-3 px-3 py-3 rounded-[12px] font-mono text-xs transition-all duration-300 border ${
                     isActive
-                      ? "bg-orange-950/60 text-orange-400 border-orange-500/60 shadow-[0_0_20px_rgba(255,140,0,0.4)] font-bold scale-[1.02] group-hover/nav:bg-transparent group-hover/nav:text-slate-500 group-hover/nav:border-transparent group-hover/nav:shadow-none group-hover/nav:scale-100 group-hover/nav:font-medium hover:!bg-orange-950/60 hover:!text-orange-400 hover:!border-orange-500/60 hover:!shadow-[0_0_20px_rgba(255,140,0,0.4)] hover:!scale-[1.02] hover:!font-bold"
-                      : "text-slate-500 border-transparent hover:text-orange-400 hover:bg-orange-950/30 hover:border-orange-500/40 hover:shadow-[0_0_15px_rgba(255,140,0,0.3)] hover:scale-[1.02] font-medium"
-                  } ${collapsed ? "justify-center w-11 h-11 mx-auto p-0" : ""}`
+                      ? "font-bold scale-[1.02]"
+                      : "text-slate-500 border-transparent hover:text-[#FF7A00] hover:bg-[#FF7A00]/5 hover:border-[#FF7A00]/20 hover:shadow-[0_0_10px_rgba(255,122,0,0.1)] hover:scale-[1.02] font-medium"
+                  } ${collapsed ? "justify-center w-12 h-12 mx-auto p-0" : ""}`
+                }
+                style={
+                  ({ isActive }) =>
+                    isActive
+                      ? {
+                          color: "#FF7A00",
+                          background: "rgba(255,122,0,0.08)",
+                          border: "1px solid rgba(255,122,0,0.3)",
+                          boxShadow: "0 0 16px rgba(255,122,0,0.1)",
+                        }
+                      : {}
                 }
                 title={collapsed ? item.label : undefined}
               >
@@ -121,15 +132,15 @@ export const Sidebar: React.FC = () => {
         {!collapsed ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 px-1">
-              <div className="w-8 h-8 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-400 flex items-center justify-center font-bold font-mono text-xs">
+              <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center font-bold font-mono text-xs">
                 {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
               </div>
               <div className="overflow-hidden flex-1">
                 <span className="text-xs font-bold text-white font-mono block truncate">
                   {profile?.full_name || profile?.email || "Operator"}
                 </span>
-                <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1 font-semibold">
-                  <Shield className="w-3 h-3 text-cyan-400" />
+                <span className="text-[10px] text-orange-400 font-mono flex items-center gap-1 font-semibold">
+                  <Shield className="w-3 h-3 text-orange-400" />
                   {profile?.role || "ADMIN"}
                 </span>
               </div>
