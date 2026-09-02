@@ -21,45 +21,49 @@ const createActiveMarkerIcon = (wellId: string) =>
     className: "custom-active-marker",
     html: `
       <div class="relative flex items-center justify-center">
-        <div class="absolute w-8 h-8 rounded-full bg-amber-500/40 animate-ping"></div>
-        <div class="w-7 h-7 rounded-full bg-slate-950 border-2 border-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/50">
-          <span class="text-amber-400 font-bold text-xs">★</span>
+        <div class="absolute w-10 h-10 rounded-full bg-[#FF8A00]/40 animate-ping shadow-[0_0_20px_#FF8A00]"></div>
+        <div class="w-8 h-8 rounded-full bg-[#050607] border-[2px] border-[#FF9D1A] flex items-center justify-center shadow-[0_0_15px_rgba(255,157,26,0.6)]">
+          <span class="text-[#FF9D1A] font-bold text-sm drop-shadow-[0_0_5px_#FF9D1A]">★</span>
         </div>
-        <div class="absolute top-8 whitespace-nowrap bg-slate-900/95 text-amber-300 font-mono text-[10px] px-2 py-0.5 rounded border border-amber-500/40 shadow">
+        <div class="absolute top-10 whitespace-nowrap bg-[rgba(18,16,14,0.95)] backdrop-blur-md text-[#FF9D1A] font-mono font-bold text-[11px] px-[8px] py-[4px] rounded-[6px] border border-[rgba(255,138,0,0.5)] shadow-[0_4px_15px_rgba(0,0,0,0.6)] uppercase tracking-wider">
           ★ ${wellId} (ACTIVE)
         </div>
       </div>
     `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 
 const createNearbyMarkerIcon = (wellId: string, isSelected: boolean, hasAlert: boolean = false) => {
-  const color = hasAlert ? "#ef4444" : isSelected ? "#f59e0b" : "#d97706";
+  const color = hasAlert ? "#FF3250" : isSelected ? "#FF9D1A" : "#FF8A00";
+  const bg = isSelected ? "rgba(255,138,0,0.15)" : "rgba(18, 16, 14, 0.95)";
   const label = hasAlert ? `⚠ ${wellId}` : `● ${wellId}`;
   return L.divIcon({
     className: "custom-nearby-marker",
     html: `
       <div style="
-        background: rgba(15, 23, 42, 0.95);
+        background: ${bg};
+        backdrop-filter: blur(8px);
         border: 1.5px solid ${color};
         color: ${color};
-        padding: 2px 7px;
+        padding: 4px 10px;
         border-radius: 9999px;
-        font-family: monospace;
-        font-size: 10px;
-        font-weight: bold;
+        font-family: 'Space Grotesk', monospace;
+        font-size: 11px;
+        font-weight: 700;
         white-space: nowrap;
-        box-shadow: 0 0 ${hasAlert ? "14px rgba(245, 158, 11, 0.7)" : "8px rgba(16, 185, 129, 0.4)"};
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 ${hasAlert ? "20px rgba(255,50,80,0.6)" : "10px rgba(255,138,0,0.3)"};
         display: flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
+        letter-spacing: 0.05em;
+        transition: all 0.3s ease;
       ">
         ${label}
       </div>
     `,
-    iconSize: [84, 24],
-    iconAnchor: [42, 12],
+    iconSize: [90, 28],
+    iconAnchor: [45, 14],
   });
 };
 
@@ -81,7 +85,7 @@ const MapController: React.FC<MapControllerProps> = ({ center, nearbyWells = [] 
 
       if (points.length > 1) {
         const bounds = L.latLngBounds(points);
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16, animate: true, duration: 1.2 });
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16, animate: true, duration: 1.2 });
       } else {
         map.setView(center, 15, { animate: true });
       }
@@ -147,64 +151,106 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
 
   return (
     <div 
-      className="rounded-3xl p-5 space-y-4 transition-all duration-500 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]"
+      className="rounded-[20px] p-[24px] space-y-[20px] transition-all duration-300 relative group"
       style={{
-        background: "linear-gradient(145deg, rgba(20, 20, 20, 0.72), rgba(10, 10, 10, 0.60))",
-        border: "1px solid rgba(245, 158, 11, 0.2)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        boxShadow: "0 25px 70px rgba(0, 0, 0, 0.45)"
+        background: "rgba(18, 16, 14, 0.75)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(255, 138, 0, 0.25)",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,138,0,0.05)"
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "rgba(255, 138, 0, 0.4)";
+        e.currentTarget.style.boxShadow = "0 15px 50px rgba(0,0,0,0.5), 0 0 30px rgba(255,138,0,0.1), inset 0 0 30px rgba(255,138,0,0.08)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "rgba(255, 138, 0, 0.25)";
+        e.currentTarget.style.boxShadow = "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,138,0,0.05)";
       }}
     >
       {/* Header Controls Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-[rgba(255,138,0,0.2)] pb-[20px]">
         <div>
-          <div className="flex items-center gap-2">
-            <Compass className="w-5 h-5 text-amber-500 animate-spin-slow" />
-            <h2 className="text-base font-bold text-white font-mono tracking-tight">
+          <div className="flex items-center gap-3">
+            <Compass className="w-5 h-5 text-[#FF9D1A] animate-spin-slow drop-shadow-[0_0_5px_rgba(255,157,26,0.6)]" />
+            <h2 className="text-[18px] font-[700] text-white font-['Space_Grotesk',sans-serif] uppercase tracking-wider drop-shadow-sm">
               Nearby Wells Intelligence Map
             </h2>
-            <span className="text-xs px-2 py-0.5 rounded bg-amber-950/80 text-amber-500 border border-amber-500/30 font-mono shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+            <span className="text-[10px] px-[8px] py-[2px] rounded-[6px] font-[700] font-mono tracking-wider uppercase border"
+              style={{ background: "rgba(255, 138, 0, 0.15)", borderColor: "rgba(255, 138, 0, 0.4)", color: "#FF9D1A" }}
+            >
               NWIS GEOSPATIAL
             </span>
           </div>
-          <p className="text-xs text-slate-300 mt-1 font-mono">
-            Interactive map-based offset intelligence for <strong>{selectedWell}</strong> in Equinor Volve Field (Block 15/9, North Sea).
+          <p className="text-[13px] text-[#A1A1AA] mt-2 font-mono">
+            Interactive map-based offset intelligence for <strong className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">{selectedWell}</strong> in Equinor Volve Field (Block 15/9, North Sea).
           </p>
         </div>
 
         {/* Search Radius Controls */}
-        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)] hover:shadow-[0_0_15px_rgba(245,158,11,0.2)] transition-all">
-          <Layers className="w-4 h-4 text-amber-500/70 ml-1" />
-          <span className="text-xs text-slate-300 font-mono font-medium">Search Radius:</span>
-          <div className="flex items-center gap-1">
-            {radiusOptions.map((r) => (
-              <button
-                key={r}
-                onClick={() => setRadiusKm(r)}
-                className={`text-xs px-2.5 py-1 rounded font-mono font-semibold transition-all ${
-                  radiusKm === r
-                    ? "bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.6)]"
-                    : "bg-black/50 text-slate-300 hover:bg-amber-950 hover:text-amber-500 hover:shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                }`}
-              >
-                {r < 1 ? `${r * 1000}m` : `${r}km`}
-              </button>
-            ))}
+        <div 
+          className="flex items-center gap-[12px] p-[6px] rounded-[12px] border transition-all duration-300"
+          style={{ background: "rgba(0,0,0,0.6)", borderColor: "rgba(255,138,0,0.3)", boxShadow: "inset 0 0 15px rgba(255,138,0,0.05)" }}
+        >
+          <Layers className="w-4 h-4 text-[#FF8A00] ml-2 drop-shadow-[0_0_5px_rgba(255,138,0,0.5)]" />
+          <span className="text-[11px] text-[#E2E2E2] font-[700] uppercase tracking-wider">Search Radius:</span>
+          <div className="flex items-center gap-[4px] pr-[2px]">
+            {radiusOptions.map((r) => {
+              const isActive = radiusKm === r;
+              return (
+                <button
+                  key={r}
+                  onClick={() => setRadiusKm(r)}
+                  className="text-[11px] px-[12px] py-[6px] rounded-[8px] font-[700] uppercase tracking-wider transition-all duration-200"
+                  style={
+                    isActive
+                      ? {
+                          background: "radial-gradient(circle at top, rgba(255,138,0,0.35), rgba(255,138,0,0.15))",
+                          color: "#FFFFFF",
+                          border: "1px solid rgba(255, 138, 0, 0.8)",
+                          boxShadow: "0 4px 15px rgba(255, 138, 0, 0.25), inset 0 0 10px rgba(255,138,0,0.2)",
+                          textShadow: "0 0 8px rgba(255,138,0,0.5)"
+                        }
+                      : {
+                          background: "transparent",
+                          color: "#A1A1AA",
+                          border: "1px solid transparent",
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "rgba(255, 138, 0, 0.1)";
+                      e.currentTarget.style.color = "#FF9D1A";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#A1A1AA";
+                    }
+                  }}
+                >
+                  {r < 1 ? `${r * 1000}m` : `${r}km`}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Main Grid: Map (2/3) + Nearby Wells List (1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
         {/* Map Container */}
-        <div className="lg:col-span-2 relative h-[450px] rounded-2xl overflow-hidden border border-amber-500/20 shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)]">
+        <div 
+          className="lg:col-span-2 relative h-[500px] rounded-[16px] overflow-hidden transition-all duration-300"
+          style={{ border: "1px solid rgba(255, 138, 0, 0.25)", boxShadow: "0 10px 40px rgba(0,0,0,0.6)" }}
+        >
           {activeWellCoords ? (
             <MapContainer
               center={activeWellCoords}
               zoom={radiusKm <= 0.5 ? 17 : radiusKm <= 1.0 ? 16 : radiusKm <= 5.0 ? 15 : radiusKm <= 10.0 ? 14 : 13}
               scrollWheelZoom={true}
-              style={{ height: "100%", width: "100%" }}
+              style={{ height: "100%", width: "100%", backgroundColor: "#050607" }}
               className="z-10"
             >
               <MapController
@@ -221,11 +267,11 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                 center={activeWellCoords}
                 radius={radiusKm * 1000}
                 pathOptions={{
-                  color: "#f59e0b",
-                  fillColor: "#f59e0b",
+                  color: "#FF8A00",
+                  fillColor: "#FF8A00",
                   fillOpacity: 0.08,
-                  weight: 1.5,
-                  dashArray: "4, 6",
+                  weight: 2,
+                  dashArray: "6, 8",
                 }}
               />
 
@@ -235,21 +281,24 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                 icon={createActiveMarkerIcon(selectedWell)}
               >
                 <Popup className="custom-leaflet-popup">
-                  <div className="p-2 space-y-1 font-sans text-xs">
-                    <div className="font-bold text-amber-400 font-mono text-sm border-b border-slate-700 pb-1">
-                      ★ {selectedWell} (ACTIVE WELL)
+                  <div 
+                    className="p-[12px] space-y-[8px] font-mono text-[11px] rounded-[8px]"
+                    style={{ background: "rgba(18,16,14,0.95)", border: "1px solid rgba(255,138,0,0.3)" }}
+                  >
+                    <div className="font-[700] text-[#FF9D1A] text-[12px] border-b border-[rgba(255,138,0,0.2)] pb-[8px] uppercase tracking-wider flex items-center gap-2">
+                      <span className="drop-shadow-[0_0_5px_#FF9D1A]">★</span> {selectedWell} <span className="text-[#A1A1AA] text-[10px]">(ACTIVE)</span>
                     </div>
-                    <div className="text-slate-300">
-                      <strong>Status:</strong> {activeWellItem?.status || "Active Drilling"}
+                    <div className="text-[#E2E2E2]">
+                      <strong className="text-[#FF8A00]">Status:</strong> {activeWellItem?.status || "Active Drilling"}
                     </div>
-                    <div className="text-slate-300">
-                      <strong>Field:</strong> {activeWellItem?.field || "Volve (Block 15/9)"}
+                    <div className="text-[#E2E2E2]">
+                      <strong className="text-[#FF8A00]">Field:</strong> {activeWellItem?.field || "Volve (Block 15/9)"}
                     </div>
-                    <div className="text-slate-300">
-                      <strong>Slot:</strong> {activeWellItem?.slot_name || "Slot 3"}
+                    <div className="text-[#E2E2E2]">
+                      <strong className="text-[#FF8A00]">Slot:</strong> {activeWellItem?.slot_name || "Slot 3"}
                     </div>
-                    <div className="text-slate-300">
-                      <strong>Coordinates:</strong> {activeWellCoords[0].toFixed(5)}°N, {activeWellCoords[1].toFixed(5)}°E
+                    <div className="text-[#E2E2E2]">
+                      <strong className="text-[#FF8A00]">Coordinates:</strong> {activeWellCoords[0].toFixed(5)}°N, {activeWellCoords[1].toFixed(5)}°E
                     </div>
                   </div>
                 </Popup>
@@ -271,54 +320,66 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                       click: () => setSelectedNearbyWellId(nw.well_id),
                     }}
                   >
-                    <Popup>
-                      <div className="p-2 space-y-1.5 font-sans text-xs">
-                        <div className="font-bold text-amber-500 font-mono text-sm border-b border-slate-700 pb-1 flex items-center justify-between gap-2">
+                    <Popup className="custom-leaflet-popup">
+                      <div 
+                        className="p-[12px] space-y-[10px] font-mono text-[11px] rounded-[8px]"
+                        style={{ background: "rgba(18,16,14,0.95)", border: "1px solid rgba(255,138,0,0.3)" }}
+                      >
+                        <div className="font-[700] text-[#FF9D1A] text-[12px] border-b border-[rgba(255,138,0,0.2)] pb-[8px] uppercase tracking-wider flex items-center justify-between gap-[16px]">
                           <span>{hasAlert ? `⚠ ${nw.well_id}` : `● ${nw.well_id}`}</span>
-                          <span className="text-amber-500 font-mono text-[11px] bg-black px-1.5 py-0.5 rounded border border-amber-500/30">
+                          <span 
+                            className="bg-[rgba(255,138,0,0.15)] text-[#FF9D1A] px-[6px] py-[2px] rounded-[4px] border border-[rgba(255,138,0,0.4)]"
+                          >
                             {formatDistance(nw.distance_km, nw.distance_m)}
                           </span>
                         </div>
 
                         {matchForWell && (
-                          <div className="bg-amber-950/90 text-amber-300 font-mono text-[11px] p-2 rounded border border-amber-500/40 space-y-0.5">
-                            <div className="font-bold text-amber-400 flex items-center gap-1 uppercase">
-                              <span>⚠ {matchForWell.proximity_classification}</span>
+                          <div 
+                            className="p-[8px] rounded-[6px] space-y-[4px]"
+                            style={{ background: "rgba(255,50,80,0.1)", border: "1px solid rgba(255,50,80,0.4)" }}
+                          >
+                            <div className="font-[700] text-[#FF3250] flex items-center gap-[4px] uppercase drop-shadow-[0_0_5px_rgba(255,50,80,0.5)]">
+                              <span>⚠</span> {matchForWell.proximity_classification}
                             </div>
-                            <div>Event: <strong>{matchForWell.event_type}</strong> @ {matchForWell.event_md}m</div>
-                            <div>Depth Delta: <strong>Δ {matchForWell.delta_md}m</strong></div>
-                            <div className="text-[9px] text-amber-400/80 mt-1 uppercase font-bold">
+                            <div className="text-[#E2E2E2]">Event: <strong className="text-white">{matchForWell.event_type}</strong> @ {matchForWell.event_md}m</div>
+                            <div className="text-[#E2E2E2]">Depth Delta: <strong className="text-white">Δ {matchForWell.delta_md}m</strong></div>
+                            <div className="text-[9px] text-[#FF3250] mt-[4px] uppercase font-[700] tracking-wider">
                               HISTORICAL EVENT — NOT A PREDICTION
                             </div>
                           </div>
                         )}
-                      </div>
-                      <div className="text-slate-300">
-                        <strong>Name:</strong> {nw.name}
-                      </div>
-                      <div className="text-slate-300">
-                        <strong>Status:</strong> {nw.status}
-                      </div>
-                      <div className="text-slate-300">
-                        <strong>Distance from {selectedWell}:</strong> {formatDistance(nw.distance_km, nw.distance_m)}
-                      </div>
-                      <div className="text-slate-300">
-                        <strong>Water Depth:</strong> {nw.water_depth_m} m
-                      </div>
-                      <div className="pt-2">
-                        <button
-                          onClick={() => {
-                            if (onOpenIntelligence) {
-                              onOpenIntelligence(nw.well_id);
-                            } else {
-                              onSelectWell(nw.well_id);
-                            }
-                          }}
-                          className="w-full bg-amber-600 hover:bg-amber-500 text-white font-mono text-[11px] py-1 rounded flex items-center justify-center gap-1 transition-all shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          View Well Intelligence
-                        </button>
+
+                        <div className="text-[#E2E2E2] space-y-[4px] pt-[4px]">
+                          <div><strong className="text-[#FF8A00]">Name:</strong> {nw.name}</div>
+                          <div><strong className="text-[#FF8A00]">Status:</strong> {nw.status}</div>
+                          <div><strong className="text-[#FF8A00]">Water Depth:</strong> {nw.water_depth_m} m</div>
+                        </div>
+
+                        <div className="pt-[8px]">
+                          <button
+                            onClick={() => {
+                              if (onOpenIntelligence) {
+                                onOpenIntelligence(nw.well_id);
+                              } else {
+                                onSelectWell(nw.well_id);
+                              }
+                            }}
+                            className="w-full flex items-center justify-center gap-[6px] px-[12px] py-[8px] rounded-[6px] font-[700] text-[11px] uppercase tracking-wider transition-all"
+                            style={{ background: "rgba(255,138,0,0.15)", color: "#FF9D1A", border: "1px solid rgba(255,138,0,0.4)" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "rgba(255,138,0,0.3)";
+                              e.currentTarget.style.boxShadow = "0 0 15px rgba(255,138,0,0.2)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(255,138,0,0.15)";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            View Intelligence
+                          </button>
+                        </div>
                       </div>
                     </Popup>
                   </Marker>
@@ -326,90 +387,124 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
               })}
             </MapContainer>
           ) : (
-            <div className="h-full flex items-center justify-center text-slate-400 text-xs font-mono">
+            <div className="h-full flex items-center justify-center text-[#686868] text-[12px] font-mono tracking-widest uppercase">
               Location data unavailable for this well.
             </div>
           )}
 
           {/* Map Overlay Badge */}
-          <div className="absolute top-3 left-3 z-[400] bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-amber-500/30 text-[11px] font-mono text-slate-200 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              <span>★ Active: <strong>{selectedWell}</strong></span>
-              <span className="text-slate-500">|</span>
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span>● Radius: <strong>{radiusKm} km</strong></span>
+          <div 
+            className="absolute top-[16px] left-[16px] z-[400] px-[16px] py-[10px] rounded-[10px] text-[11px] font-[700] font-mono text-[#E2E2E2] uppercase tracking-wider"
+            style={{ background: "rgba(18,16,14,0.85)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,138,0,0.3)", boxShadow: "0 6px 20px rgba(0,0,0,0.6)" }}
+          >
+            <div className="flex items-center gap-[12px]">
+              <span className="flex items-center gap-[6px]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#34D399] animate-pulse drop-shadow-[0_0_5px_#34D399]"></span>
+                <span className="text-[#A1A1AA]">Active:</span> <strong className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">{selectedWell}</strong>
+              </span>
+              <span className="text-[rgba(255,255,255,0.2)]">|</span>
+              <span className="flex items-center gap-[6px]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF8A00] drop-shadow-[0_0_5px_#FF8A00]"></span>
+                <span className="text-[#A1A1AA]">Radius:</span> <strong className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">{radiusKm} km</strong>
+              </span>
             </div>
           </div>
         </div>
 
         {/* Nearby Wells Sorted List Panel */}
         <div 
-          className="rounded-2xl p-4 flex flex-col justify-between h-[450px] transition-all duration-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.15)]"
+          className="rounded-[16px] p-[24px] flex flex-col justify-between h-[500px] transition-all duration-300"
           style={{
-            background: "rgba(10, 10, 10, 0.5)",
-            border: "1px solid rgba(245, 158, 11, 0.2)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)"
+            background: "rgba(5, 7, 9, 0.75)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255, 138, 0, 0.15)",
+            boxShadow: "inset 0 0 30px rgba(0,0,0,0.3)"
           }}
         >
           <div>
-            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase font-mono tracking-wider">
-                <Navigation className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center justify-between border-b border-[rgba(255,138,0,0.2)] pb-[16px] mb-[16px]">
+              <div className="flex items-center gap-[8px] text-[13px] font-[700] text-white uppercase font-mono tracking-wider drop-shadow-sm">
+                <Navigation className="w-4 h-4 text-[#FF9D1A]" />
                 Nearby Wells ({nearbyData?.count || 0})
               </div>
-              <span className="text-[11px] text-slate-400 font-mono">
+              <span className="text-[10px] text-[#686868] font-[700] uppercase tracking-widest font-mono">
                 Sorted by Distance
               </span>
             </div>
 
             {/* List Container */}
             {isLoading ? (
-              <div className="py-12 text-center text-xs font-mono text-slate-400 animate-pulse">
+              <div className="py-[60px] text-center text-[11px] font-mono font-[700] uppercase tracking-widest text-[#FF8A00] animate-pulse">
                 Calculating Haversine offset distances...
               </div>
             ) : nearbyData && nearbyData.nearby_wells.length > 0 ? (
-              <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+              <div className="space-y-[12px] max-h-[380px] overflow-y-auto custom-scrollbar pr-[8px]">
                 {nearbyData.nearby_wells.map((nw: NearbyWellItem) => {
                   const isSelected = selectedNearbyWellId === nw.well_id;
                   return (
                     <div
                       key={nw.well_id}
                       onClick={() => setSelectedNearbyWellId(nw.well_id)}
-                      className={`p-3 rounded-xl transition-all cursor-pointer border ${
+                      className="p-[16px] rounded-[12px] transition-all duration-300 cursor-pointer"
+                      style={
                         isSelected
-                          ? "bg-amber-950/40 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
-                          : "bg-black/40 border-amber-500/10 hover:border-amber-500/40 hover:shadow-[0_0_10px_rgba(245,158,11,0.2)] hover:bg-black/60"
-                      }`}
+                          ? {
+                              background: "rgba(255, 138, 0, 0.1)",
+                              border: "1px solid rgba(255, 138, 0, 0.5)",
+                              boxShadow: "0 0 20px rgba(255, 138, 0, 0.15)"
+                            }
+                          : {
+                              background: "rgba(255, 255, 255, 0.02)",
+                              border: "1px solid rgba(255, 255, 255, 0.05)",
+                              boxShadow: "none"
+                            }
+                      }
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = "rgba(255, 138, 0, 0.05)";
+                          e.currentTarget.style.borderColor = "rgba(255, 138, 0, 0.25)";
+                          e.currentTarget.style.boxShadow = "0 0 10px rgba(255, 138, 0, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
+                          e.currentTarget.style.boxShadow = "none";
+                        }
+                      }}
                     >
-                      <div className="flex items-center justify-between font-mono">
-                        <span className="font-bold text-amber-500 text-xs flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                      <div className="flex items-center justify-between font-mono mb-[6px]">
+                        <span className="font-[700] text-[#FF9D1A] text-[12px] flex items-center gap-[6px] drop-shadow-sm">
+                          <MapPin className="w-3.5 h-3.5" />
                           {nw.well_id}
                         </span>
-                        <span className="text-xs px-2 py-0.5 rounded bg-black/60 text-amber-400 font-bold border border-amber-500/30">
+                        <span 
+                          className="text-[10px] px-[8px] py-[2px] rounded-[6px] font-[700] tracking-wider"
+                          style={{ background: "rgba(0,0,0,0.6)", color: "#FF9D1A", border: "1px solid rgba(255,138,0,0.3)" }}
+                        >
                           {formatDistance(nw.distance_km, nw.distance_m)}
                         </span>
                       </div>
 
-                      <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between font-sans">
-                        <span>{nw.name}</span>
-                        <span className="font-mono text-[10px] text-slate-400">
+                      <div className="text-[12px] text-[#A1A1AA] flex items-center justify-between font-sans mb-[4px]">
+                        <span className="truncate pr-2">{nw.name}</span>
+                        <span className="font-mono text-[10px] text-[#686868] shrink-0 uppercase tracking-widest">
                           Slot: {nw.slot_name}
                         </span>
                       </div>
-                      <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+                      <div className="text-[10px] font-mono text-[#686868] uppercase tracking-widest">
                         Surface Platform Slot Distance
                       </div>
 
-                      <div className="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between text-[10px] font-mono">
+                      <div className="mt-[12px] pt-[12px] border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between text-[10px] font-[700] font-mono uppercase tracking-wider">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectWell(nw.well_id);
                           }}
-                          className="text-slate-400 hover:text-amber-400 hover:underline flex items-center gap-1 transition-colors"
+                          className="text-[#9A9A9A] hover:text-[#FFFFFF] flex items-center gap-[4px] transition-colors"
                         >
                           Set Active ➔
                         </button>
@@ -422,7 +517,16 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                               onSelectWell(nw.well_id);
                             }
                           }}
-                          className="text-amber-500 hover:text-black hover:bg-amber-500 flex items-center gap-1 font-bold bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/50 transition-all shadow-[0_0_5px_rgba(245,158,11,0.2)] hover:shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                          className="flex items-center gap-[4px] px-[10px] py-[6px] rounded-[6px] transition-all"
+                          style={{ background: "rgba(255,138,0,0.1)", color: "#FF9D1A", border: "1px solid rgba(255,138,0,0.3)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "rgba(255,138,0,0.25)";
+                            e.currentTarget.style.boxShadow = "0 0 10px rgba(255,138,0,0.2)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "rgba(255,138,0,0.1)";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
                         >
                           View Intelligence ➔
                         </button>
@@ -432,21 +536,24 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                 })}
               </div>
             ) : (
-              <div className="py-16 text-center border border-dashed border-amber-500/20 rounded-xl bg-black/20 text-slate-400 text-xs font-mono space-y-2 hover:border-amber-500/40 transition-all hover:shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+              <div 
+                className="py-[60px] text-center rounded-[12px] text-[11px] font-mono font-[700] text-[#686868] uppercase tracking-widest space-y-[8px]"
+                style={{ background: "rgba(0,0,0,0.3)", border: "1px dashed rgba(255,255,255,0.1)" }}
+              >
                 <div>No nearby offset wells found within {radiusKm} km.</div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[10px] opacity-70">
                   Try expanding the search radius using the controls above.
                 </div>
               </div>
             )}
           </div>
 
-          <div className="pt-3 border-t border-amber-500/20 text-[10px] text-slate-400 font-mono flex items-center justify-between">
-            <span className="flex items-center gap-1">
-              <Shield className="w-3 h-3 text-amber-500" />
+          <div className="pt-[16px] border-t border-[rgba(255,138,0,0.2)] text-[10px] font-[700] text-[#686868] font-mono uppercase tracking-widest flex flex-wrap items-center justify-between gap-2">
+            <span className="flex items-center gap-[6px]">
+              <Shield className="w-3.5 h-3.5 text-[#FF9D1A]" />
               Haversine Proximity Engine
             </span>
-            <span className="text-amber-500/70">NPD Verified Coordinates</span>
+            <span className="text-[#60A5FA]">NPD Verified Coordinates</span>
           </div>
         </div>
       </div>
