@@ -27,20 +27,11 @@ export const RiskPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
           <div className="flex items-start gap-4">
             <div>
-              {/* Eyebrow */}
-              <p style={{ color: orangeLight, letterSpacing: "2px" }} className="text-[11px] font-bold uppercase mb-1">
-                NEARBY WELLS INTELLIGENCE SYSTEM
-              </p>
-              <h1 className="text-white font-bold text-xl tracking-tight leading-tight drop-shadow-sm">
+              {/* Header Title */}
+              <h1 className="text-white font-bold text-3xl tracking-tight leading-tight drop-shadow-sm">
                 ML Risk &amp; Prediction Center
               </h1>
-              <p className="mt-1 text-sm drop-shadow-sm" style={{ color: "rgba(255,255,255,0.7)" }}>
-                Real-time causal feature engineering → Isolation Forest anomaly scoring → live alert dispatch
-              </p>
-              {/* Orange line */}
-              <div
-                style={{ width: "36px", height: "3px", background: orange, boxShadow: "0 0 12px rgba(255,138,31,0.5)", borderRadius: "10px", marginTop: "12px" }}
-              />
+
             </div>
           </div>
 
