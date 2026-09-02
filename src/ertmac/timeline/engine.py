@@ -81,6 +81,7 @@ class OperationalTimelineEngine:
 
     @staticmethod
     def get_timeline(
+        organization_id: str,
         well_id: str,
         category: Optional[str] = None,
         min_md: Optional[float] = None,
@@ -104,6 +105,7 @@ class OperationalTimelineEngine:
                     db.table("timeline_events")
                     .select("*")
                     .eq("well_id", well_id)
+                    .eq("organization_id", organization_id)
                     .order("created_at", desc=True)
                     .limit(limit)
                     .execute()
@@ -126,7 +128,7 @@ class OperationalTimelineEngine:
 
         # Fallback in-memory shift notes
         for note in _in_memory_timeline_notes:
-            if note.get("well_id") == well_id:
+            if note.get("well_id") == well_id and note.get("organization_id") == organization_id:
                 if not any(a["timeline_id"] == note["id"] for a in aggregated):
                     aggregated.append({
                         "timeline_id": note["id"],
@@ -141,7 +143,7 @@ class OperationalTimelineEngine:
                     })
 
         # 2. Alerts for this well
-        alerts = global_alert_engine.get_active_alerts(well_id=well_id)
+        alerts = global_alert_engine.get_active_alerts(organization_id=organization_id, well_id=well_id)
         for alt in alerts:
             aggregated.append({
                 "timeline_id": f"TL_ALT_{alt['alert_id']}",
@@ -156,7 +158,7 @@ class OperationalTimelineEngine:
             })
 
         # 3. Audit log events for this well
-        audit_events = global_audit_service.get_events(well_id=well_id, limit=50)
+        audit_events = global_audit_service.get_events(organization_id=organization_id, well_id=well_id, limit=50)
         for ae in audit_events:
             aggregated.append({
                 "timeline_id": f"TL_AUD_{ae['audit_id']}",

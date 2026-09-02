@@ -127,6 +127,17 @@ export function useSensorStream(selectedWell: string) {
             });
           } else if (msg.type === "ml_update" && msg.data) {
             setMlState(msg.data);
+          } else if (msg.type === "alert_created" && msg.data) {
+            // Dispatch custom DOM event so AlertsPage prepends the card
+            window.dispatchEvent(new CustomEvent("ertmac:alert_created", { detail: msg.data }));
+            // Dispatch toast event for global notification
+            window.dispatchEvent(new CustomEvent("ertmac:toast", {
+              detail: {
+                severity: msg.data.severity,
+                title: msg.data.title,
+                description: `Well ${msg.data.well_id} @ MD ${msg.data.current_md?.toFixed(1)}m`,
+              }
+            }));
           } else if (msg.type === "stream_status" && msg.data) {
             if (msg.data.status === "LIVE") {
               setStatus("LIVE");

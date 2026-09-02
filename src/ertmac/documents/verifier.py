@@ -75,7 +75,7 @@ class DocumentVerificationEngine:
         return saved_list
 
     @staticmethod
-    def get_events_for_document(document_id: str) -> List[Dict[str, Any]]:
+    def get_events_for_document(document_id: str, organization_id: str) -> List[Dict[str, Any]]:
         """Fetches extracted events for a specific document."""
         db = get_supabase_admin()
         if db:
@@ -84,6 +84,7 @@ class DocumentVerificationEngine:
                     db.table("extracted_events")
                     .select("*")
                     .eq("document_id", document_id)
+                    .eq("organization_id", organization_id)
                     .order("created_at", desc=False)
                     .execute()
                 )
@@ -92,10 +93,10 @@ class DocumentVerificationEngine:
             except Exception as e:
                 logger.warning(f"Failed to fetch extracted events from DB: {e}")
 
-        return [e for e in _in_memory_extracted_events.values() if e.get("document_id") == document_id]
+        return [e for e in _in_memory_extracted_events.values() if e.get("document_id") == document_id and e.get("organization_id") == organization_id]
 
     @staticmethod
-    def verify_event(event_id: str, verifier_user_id: str, verifier_role: str = "DRILLING_ENGINEER") -> Optional[Dict[str, Any]]:
+    def verify_event(event_id: str, verifier_user_id: str, verifier_role: str = "DRILLING_ENGINEER", organization_id: str = "00000000-0000-0000-0000-000000000001") -> Optional[Dict[str, Any]]:
         """
         Marks an extracted event as VERIFIED and promotes it to historical DDR events repository.
         """
@@ -103,7 +104,7 @@ class DocumentVerificationEngine:
         clean_verifier = verifier_user_id if len(verifier_user_id) == 36 and verifier_user_id != "00000000-0000-0000-0000-000000000001" else None
 
         evt = _in_memory_extracted_events.get(event_id)
-        if evt:
+        if evt and evt.get("organization_id") == organization_id:
             evt["verification_status"] = "VERIFIED"
             evt["verified_by"] = verifier_user_id
             evt["verified_at"] = now
@@ -118,7 +119,7 @@ class DocumentVerificationEngine:
                 if clean_verifier:
                     updates["verified_by"] = clean_verifier
 
-                res = db.table("extracted_events").update(updates).eq("id", event_id).execute()
+                res = db.table("extracted_events").update(updates).eq("id", event_id).eq("organization_id", organization_id).execute()
                 if res.data and len(res.data) > 0:
                     evt = res.data[0]
 
@@ -161,11 +162,11 @@ class DocumentVerificationEngine:
         return evt
 
     @staticmethod
-    def reject_event(event_id: str, verifier_user_id: str, verifier_role: str = "DRILLING_ENGINEER") -> Optional[Dict[str, Any]]:
+    def reject_event(event_id: str, verifier_user_id: str, verifier_role: str = "DRILLING_ENGINEER", organization_id: str = "00000000-0000-0000-0000-000000000001") -> Optional[Dict[str, Any]]:
         """Marks an extracted event as REJECTED."""
         now = datetime.now(timezone.utc).isoformat()
         evt = _in_memory_extracted_events.get(event_id)
-        if evt:
+        if evt and evt.get("organization_id") == organization_id:
             evt["verification_status"] = "REJECTED"
             evt["verified_at"] = now
 
@@ -175,7 +176,7 @@ class DocumentVerificationEngine:
                 db.table("extracted_events").update({
                     "verification_status": "REJECTED",
                     "verified_at": now,
-                }).eq("id", event_id).execute()
+                }).eq("id", event_id).eq("organization_id", organization_id).execute()
             except Exception as e:
                 logger.error(f"Failed to reject event in DB: {e}")
 

@@ -37,6 +37,7 @@ class NoteRepository:
         
         record = {
             "id": note_id,
+            "organization_id": note_data.get("organization_id", "00000000-0000-0000-0000-000000000001"),
             "title": note_data.get("title", "Untitled Handwritten Note"),
             "raw_ocr_text": note_data.get("raw_ocr_text", ""),
             "verified_text": note_data.get("verified_text", ""),
@@ -71,15 +72,17 @@ class NoteRepository:
 
         return record
 
-    def update_note(self, note_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def update_note(self, note_id: str, updates: Dict[str, Any], organization_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Updates specific fields of an existing note."""
         note = self._notes.get(note_id)
+        if note and organization_id and note.get("organization_id") and note.get("organization_id") != organization_id:
+            return None
         if not note or note.get("is_deleted", False):
             return None
 
         now_iso = datetime.now(timezone.utc).isoformat()
         for k, v in updates.items():
-            if k != "id":
+            if k not in ("id", "organization_id"):
                 note[k] = v
         note["updated_at"] = now_iso
 
@@ -88,22 +91,29 @@ class NoteRepository:
         if is_supabase_configured():
             try:
                 client = get_supabase_admin()
-                client.table("handwritten_notes").update(updates).eq("id", note_id).execute()
+                query = client.table("handwritten_notes").update(updates).eq("id", note_id)
+                if organization_id:
+                    query = query.eq("organization_id", organization_id)
+                query.execute()
             except Exception as e:
                 logger.debug(f"Supabase update for note {note_id} skipped: {e}")
 
         return note
 
-    def get_note(self, note_id: str) -> Optional[Dict[str, Any]]:
+    def get_note(self, note_id: str, organization_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Retrieves a single note by ID."""
         note = self._notes.get(note_id)
         if note and not note.get("is_deleted", False):
-            return note
+            if not organization_id or not note.get("organization_id") or note.get("organization_id") == organization_id:
+                return note
 
         if is_supabase_configured():
             try:
                 client = get_supabase_admin()
-                res = client.table("handwritten_notes").select("*").eq("id", note_id).execute()
+                query = client.table("handwritten_notes").select("*").eq("id", note_id)
+                if organization_id:
+                    query = query.eq("organization_id", organization_id)
+                res = query.execute()
                 if res.data:
                     self._notes[note_id] = res.data[0]
                     return res.data[0]
@@ -112,11 +122,12 @@ class NoteRepository:
 
         return None
 
-    def find_by_checksum(self, checksum: str) -> Optional[Dict[str, Any]]:
+    def find_by_checksum(self, checksum: str, organization_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Finds active note matching SHA-256 checksum for idempotency."""
         for note in self._notes.values():
             if not note.get("is_deleted") and note.get("metadata", {}).get("checksum") == checksum:
-                return note
+                if not organization_id or not note.get("organization_id") or note.get("organization_id") == organization_id:
+                    return note
         return None
 
     def list_notes(
@@ -125,19 +136,27 @@ class NoteRepository:
         offset: int = 0,
         status_filter: Optional[str] = None,
         search_query: Optional[str] = None,
+        organization_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Lists notes with optional filtering and search."""
+        """Lists notes with optional filtering, search, and organization scoping."""
         if is_supabase_configured():
             try:
                 client = get_supabase_admin()
-                res = client.table("handwritten_notes").select("*").eq("is_deleted", False).order("created_at", desc=True).limit(200).execute()
+                query = client.table("handwritten_notes").select("*").eq("is_deleted", False).order("created_at", desc=True).limit(200)
+                if organization_id:
+                    query = query.eq("organization_id", organization_id)
+                res = query.execute()
                 if res.data:
                     for note in res.data:
                         self._notes[note["id"]] = note
             except Exception as e:
                 logger.debug(f"Supabase list_notes sync skipped: {e}")
 
-        active = [n for n in self._notes.values() if not n.get("is_deleted", False)]
+        active = [
+            n for n in self._notes.values()
+            if not n.get("is_deleted", False)
+            and (not organization_id or not n.get("organization_id") or n.get("organization_id") == organization_id)
+        ]
         
         if status_filter:
             active = [n for n in active if n.get("verification_status") == status_filter or n.get("ocr_status") == status_filter]
@@ -156,10 +175,10 @@ class NoteRepository:
         active.sort(key=lambda x: x.get("created_at", ""), reverse=True)
         return active[offset : offset + limit]
 
-    def delete_note(self, note_id: str) -> bool:
+    def delete_note(self, note_id: str, organization_id: Optional[str] = None) -> bool:
         """Soft deletes a note."""
         note = self._notes.get(note_id)
-        if not note:
+        if not note or (organization_id and note.get("organization_id") and note.get("organization_id") != organization_id):
             return False
         note["is_deleted"] = True
         note["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -167,7 +186,10 @@ class NoteRepository:
         if is_supabase_configured():
             try:
                 client = get_supabase_admin()
-                client.table("handwritten_notes").update({"is_deleted": True}).eq("id", note_id).execute()
+                query = client.table("handwritten_notes").update({"is_deleted": True}).eq("id", note_id)
+                if organization_id:
+                    query = query.eq("organization_id", organization_id)
+                query.execute()
             except Exception as e:
                 logger.debug(f"Supabase delete for note {note_id} skipped: {e}")
         return True

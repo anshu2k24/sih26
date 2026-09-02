@@ -92,9 +92,9 @@ class AlertPersistence:
 
     @staticmethod
     def get_alerts(
+        organization_id: str,
         well_id: Optional[str] = None,
         status: Optional[str] = None,
-        organization_id: Optional[str] = None,
         limit: int = 100,
     ) -> Optional[List[Dict[str, Any]]]:
         """Fetches alerts from Supabase."""
@@ -104,12 +104,11 @@ class AlertPersistence:
 
         try:
             query = db.table("alerts").select("*").order("created_at", desc=True).limit(limit)
+            query = query.eq("organization_id", organization_id)
             if well_id:
                 query = query.eq("well_id", well_id)
             if status:
                 query = query.eq("status", status)
-            if organization_id:
-                query = query.eq("organization_id", organization_id)
 
             res = query.execute()
             return res.data
@@ -120,11 +119,12 @@ class AlertPersistence:
     @staticmethod
     def update_alert_status(
         alert_id: str,
+        organization_id: str,
         status: str,
         actor_id: str,
         resolution_summary: Optional[str] = None,
     ) -> bool:
-        """Updates alert status and lifecycle actor fields in DB."""
+        """Updates alert status and lifecycle actor fields in DB, strictly within the organization."""
         db = get_supabase_admin()
         if not db:
             return False
@@ -153,15 +153,15 @@ class AlertPersistence:
                 updates["resolution_summary"] = resolution_summary
 
         try:
-            res = db.table("alerts").update(updates).eq("id", alert_id).execute()
+            res = db.table("alerts").update(updates).eq("id", alert_id).eq("organization_id", organization_id).execute()
             return bool(res.data and len(res.data) > 0)
         except Exception as e:
             logger.error(f"[PERSISTENCE] Failed to update alert {alert_id}: {e}")
             return False
 
     @staticmethod
-    def assign_alert(alert_id: str, assignee_id: str) -> bool:
-        """Assigns an alert to a specific profile UUID."""
+    def assign_alert(alert_id: str, organization_id: str, assignee_id: str) -> bool:
+        """Assigns an alert to a specific profile UUID, strictly within the organization."""
         db = get_supabase_admin()
         if not db:
             return False
@@ -178,6 +178,7 @@ class AlertPersistence:
                 db.table("alerts")
                 .update(updates)
                 .eq("id", alert_id)
+                .eq("organization_id", organization_id)
                 .execute()
             )
             return bool(res.data and len(res.data) > 0)
@@ -211,8 +212,8 @@ class AlertPersistence:
         return None
 
     @staticmethod
-    def get_notes(alert_id: str) -> List[Dict[str, Any]]:
-        """Fetches notes for an alert."""
+    def get_notes(alert_id: str, organization_id: str) -> List[Dict[str, Any]]:
+        """Fetches notes for an alert, verifying organization_id."""
         db = get_supabase_admin()
         if not db:
             return []
@@ -220,8 +221,9 @@ class AlertPersistence:
         try:
             res = (
                 db.table("alert_notes")
-                .select("id, alert_id, author_id, note_text, created_at")
+                .select("id, alert_id, author_id, note_text, created_at, organization_id")
                 .eq("alert_id", alert_id)
+                .eq("organization_id", organization_id)
                 .order("created_at", desc=False)
                 .execute()
             )
