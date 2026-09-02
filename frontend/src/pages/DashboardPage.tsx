@@ -36,13 +36,13 @@ export const DashboardPage: React.FC = () => {
     <div 
       className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 bg-cover bg-no-repeat bg-fixed"
       style={{ 
-        backgroundColor: "#050505", 
-        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-network-orange.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed"
+        backgroundImage: 'url("/src/assets/hero_sunset.png")',
+        backgroundPosition: 'center bottom'
       }}
     >
+      {/* Subtle overlay to ensure text remains readable without dulling the image */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#02050A]/70 via-transparent to-[#02050A]/30 z-0" />
+      
       {/* 1. HERO / COMMAND CENTER INTRODUCTION */}
       <div className="relative w-full pt-12 pb-28 px-6 sm:px-8 overflow-hidden z-10">
         
