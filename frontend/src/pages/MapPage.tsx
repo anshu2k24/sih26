@@ -9,21 +9,20 @@ export const MapPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 p-4 sm:p-6 overflow-hidden">
-      {/* Background Image scoped only to this page */}
+    <div className="group relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 p-4 sm:p-6 overflow-hidden transition-all duration-500 hover:shadow-[0_0_80px_rgba(249,115,22,0.6)] rounded-xl">
+      {/* Background Gradient */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-no-repeat"
+        className="absolute inset-0 z-0 transition-all duration-500 group-hover:opacity-90"
         style={{ 
-          backgroundImage: 'url("/src/assets/sunset_rig.jpg")',
-          backgroundPosition: 'center',
+          background: "linear-gradient(135deg, rgba(249, 115, 22, 0.8) 0%, rgba(234, 179, 8, 0.8) 100%)",
         }}
       >
         <div 
-          className="absolute inset-0 z-0" 
+          className="absolute inset-0 z-0 transition-all duration-500 group-hover:bg-white/10" 
           style={{
-            background: "linear-gradient(90deg, rgba(3, 8, 18, 0.40) 0%, rgba(3, 8, 18, 0.20) 100%)",
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)"
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)"
           }} 
         />
       </div>

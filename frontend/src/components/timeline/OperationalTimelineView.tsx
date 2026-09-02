@@ -69,20 +69,6 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
     }
   };
 
-  const getCategoryBadgeStyle = (category: string) => {
-    switch (category) {
-      case "ALERT":
-        return "bg-rose-950/80 text-rose-400 border-rose-500/30";
-      case "NOTE":
-        return "bg-blue-950/80 text-blue-400 border-blue-500/30";
-      case "AUDIT":
-        return "bg-emerald-950/80 text-emerald-400 border-emerald-500/30";
-      case "DOCUMENT":
-        return "bg-cyan-950/80 text-cyan-400 border-cyan-500/30";
-      default:
-        return "bg-slate-800 text-slate-300 border-slate-700";
-    }
-  };
 
   return (
     <div 
