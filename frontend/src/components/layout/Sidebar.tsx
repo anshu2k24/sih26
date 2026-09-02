@@ -106,6 +106,7 @@ export const Sidebar: React.FC = () => {
               <NavLink
                 key={item.to}
                 to={item.to}
+                end
                 className={({ isActive }) =>
                   `group relative flex items-center justify-between px-[16px] py-[14px] rounded-[12px] transition-all duration-200 border ${
                     isActive

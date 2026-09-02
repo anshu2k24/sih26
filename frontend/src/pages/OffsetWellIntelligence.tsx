@@ -154,7 +154,14 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
   return (
     <div 
       className="min-h-screen text-[#F2F2F2] pb-16 selection:bg-[#FF7A00] selection:text-white relative overflow-hidden"
-      style={{ backgroundColor: "#050607", fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+      style={{ 
+        backgroundColor: "#050607", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        fontFamily: "'Space Grotesk', 'Inter', sans-serif" 
+      }}
     >
       {/* Ambient Background Glows to enhance glass transparency */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.15] blur-[120px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF7A00 0%, transparent 70%)" }}></div>
@@ -186,10 +193,9 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
 
       <main className="max-w-[1400px] mx-auto px-[24px] pt-[20px] space-y-[20px]">
         
-        {/* 5. MAIN HEADER / INTELLIGENCE HEADER */}
+        {/* 5. MAIN HEADER / INTELLIGENCE HEADER - Transparent */}
         <div 
-          className="flex flex-col xl:flex-row items-center gap-6 p-[20px]"
-          style={{ ...glassPanelStyle, minHeight: "100px" }}
+          className="flex flex-col xl:flex-row items-center gap-6 py-[10px]"
         >
           {/* 6. BACK BUTTON */}
           <button
@@ -223,7 +229,6 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
 
           {/* 7. OFFSET WELL INTELLIGENCE TITLE */}
           <div className="flex items-center gap-3 shrink-0">
-            <Database className="w-8 h-8 text-[#FF7A00]" />
             <div className="flex flex-col leading-tight font-[700] text-[20px] tracking-wide">
               <span className="text-[#F2F2F2]">OFFSET WELL</span>
               <span className="text-[#F2F2F2]">INTELLIGENCE:</span>
