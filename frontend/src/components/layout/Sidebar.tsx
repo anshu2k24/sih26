@@ -111,45 +111,6 @@ export const Sidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* User Profile & Logout Section at Bottom */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/60">
-        {!collapsed ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5 px-1">
-              <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center font-bold font-mono text-xs">
-                {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
-              </div>
-              <div className="overflow-hidden flex-1">
-                <span className="text-xs font-bold text-white font-mono block truncate">
-                  {profile?.full_name || profile?.email || "Operator"}
-                </span>
-                <span className="text-[10px] text-orange-400 font-mono flex items-center gap-1 font-semibold">
-                  <Shield className="w-3 h-3 text-orange-400" />
-                  {profile?.role || "ADMIN"}
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 rounded-xl py-2 font-mono text-xs font-bold transition-all shadow-sm"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              SIGN OUT
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center p-2 text-rose-400 hover:bg-rose-950/60 rounded-xl transition-colors"
-            title="Sign Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        )}
-      </div>
     </aside>
   );
 };

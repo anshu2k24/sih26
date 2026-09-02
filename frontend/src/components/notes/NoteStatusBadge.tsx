@@ -13,12 +13,16 @@ export const NoteStatusBadge: React.FC<Props> = ({
   ocrStatus,
   size = "md",
 }) => {
-  const pad = size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs";
+  const isSm = size === "sm";
+  const commonClasses = `inline-flex items-center gap-1.5 font-[700] rounded-[6px] tracking-wide transition-all ${isSm ? "px-[8px] py-[4px] text-[10px]" : "px-[10px] py-[6px] text-[11px]"}`;
 
   if (ocrStatus === "PROCESSING") {
     return (
-      <span className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 ${pad} animate-pulse`}>
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      <span 
+        className={`${commonClasses} animate-pulse`}
+        style={{ background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.4)", color: "#60A5FA", boxShadow: "0 0 10px rgba(59, 130, 246, 0.15)" }}
+      >
+        <Loader2 className={`${isSm ? "w-3 h-3" : "w-3.5 h-3.5"} animate-spin`} />
         OCR Processing
       </span>
     );
@@ -26,8 +30,11 @@ export const NoteStatusBadge: React.FC<Props> = ({
 
   if (ocrStatus === "FAILED") {
     return (
-      <span className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 ${pad}`}>
-        <AlertCircle className="w-3.5 h-3.5" />
+      <span 
+        className={commonClasses}
+        style={{ background: "rgba(225, 29, 72, 0.15)", border: "1px solid rgba(225, 29, 72, 0.4)", color: "#FB7185", boxShadow: "0 0 10px rgba(225, 29, 72, 0.15)" }}
+      >
+        <AlertCircle className={isSm ? "w-3 h-3" : "w-3.5 h-3.5"} />
         OCR Failed
       </span>
     );
@@ -35,8 +42,11 @@ export const NoteStatusBadge: React.FC<Props> = ({
 
   if (verificationStatus === "VERIFIED") {
     return (
-      <span className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 ${pad}`}>
-        <CheckCircle2 className="w-3.5 h-3.5" />
+      <span 
+        className={commonClasses}
+        style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#34D399", boxShadow: "0 0 10px rgba(16, 185, 129, 0.15)" }}
+      >
+        <CheckCircle2 className={isSm ? "w-3 h-3" : "w-3.5 h-3.5"} />
         Verified Data
       </span>
     );
@@ -44,16 +54,22 @@ export const NoteStatusBadge: React.FC<Props> = ({
 
   if (verificationStatus === "NEEDS_REVIEW") {
     return (
-      <span className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 ${pad}`}>
-        <Clock className="w-3.5 h-3.5" />
+      <span 
+        className={commonClasses}
+        style={{ background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.4)", color: "#FBBF24", boxShadow: "0 0 10px rgba(245, 158, 11, 0.15)" }}
+      >
+        <Clock className={isSm ? "w-3 h-3" : "w-3.5 h-3.5"} />
         Needs Review
       </span>
     );
   }
 
   return (
-    <span className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/30 ${pad}`}>
-      <FileQuestion className="w-3.5 h-3.5" />
+    <span 
+      className={commonClasses}
+      style={{ background: "rgba(100, 116, 139, 0.15)", border: "1px solid rgba(100, 116, 139, 0.4)", color: "#94A3B8", boxShadow: "none" }}
+    >
+      <FileQuestion className={isSm ? "w-3 h-3" : "w-3.5 h-3.5"} />
       {verificationStatus || ocrStatus || "Uploaded"}
     </span>
   );
