@@ -74,58 +74,29 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen pb-[48px] relative overflow-hidden font-['Space_Grotesk',sans-serif]"
-      style={{ backgroundColor: "#050607" }}
+      className="min-h-screen pb-[48px] relative font-['Space_Grotesk',sans-serif]"
+      style={{ 
+        backgroundColor: "#050505", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
     >
-      {/* Ambient Glow */}
-      <div className="absolute top-[10%] left-[15%] w-[40%] h-[30%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
-      <div className="absolute bottom-[20%] right-[10%] w-[50%] h-[40%] rounded-full opacity-[0.02] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
-
       <div className="relative z-10 max-w-[1600px] mx-auto px-[32px] pt-[32px] space-y-[24px]">
         {/* Header Banner */}
-        <div 
-          className="rounded-[20px] p-[32px] flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-all duration-300 relative overflow-hidden group"
-          style={{
-            background: "rgba(10, 10, 10, 0.72)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            border: "1px solid rgba(255, 138, 0, 0.35)",
-            boxShadow: "0 0 30px rgba(255, 138, 0, 0.08), inset 0 0 20px rgba(255,138,0,0.05)"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = "0 10px 40px rgba(255, 138, 0, 0.12), inset 0 0 30px rgba(255,138,0,0.08)";
-            e.currentTarget.style.borderColor = "rgba(255, 138, 0, 0.45)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = "0 0 30px rgba(255, 138, 0, 0.08), inset 0 0 20px rgba(255,138,0,0.05)";
-            e.currentTarget.style.borderColor = "rgba(255, 138, 0, 0.35)";
-          }}
-        >
-          {/* Header internal glow */}
-          <div className="absolute top-0 left-0 w-[40%] h-[150%] rounded-full opacity-[0.03] blur-[50px] pointer-events-none" style={{ background: "#FF8A00" }}></div>
-
-          <div className="relative z-10 flex items-center gap-[24px]">
-            <div 
-              className="w-[60px] h-[60px] rounded-[16px] flex items-center justify-center shrink-0 border transition-all duration-300"
-              style={{ background: "rgba(255, 138, 0, 0.08)", borderColor: "rgba(255, 138, 0, 0.4)", boxShadow: "0 0 20px rgba(255,138,0,0.15)" }}
-            >
-              <FileText className="w-8 h-8 text-[#FF9D1A] drop-shadow-[0_0_8px_rgba(255,157,26,0.6)]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-4 flex-wrap mb-[8px]">
-                <h1 className="text-[24px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
-                  OPERATIONAL REPORT & SHIFT HANDOVER CONSOLE
-                </h1>
-                <span 
-                  className="text-[11px] px-[10px] py-[4px] rounded-[6px] font-[700] uppercase tracking-wider flex items-center gap-1.5"
-                  style={{ background: "rgba(56,189,248,0.1)", color: "#38BDF8", border: "1px solid rgba(56,189,248,0.3)", boxShadow: "0 0 10px rgba(56,189,248,0.15)" }}
-                >
-                  EQUINOR VOLVE PROVENANCED
-                </span>
-              </div>
-              <p className="text-[13px] text-[#A1A1AA] font-['Inter',sans-serif] max-w-3xl leading-relaxed">
-                Generate Daily Drilling Reports (DDR), Shift Handover Summaries, and Incident Reports with telemetry metrics and audit history.
-              </p>
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 relative">
+          <div className="relative z-10 flex flex-col gap-[12px]">
+            <div className="flex items-center gap-4 flex-wrap">
+              <h1 className="text-[32px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
+                OPERATIONAL REPORT & SHIFT HANDOVER CONSOLE
+              </h1>
+              <span 
+                className="text-[11px] px-[10px] py-[4px] rounded-[6px] font-[700] uppercase tracking-wider flex items-center gap-1.5 mt-1"
+                style={{ background: "rgba(56,189,248,0.1)", color: "#38BDF8", border: "1px solid rgba(56,189,248,0.3)", boxShadow: "0 0 10px rgba(56,189,248,0.15)" }}
+              >
+                EQUINOR VOLVE PROVENANCED
+              </span>
             </div>
           </div>
 
