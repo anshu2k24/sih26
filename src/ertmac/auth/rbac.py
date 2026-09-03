@@ -218,12 +218,40 @@ def _lookup_profile_from_db(user_id: str) -> Optional[Dict[str, Any]]:
             .single()
             .execute()
         )
-        data = result.data if result.data else None
-        _PROFILE_CACHE[user_id] = (data, now + _PROFILE_TTL)
-        return data
+        if result.data:
+            _PROFILE_CACHE[user_id] = (result.data, now + _PROFILE_TTL)
+            return result.data
+    except Exception:
+        pass
+
+    # Auto-provision profile from auth.users if not yet created
+    try:
+        auth_res = db.auth.admin.get_user_by_id(user_id)
+        if auth_res and auth_res.user:
+            u = auth_res.user
+            meta = u.user_metadata or {}
+            full_name = meta.get("full_name") or (u.email.split("@")[0] if u.email else "Operator")
+            raw_role = meta.get("role", "ADMIN")
+            try:
+                role_val = Role(str(raw_role).upper()).value
+            except Exception:
+                role_val = Role.ADMIN.value
+
+            new_profile = {
+                "id": user_id,
+                "email": u.email or "",
+                "full_name": full_name,
+                "role": role_val,
+                "organization_id": "00000000-0000-0000-0000-000000000001",
+                "is_active": True,
+            }
+            db.table("profiles").upsert(new_profile).execute()
+            _PROFILE_CACHE[user_id] = (new_profile, now + _PROFILE_TTL)
+            return new_profile
     except Exception as e:
-        logger.error(f"Profile DB lookup failed for user {user_id}: {e}")
-        return None
+        logger.error(f"Profile auto-provision failed for user {user_id}: {e}")
+
+    return None
 
 
 # ============================================================

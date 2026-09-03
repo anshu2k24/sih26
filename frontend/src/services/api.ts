@@ -511,6 +511,30 @@ export async function fetchDocumentDetailsApi(docId: string) {
   }
 }
 
+export async function fetchDocumentContentBlobApi(docId: string): Promise<string | null> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(docId)}/content`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error("fetchDocumentContentBlobApi error:", err);
+    return null;
+  }
+}
+
+export async function fetchNoteImageBlobApi(filename: string): Promise<string | null> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(filename)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error("fetchNoteImageBlobApi error:", err);
+    return null;
+  }
+}
+
 export async function verifyExtractedEventApi(docId: string, eventId: string) {
   try {
     const res = await authFetch(
