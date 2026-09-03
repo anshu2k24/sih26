@@ -130,6 +130,9 @@ class BroadcastManager:
         self._task = None
 
     def subscribe(self, well_id: str) -> asyncio.Queue:
+        if not self.running or self._task is None or self._task.done():
+            self.running = True
+            self._task = asyncio.create_task(self._broadcast_loop())
         q = asyncio.Queue()
         self.queues[well_id].append(q)
         return q
@@ -139,7 +142,7 @@ class BroadcastManager:
             self.queues[well_id].remove(q)
 
     async def start(self):
-        if self.running:
+        if self.running and self._task and not self._task.done():
             return
         self.running = True
         self._task = asyncio.create_task(self._broadcast_loop())
@@ -148,48 +151,60 @@ class BroadcastManager:
         state_mgr = get_app_state()
         last_counts = {}
         while self.running:
-            await asyncio.sleep(0.5)
-            for well_id, queues in list(self.queues.items()):
-                if not queues:
-                    continue
-                st = state_mgr.get_well_state(well_id)
-                current_count = st["samples_received"]
-                last_count = last_counts.get(well_id, -1)
-                
-                if current_count != last_count and st["latest_sensor"] is not None:
-                    last_counts[well_id] = current_count
-                    ml = st["ml"]
+            try:
+                await asyncio.sleep(0.3)
+                for well_id, queues in list(self.queues.items()):
+                    if not queues:
+                        continue
+                    st = state_mgr.get_well_state(well_id)
+                    current_count = st["samples_received"]
+                    last_count = last_counts.get(well_id, -1)
                     
-                    if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
-                        meta = state_mgr.coords_metadata.get(well_id, {})
-                        org_id = meta.get("organization_id", "00000000-0000-0000-0000-000000000001")
-                        alert = evaluate_telemetry_hazards(
-                            sensor=st["latest_sensor"] or {},
-                            features=ml.get("features", {}),
-                            current_md=st["current_md"],
-                            well_id=well_id,
-                            organization_id=org_id
-                        )
-                        if alert:
-                            logger.info(f"ML Anomaly Alert created: {alert.alert_id} at MD={st['current_md']:.1f}m")
-                            for q in queues:
-                                q.put_nowait({"type": "alert_created", "data": alert.to_dict()})
+                    if current_count != last_count and st["latest_sensor"] is not None:
+                        last_counts[well_id] = current_count
+                        ml = st["ml"]
+                        
+                        if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
+                            try:
+                                meta = state_mgr.coords_metadata.get(well_id, {})
+                                org_id = meta.get("organization_id", "00000000-0000-0000-0000-000000000001")
+                                alert = evaluate_telemetry_hazards(
+                                    sensor=st["latest_sensor"] or {},
+                                    features=ml.get("features", {}),
+                                    current_md=st["current_md"],
+                                    well_id=well_id,
+                                    organization_id=org_id
+                                )
+                                if alert:
+                                    logger.info(f"ML Anomaly Alert created: {alert.alert_id} at MD={st['current_md']:.1f}m")
+                                    for q in list(queues):
+                                        q.put_nowait({"type": "alert_created", "data": alert.to_dict()})
+                            except Exception as alert_err:
+                                logger.error(f"Error evaluating hazards: {alert_err}")
 
-                    msg_sensor = {"type": "sensor_update", "data": st["latest_sensor"]}
-                    msg_ml = {"type": "ml_update", "data": ml}
-                    msg_status = {
-                        "type": "stream_status",
-                        "data": {
-                            "status": st["stream_status"],
-                            "current_md": st["current_md"],
-                            "samples_received": current_count
+                        msg_sensor = {"type": "sensor_update", "data": st["latest_sensor"]}
+                        msg_ml = {"type": "ml_update", "data": ml}
+                        msg_status = {
+                            "type": "stream_status",
+                            "data": {
+                                "status": st["stream_status"],
+                                "current_md": st["current_md"],
+                                "samples_received": current_count
+                            }
                         }
-                    }
-                    
-                    for q in queues:
-                        q.put_nowait(msg_sensor)
-                        q.put_nowait(msg_ml)
-                        q.put_nowait(msg_status)
+                        
+                        for q in list(queues):
+                            try:
+                                q.put_nowait(msg_sensor)
+                                q.put_nowait(msg_ml)
+                                q.put_nowait(msg_status)
+                            except Exception:
+                                pass
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in broadcast loop: {e}")
+                await asyncio.sleep(1.0)
 
 broadcaster = BroadcastManager()
 
@@ -416,7 +431,8 @@ def get_historical_depth_proximity(
         active_well_id=active_well_id,
         current_md=current_md,
         radius_km=radius_km,
-        depth_window_m=depth_window_m
+        depth_window_m=depth_window_m,
+        organization_id=user.organization_id,
     )
 
 
@@ -748,10 +764,23 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
             "data": {
                 "well_id": well_id,
                 "status": st["stream_status"],
+                "current_md": st["current_md"],
+                "samples_received": st["samples_received"],
                 "data_source": SCIENTIFIC_LABEL
             }
         })
 
+        if st["latest_sensor"]:
+            await websocket.send_json({
+                "type": "sensor_update",
+                "data": st["latest_sensor"]
+            })
+            await websocket.send_json({
+                "type": "ml_update",
+                "data": st["ml"]
+            })
+
+        await broadcaster.start()
         q = broadcaster.subscribe(well_id)
         while True:
             msg = await q.get()

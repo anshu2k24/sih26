@@ -74,6 +74,7 @@ class NWISHistoricalAPI:
                     "mitigation_text": r.get("mitigation_text"),
                     "resolution_text": r.get("resolution_text"),
                     "is_verified_positive": r.get("is_verified", True),
+                    "organization_id": r.get("organization_id", "00000000-0000-0000-0000-000000000001"),
                 })
 
             df = pd.DataFrame(mapped_rows)
@@ -84,12 +85,14 @@ class NWISHistoricalAPI:
             logger.warning(f"Failed to load events from Supabase (will use CSV fallback): {e}")
             return None
         
-    def get_intelligence_by_depth(self, active_well_id: str, current_md: float, radius: float = 100.0, event_type: str = None):
+    def get_intelligence_by_depth(self, active_well_id: str, current_md: float, radius: float = 100.0, event_type: str = None, organization_id: str = None, **kwargs):
         """
         Retrieves historical offset intelligence around a specific active well and depth.
         """
         # Filter out the active well itself (only look at offset/historical wells)
         df_offsets = self.df_events[self.df_events['wellbore_id'] != active_well_id].copy()
+        if organization_id and 'organization_id' in df_offsets.columns:
+            df_offsets = df_offsets[df_offsets['organization_id'] == organization_id]
         
         # Optional event filter
         if event_type:
@@ -156,7 +159,7 @@ class NWISHistoricalAPI:
             "provenance": "All evidence extracted deterministically from Equinor Volve verified DDR semantic audit. No generative AI claims used."
         }
 
-    def get_well_full_intelligence(self, target_well_id: str) -> dict:
+    def get_well_full_intelligence(self, target_well_id: str, organization_id: str = None, **kwargs) -> dict:
         """
         Retrieves all historical verified DDR event episodes for a specific wellbore.
         Handles normalized matching (e.g. '15/9-F-14' matches 'NO 15/9-F-14').
@@ -168,49 +171,37 @@ class NWISHistoricalAPI:
         alias_targets = {clean_target, f"NO {clean_target}"}
         if clean_target == "15/9-F-15S":
             alias_targets.add("NO 15/9-F-15 A")
-            alias_targets.add("15/9-F-15 A")
-        elif clean_target == "15/9-F-9 A":
-            alias_targets.add("NO 15/9-F-9 A")
-            alias_targets.add("15/9-F-9")
-
-        df = self.df_events.copy()
-        df['norm_well'] = df['well_id'].astype(str).str.replace("NO ", "").str.strip()
-        df['norm_wellbore'] = df['wellbore_id'].astype(str).str.replace("NO ", "").str.strip()
-
-        mask = (
-            df['well_id'].isin(alias_targets)
-            | df['wellbore_id'].isin(alias_targets)
-            | df['norm_well'].isin({clean_target})
-            | df['norm_wellbore'].isin({clean_target})
-        )
-        df_target = df[mask].sort_values('onset_md', ascending=True).copy()
-
-        event_counts = df_target['event_type'].value_counts().to_dict()
-        events_list = []
-
-        for _, row in df_target.iterrows():
-            rec_id = str(row['primary_source_record']) if pd.notnull(row['primary_source_record']) else "DDR_REPORT"
-            events_list.append({
-                "event_episode_id": str(row['event_episode_id']),
-                "event_type": str(row['event_type']),
-                "event_domain": str(row['event_domain']) if pd.notnull(row['event_domain']) else "DRILLING_EVENT",
-                "well_id": str(row['well_id']),
-                "wellbore_id": str(row['wellbore_id']),
-                "onset_timestamp": str(row['onset_timestamp']) if pd.notnull(row['onset_timestamp']) else "Data unavailable",
-                "onset_md": float(row['onset_md']) if pd.notnull(row['onset_md']) else 0.0,
-                "onset_tvd": float(row['onset_tvd']) if pd.notnull(row['onset_tvd']) else None,
-                "primary_evidence": str(row['primary_evidence']) if pd.notnull(row['primary_evidence']) else "No primary evidence recorded.",
-                "mitigation_text": str(row['mitigation_text']) if pd.notnull(row['mitigation_text']) else "None recorded",
-                "resolution_text": str(row['resolution_text']) if pd.notnull(row['resolution_text']) else "None recorded",
+            
+        df = self.df_events[self.df_events['wellbore_id'].isin(alias_targets) | self.df_events['well_id'].isin(alias_targets)].copy()
+        if organization_id and 'organization_id' in df.columns:
+            df = df[df['organization_id'] == organization_id]
+        
+        events = []
+        for _, ep in df.iterrows():
+            rec_id = str(ep['primary_source_record']) if pd.notnull(ep['primary_source_record']) else "DDR_REPORT"
+            events.append({
+                "event_episode_id": ep['event_episode_id'],
+                "event_type": ep['event_type'],
+                "event_domain": ep['event_domain'],
+                "onset_timestamp": str(ep['onset_timestamp']) if pd.notnull(ep['onset_timestamp']) else "Data unavailable",
+                "onset_md": ep['onset_md'],
+                "onset_tvd": ep['onset_tvd'] if pd.notnull(ep['onset_tvd']) else None,
+                "primary_evidence": ep['primary_evidence'],
+                "mitigation_text": ep['mitigation_text'] if pd.notnull(ep['mitigation_text']) else "None recorded",
+                "resolution_text": ep['resolution_text'] if pd.notnull(ep['resolution_text']) else "None recorded",
                 "primary_source_record": rec_id,
-                "source_label": f"Equinor Volve DDR ({rec_id})"
+                "source_label": f"Equinor Volve DDR ({rec_id})",
+                "is_verified": True
             })
-
+            
+        event_counts = df['event_type'].value_counts().to_dict() if len(df) > 0 and 'event_type' in df.columns else {}
         return {
             "well_id": target_well_id,
-            "total_events": len(events_list),
+            "wellbore_id": target_well_id,
+            "total_events": len(events),
+            "total_verified_events": len(events),
             "event_counts": event_counts,
-            "events": events_list,
+            "events": events,
             "provenance": "All evidence extracted deterministically from Equinor Volve verified DDR semantic audit. No generative AI claims used."
         }
 
@@ -225,13 +216,17 @@ class NWISHistoricalAPI:
         max_md: float = None,
         sort_by: str = "depth_asc",
         limit: int = 50,
-        offset: int = 0
+        offset: int = 0,
+        organization_id: str = None,
+        **kwargs
     ) -> dict:
         """
         Searches historical verified DDR drilling knowledge using real repository records.
         Supports deterministic text search, well filtering, event type, domain, document source, depth bounds, and sorting.
         """
         df = self.df_events.copy()
+        if organization_id and 'organization_id' in df.columns:
+            df = df[df['organization_id'] == organization_id]
         
         # Normalize well identifiers
         df['norm_well'] = df['well_id'].astype(str).str.replace("NO ", "").str.strip()
