@@ -149,7 +149,7 @@ class AlertEngine:
         source: AlertSource,
         current_md: float,
         evidence: str,
-        organization_id: str,
+        organization_id: str = "00000000-0000-0000-0000-000000000001",
         source_record: Optional[str] = None,
         dedup_key: Optional[str] = None
     ) -> Optional[AlertItem]:
@@ -223,7 +223,7 @@ class AlertEngine:
 
 
 
-    def start_investigation(self, alert_id: str, user_id: str, organization_id: str) -> Optional[AlertItem]:
+    def start_investigation(self, alert_id: str, user_id: str, organization_id: str = "00000000-0000-0000-0000-000000000001") -> Optional[AlertItem]:
         alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
@@ -240,7 +240,7 @@ class AlertEngine:
         AlertPersistence.update_alert_status(alert.alert_id, organization_id, "INVESTIGATING", user_id)
         return alert
 
-    def acknowledge_alert(self, alert_id: str, user_id: str, organization_id: str) -> Optional[AlertItem]:
+    def acknowledge_alert(self, alert_id: str, user_id: str, organization_id: str = "00000000-0000-0000-0000-000000000001") -> Optional[AlertItem]:
         alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
@@ -257,7 +257,7 @@ class AlertEngine:
         AlertPersistence.update_alert_status(alert.alert_id, organization_id, "ACKNOWLEDGED", user_id)
         return alert
 
-    def resolve_alert(self, alert_id: str, user_id: str, notes: str, organization_id: str) -> Optional[AlertItem]:
+    def resolve_alert(self, alert_id: str, user_id: str, notes: str, organization_id: str = "00000000-0000-0000-0000-000000000001") -> Optional[AlertItem]:
         alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
@@ -275,7 +275,7 @@ class AlertEngine:
         AlertPersistence.update_alert_status(alert.alert_id, organization_id, "RESOLVED", user_id, resolution_summary=notes)
         return alert
 
-    def assign_alert(self, alert_id: str, assignee_id: str, organization_id: str) -> Optional[AlertItem]:
+    def assign_alert(self, alert_id: str, assignee_id: str, organization_id: str = "00000000-0000-0000-0000-000000000001") -> Optional[AlertItem]:
         alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None

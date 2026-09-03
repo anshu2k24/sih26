@@ -517,7 +517,7 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
               {searchResponse.results.map((ev, idx) => (
                 <div
-                  key={ev.event_episode_id || idx}
+                  key={`${ev.event_episode_id || 'ev'}-${idx}`}
                   className="p-[16px] flex flex-col justify-between group"
                   style={glassCardStyle}
                   onMouseEnter={(e) => {

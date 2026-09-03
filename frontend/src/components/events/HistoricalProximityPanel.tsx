@@ -143,7 +143,7 @@ export const HistoricalProximityPanel: React.FC<HistoricalProximityPanelProps> =
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {matches.map((m: HistoricalProximityMatch, idx: number) => (
             <div
-              key={m.event_episode_id || idx}
+              key={`${m.event_episode_id || 'match'}-${idx}`}
               className="rounded-[14px] p-5 space-y-4 relative overflow-hidden transition-all duration-300 flex flex-col group"
               style={{ background: "rgba(10,10,10,0.65)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,122,0,0.3)", boxShadow: "0 0 15px rgba(255,122,0,0.05)" }}
               onMouseEnter={(e) => {

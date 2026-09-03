@@ -294,6 +294,7 @@ class NWISHistoricalAPI:
             
             def row_matches(row):
                 fields = [
+                    str(row.get('event_episode_id', '')),
                     str(row.get('event_type', '')),
                     str(row.get('well_id', '')),
                     str(row.get('wellbore_id', '')),

@@ -474,7 +474,7 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
                     <div className="space-y-6 relative z-10 pl-8 pb-4">
                       {filteredEvents.map((ev, idx) => (
                         <div
-                          key={ev.event_episode_id || idx}
+                          key={`${ev.event_episode_id || 'ev'}-${idx}`}
                           onClick={() => setSelectedEventModal(ev)}
                           className="relative cursor-pointer group"
                         >
@@ -535,7 +535,7 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
                       return (
                         // 19. DDR EVENT CARD
                         <div
-                          key={ev.event_episode_id || idx}
+                          key={`${ev.event_episode_id || 'ev'}-${idx}`}
                           className="p-5 flex flex-col gap-3"
                           style={glassPanelStyle}
                         >
