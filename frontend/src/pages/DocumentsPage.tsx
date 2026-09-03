@@ -1077,51 +1077,87 @@ export const DocumentsPage: React.FC = () => {
 
                       <div className="space-y-2">
                         <label className="text-[12px] font-bold text-[#A1A1AA] uppercase tracking-wider block font-mono">Handwritten Image File</label>
-                        <div 
-                          className="relative w-full rounded-[16px] flex items-center p-4 transition-all duration-300"
-                          style={{
-                            background: "rgba(5, 5, 5, 0.4)",
-                            border: "1px dashed rgba(255, 122, 0, 0.3)",
-                          }}
-                        >
-                          <input
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={(e) => setOcrFile(e.target.files?.[0] || null)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20"
-                          />
-                          <div className="flex items-center gap-4 relative z-10 w-full">
-                            <div className="p-3 bg-[rgba(255,122,0,0.05)] rounded-xl border border-[rgba(255,122,0,0.2)] text-[#FF7A00]">
-                              <ImageIcon className="w-5 h-5" />
+                        {!ocrFile ? (
+                          <div 
+                            className="relative w-full rounded-[16px] flex items-center p-6 transition-all duration-300 hover:border-[#FF7A00]/60 cursor-pointer"
+                            style={{
+                              background: "rgba(5, 5, 5, 0.4)",
+                              border: "1px dashed rgba(255, 122, 0, 0.3)",
+                            }}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) setOcrFile(f);
+                              }}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            />
+                            <div className="flex items-center gap-4 w-full pointer-events-none">
+                              <div className="p-3 bg-[rgba(255,122,0,0.05)] rounded-xl border border-[rgba(255,122,0,0.2)] text-[#FF7A00]">
+                                <ImageIcon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[14px] font-bold text-white truncate">
+                                  Click or drag to select handwritten image / PDF...
+                                </p>
+                                <p className="text-[11px] text-[#A1A1AA] font-mono mt-0.5">Supports JPG, PNG, WEBP, PDF</p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[14px] font-bold text-white truncate">
-                                {ocrFile ? ocrFile.name : "Click or drag to select image..."}
-                              </p>
-                              {ocrFile && <p className="text-[11px] text-[#A1A1AA] font-mono mt-0.5">Ready for processing</p>}
+                          </div>
+                        ) : (
+                          <div 
+                            className="w-full rounded-[16px] flex items-center justify-between p-4 transition-all duration-300"
+                            style={{
+                              background: "rgba(10, 10, 10, 0.6)",
+                              border: "1px solid rgba(255, 122, 0, 0.4)",
+                            }}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="p-2.5 bg-[rgba(255,122,0,0.1)] rounded-xl border border-[rgba(255,122,0,0.3)] text-[#FF7A00] shrink-0">
+                                <ImageIcon className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[13px] font-bold text-white truncate font-mono">
+                                  {ocrFile.name}
+                                </p>
+                                <p className="text-[11px] text-emerald-400 font-mono mt-0.5">
+                                  {(ocrFile.size / 1024).toFixed(1)} KB • Ready for OCR processing
+                                </p>
+                              </div>
                             </div>
-                            {ocrFile && (
+
+                            <div className="flex items-center gap-2 shrink-0 ml-3">
+                              <label className="cursor-pointer px-3 py-2 rounded-[10px] text-[11px] font-mono text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                                Change
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) setOcrFile(f);
+                                  }}
+                                />
+                              </label>
+
                               <button 
-                                type="button"
-                                className="px-5 py-2.5 rounded-[10px] text-[12px] font-bold text-white transition-all z-30 flex items-center gap-2"
+                                type="submit"
+                                className="px-5 py-2.5 rounded-[10px] text-[12px] font-bold text-white transition-all flex items-center gap-2 cursor-pointer shadow-lg"
                                 style={{
-                                  background: "rgba(255, 122, 0, 0.15)",
-                                  border: "1px solid rgba(255, 122, 0, 0.5)",
-                                  boxShadow: "0 0 15px rgba(255, 122, 0, 0.15)",
-                                }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleOcrSubmit(e as any);
+                                  background: "linear-gradient(135deg, #FF7A00, #FF5500)",
+                                  border: "1px solid rgba(255, 122, 0, 0.8)",
+                                  boxShadow: "0 0 15px rgba(255, 122, 0, 0.3)",
                                 }}
                                 disabled={uploading}
                               >
                                 {uploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                RUN TRANSCRIBER
+                                <span>{uploading ? "TRANSCRIBING..." : "RUN TRANSCRIBER"}</span>
                               </button>
-                            )}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </form>
                   </>

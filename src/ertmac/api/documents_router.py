@@ -291,8 +291,25 @@ def get_document_content(
             import tempfile
             db = get_supabase_admin()
             if db:
-                clean_path = storage_path.replace("documents/", "")
-                data = db.storage.from_("documents").download(clean_path)
+                clean_name = Path(storage_path).name
+                org_id = doc.get("organization_id") or "00000000-0000-0000-0000-000000000001"
+                
+                # Try multiple path patterns in Supabase bucket
+                candidates_sb = [
+                    storage_path.replace("documents/", ""),
+                    f"{org_id}/{clean_name}",
+                    clean_name,
+                    storage_path,
+                ]
+                data = None
+                for sb_path in candidates_sb:
+                    try:
+                        data = db.storage.from_("documents").download(sb_path)
+                        if data:
+                            break
+                    except Exception:
+                        continue
+
                 if data:
                     tfile = tempfile.NamedTemporaryFile(delete=False, suffix=f".{doc.get('document_type', 'TXT').lower()}")
                     tfile.write(data)
