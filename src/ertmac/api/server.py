@@ -3,7 +3,7 @@ import json
 import asyncio
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 # Load .env file before any env reads
 from dotenv import load_dotenv
