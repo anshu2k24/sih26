@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Map, { Source, Layer, NavigationControl, FullscreenControl, Marker, Popup } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -7,7 +8,7 @@ import { point } from "@turf/helpers";
 
 import type { WellItem, NearbyWellItem, NearbyWellsResponse } from "../../types/api";
 import { fetchNearbyWells } from "../../services/api";
-import { MapPin, Navigation, Compass, Layers, Crosshair, Globe, ShieldAlert, Sparkles } from "lucide-react";
+import { MapPin, Navigation, Compass, Layers, Crosshair, Globe, ShieldAlert, Sparkles, ArrowRight } from "lucide-react";
 
 // Map Layer Types:
 // 1. "dark": OpenStreetMap (from v04) filtered to dark night-mode matching sih2k26 background (NO API KEY / NO WATERMARK)
@@ -111,6 +112,7 @@ const MAP_TILE_CONFIGS: Record<MapLayerType, { name: string; label: string; desc
             "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
           ],
           tileSize: 256,
+          maxzoom: 12,
           attribution: "&copy; Esri &mdash; World Imagery",
         },
       },
@@ -120,7 +122,7 @@ const MAP_TILE_CONFIGS: Record<MapLayerType, { name: string; label: string; desc
           type: "raster",
           source: "esri-satellite",
           minzoom: 0,
-          maxzoom: 19,
+          maxzoom: 12,
         },
       ],
     },
@@ -264,14 +266,28 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
     }
   }, []);
 
+  const navigate = useNavigate();
+
+  const handleNavigateToWell = useCallback(
+    (wellId: string) => {
+      if (onOpenIntelligence) {
+        onOpenIntelligence(wellId);
+      } else {
+        navigate(`/wells/${encodeURIComponent(wellId)}`);
+      }
+    },
+    [onOpenIntelligence, navigate]
+  );
+
   const onClick = useCallback((event: any) => {
     const feature = event.features && event.features[0];
     if (feature && feature.properties?.id) {
       setSelectedNearbyWellId(feature.properties.id);
+      handleNavigateToWell(feature.properties.id);
     } else {
       setSelectedNearbyWellId(null);
     }
-  }, []);
+  }, [handleNavigateToWell]);
 
   const currentMapStyle = MAP_TILE_CONFIGS[selectedLayer].style;
 
@@ -388,7 +404,7 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                 zoom: 5.85,
               }}
               minZoom={4.0}
-              maxZoom={18.0}
+              maxZoom={selectedLayer === "satellite" ? 12.5 : 18.0}
               mapStyle={currentMapStyle}
               onMouseMove={onHover}
               onClick={onClick}
@@ -474,6 +490,10 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                             ? "0 0 12px rgba(245, 158, 11, 0.9)"
                             : "0 0 8px rgba(0, 0, 0, 0.7)",
                         }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNavigateToWell(feature.properties.id);
+                        }}
                         onMouseEnter={() =>
                           setHoverInfo({
                             longitude: feature.geometry.coordinates[0],
@@ -485,31 +505,42 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                         onMouseLeave={() => setHoverInfo(null)}
                       />
 
-                      {/* Pure DOM Hover Card */}
+                      {/* Pure DOM Hover Card / Matter showing */}
                       {isHovered && (
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-[100] pointer-events-none drop-shadow-2xl">
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigateToWell(feature.properties.id);
+                          }}
+                          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto cursor-pointer drop-shadow-2xl transition-all duration-150 hover:scale-[1.02]"
+                        >
                           <div
-                            className="p-3 rounded-xl text-xs font-mono w-[200px]"
+                            className="p-3.5 rounded-xl text-xs font-mono w-[220px]"
                             style={{
-                              background: "rgba(18, 16, 14, 0.95)",
-                              border: "1px solid rgba(255, 122, 0, 0.4)",
-                              backdropFilter: "blur(12px)",
-                              boxShadow: "0 8px 24px rgba(0,0,0,0.8)",
+                              background: "rgba(18, 16, 14, 0.96)",
+                              border: "1px solid rgba(255, 122, 0, 0.5)",
+                              backdropFilter: "blur(14px)",
+                              boxShadow: "0 8px 28px rgba(0,0,0,0.85), 0 0 15px rgba(255,122,0,0.15)",
                             }}
                           >
                             <div
                               className={`font-bold ${
                                 hasAlert ? "text-amber-400" : "text-[#FF9A3D]"
-                              } border-b border-white/10 pb-1.5 mb-1.5 flex items-center gap-1.5`}
+                              } border-b border-white/10 pb-1.5 mb-1.5 flex items-center justify-between`}
                             >
-                              {hasAlert ? (
-                                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                              ) : (
-                                <MapPin className="w-3.5 h-3.5 text-[#FF7A00]" />
-                              )}
-                              <span>{feature.properties.id}</span>
+                              <div className="flex items-center gap-1.5">
+                                {hasAlert ? (
+                                  <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                                ) : (
+                                  <MapPin className="w-3.5 h-3.5 text-[#FF7A00]" />
+                                )}
+                                <span>{feature.properties.id}</span>
+                              </div>
+                              <span className="text-[9px] text-[#FF7A00] uppercase font-bold tracking-wider opacity-90 flex items-center gap-0.5">
+                                INTEL <ArrowRight className="w-2.5 h-2.5" />
+                              </span>
                             </div>
-                            <div className="truncate text-white text-[11px] mb-1">
+                            <div className="truncate text-white text-[11px] mb-1 font-semibold">
                               {feature.properties.name}
                             </div>
                             <div className="text-[#A1A1AA] flex justify-between text-[10px]">
@@ -531,12 +562,37 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                             </div>
                             <div className="text-[#A1A1AA] flex justify-between text-[10px] mt-0.5">
                               <span>Status:</span>
-                              <span className={hasAlert ? "text-amber-400 font-bold" : "text-emerald-400"}>
+                              <span className={hasAlert ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>
                                 {feature.properties.status || "Offset"}
                               </span>
                             </div>
+
+                            {/* Interactive Click Action Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNavigateToWell(feature.properties.id);
+                              }}
+                              className="mt-2.5 w-full py-1.5 px-2 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md group/btn"
+                              style={{
+                                background: "linear-gradient(145deg, #FF7A00, #FF5A00)",
+                                boxShadow: "0 0 12px rgba(255,122,0,0.35)",
+                                border: "none",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.filter = "brightness(1.15)";
+                                e.currentTarget.style.boxShadow = "0 0 16px rgba(255,122,0,0.6)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.filter = "none";
+                                e.currentTarget.style.boxShadow = "0 0 12px rgba(255,122,0,0.35)";
+                              }}
+                            >
+                              <span>VIEW WELL INTELLIGENCE</span>
+                              <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+                            </button>
                           </div>
-                          <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[rgba(255,122,0,0.4)] mx-auto"></div>
+                          <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[rgba(255,122,0,0.5)] mx-auto"></div>
                         </div>
                       )}
                     </div>
@@ -549,14 +605,22 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                 longitude={activeWellCoords[0]}
                 latitude={activeWellCoords[1]}
                 anchor="center"
+                onClick={(e) => {
+                  e.originalEvent.stopPropagation();
+                  handleNavigateToWell(selectedWell);
+                }}
               >
-                <div className="relative flex items-center justify-center cursor-pointer">
+                <div 
+                  onClick={() => handleNavigateToWell(selectedWell)}
+                  className="relative flex items-center justify-center cursor-pointer group"
+                  title="Click to view Active Well Intelligence"
+                >
                   <div className="absolute w-12 h-12 rounded-full bg-[#00F0FF]/30 animate-ping"></div>
-                  <div className="w-8 h-8 rounded-full bg-[#0E0D0C] border-2 border-[#00F0FF] flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.8)] z-10 relative">
+                  <div className="w-8 h-8 rounded-full bg-[#0E0D0C] border-2 border-[#00F0FF] flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.8)] z-10 relative group-hover:scale-125 transition-transform">
                     <span className="text-[#00F0FF] font-bold text-sm">★</span>
                   </div>
                   <div
-                    className="absolute top-10 whitespace-nowrap text-[#00F0FF] font-mono text-[11px] px-2.5 py-1 rounded-lg shadow-xl z-20 flex flex-col items-center"
+                    className="absolute top-10 whitespace-nowrap text-[#00F0FF] font-mono text-[11px] px-2.5 py-1 rounded-lg shadow-xl z-20 flex flex-col items-center group-hover:scale-105 transition-transform"
                     style={{
                       background: "rgba(14, 13, 12, 0.95)",
                       border: "1px solid rgba(0, 240, 255, 0.5)",
@@ -566,7 +630,9 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                     <span className="text-[9px] text-[#00F0FF]/80 font-bold uppercase tracking-wider">
                       ACTIVE DRILLING
                     </span>
-                    <span className="font-bold text-white">{selectedWell}</span>
+                    <span className="font-bold text-white flex items-center gap-1">
+                      {selectedWell} <ArrowRight className="w-3 h-3 text-[#00F0FF]" />
+                    </span>
                   </div>
                 </div>
               </Marker>
@@ -599,36 +665,6 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
             </span>
           </div>
 
-          {/* Floating On-Map Quick Style Switcher (Top-Center) */}
-          <div
-            className="absolute top-3 right-14 z-[10] flex items-center gap-1 p-1 rounded-xl text-[10px] font-mono"
-            style={{
-              background: "rgba(14, 13, 12, 0.85)",
-              border: "1px solid rgba(255, 122, 0, 0.3)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
-            }}
-          >
-            {(["dark", "osm", "ocean", "satellite"] as MapLayerType[]).map((layerKey) => (
-              <button
-                key={layerKey}
-                onClick={() => setSelectedLayer(layerKey)}
-                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
-                  selectedLayer === layerKey
-                    ? "bg-[#FF7A00] text-black shadow-[0_0_8px_rgba(255,122,0,0.5)]"
-                    : "text-[#D4D4D8] hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {layerKey === "dark"
-                  ? "🌙 Dark"
-                  : layerKey === "osm"
-                  ? "🗺️ OSM"
-                  : layerKey === "ocean"
-                  ? "🌊 Ocean"
-                  : "🛰️ Sat"}
-              </button>
-            ))}
-          </div>
 
           {/* Bottom-Right Legend */}
           <div
@@ -750,7 +786,7 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
                       onClick={() => {
                         setSelectedNearbyWellId(nw.well_id);
                         if (mapRef.current) {
-                          mapRef.current.flyTo({ center: [nw.longitude, nw.latitude], zoom: 15 });
+                          mapRef.current.flyTo({ center: [nw.longitude, nw.latitude], zoom: 11.5, duration: 1000 });
                         }
                       }}
                       className={`p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
