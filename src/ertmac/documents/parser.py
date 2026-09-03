@@ -113,3 +113,73 @@ def parse_extracted_events(
 
     logger.info(f"Parsed {len(extracted_events)} event episodes from document {document_id}")
     return extracted_events
+
+
+def extract_document_metadata(text: str, default_well_id: str = "15/9-F-14") -> Dict[str, Any]:
+    """
+    Extracts core domain metadata deterministically from document text:
+    - well_id
+    - depth
+    - water_depth
+    - report_period
+    - abnormal_remarks
+    - current_operation
+    """
+    if not text:
+        return {
+            "well_id": default_well_id,
+            "depth": "N/A",
+            "water_depth": "N/A",
+            "report_period": "N/A",
+            "abnormal_remarks": "None",
+            "current_operation": "N/A",
+        }
+
+    # 1. Well ID
+    well_id_match = (
+        re.search(r"(?i)well\s*(?:id|name)[^\n]*?([A-Za-z0-9\-\/]{5,})", text)
+        or re.search(r"\b(15/9-[A-Z0-9\-\s]+)\b", text)
+    )
+    well_id = well_id_match.group(1).strip() if well_id_match else default_well_id
+
+    # 2. Depth
+    depth_match = (
+        re.search(r"(?i)current\s*depth[^\d\n]*?([0-9]{2,}\.[0-9]+)", text)
+        or re.search(r"(?i)(?:depth|measured depth|md)\s*[:=]?\s*(\d+(?:\.\d+)?\s*(?:m|ft|meters|feet))", text)
+        or re.search(r"(\d{3,4}(?:\.\d+)?)\s*(?:m|meters|mMD|MD)", text)
+    )
+    depth = depth_match.group(1).strip() if depth_match else "N/A"
+
+    # 3. Water Depth
+    water_depth_match = re.search(r"(?i)water\s*depth[^\d\n]*?([0-9]{1,}\.[0-9]+)", text)
+    water_depth = water_depth_match.group(1).strip() if water_depth_match else "N/A"
+
+    # 4. Report Period
+    report_period_match = (
+        re.search(r"(?is)(?:reporting\s*period|report\s*period)[\s\:\-\|]*(From[\s\S]*?To[\s\S]*?\d{4})", text)
+        or re.search(r"(?is)(From\s*:\s*0?6:00[\s\S]*?To\s*:\s*0?6:00[\s\S]*?\d{4})", text)
+        or re.search(r"(?is)(From\s*:\s*\d{1,2}:\d{2}[\s\S]*?To\s*:\s*\d{1,2}:\d{2}[^\n\|]*)", text)
+        or re.search(r"(?i)reporting\s*period[^\n\|]*[:\-\|]\s*([^\n\|]+)", text)
+        or re.search(r"(?is)4\.\s*REPORTING\s*PERIOD[\s\:\-\|]*([^\n\#\|]+)", text)
+    )
+    report_period = re.sub(r"\s+", " ", report_period_match.group(1)).strip() if report_period_match else "N/A"
+
+    # 5. Abnormal Remarks / Summary
+    abnormal_remarks_match = (
+        re.search(r"(?is)(?:19\.\s*DAILY\s*SUMMARY|DAILY\s*SUMMARY|abnormal\s*remarks|SUMMARY:)\s*[:\-]?\s*([^\n\#\|]+)", text)
+        or re.search(r"(?i)(?:abnormal\s*remarks|remarks)\s*[:\-]?\s*(.*?)(?:\n|$)", text)
+    )
+    abnormal_remarks = re.sub(r"\s+", " ", abnormal_remarks_match.group(1)).strip() if abnormal_remarks_match else "None"
+
+    # 6. Current Operation
+    op_match = re.search(r"(?i)(?:current\s*operation|operation\s*/\s*activity|ops)\s*[:=]?\s*([^\n\r\|]{1,100})", text)
+    current_operation = op_match.group(1).strip() if op_match else "N/A"
+
+    return {
+        "well_id": well_id,
+        "depth": depth,
+        "water_depth": water_depth,
+        "report_period": report_period,
+        "abnormal_remarks": abnormal_remarks,
+        "current_operation": current_operation,
+    }

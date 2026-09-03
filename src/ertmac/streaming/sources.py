@@ -110,9 +110,9 @@ class VolveReplaySensorSource(BaseSensorSource):
         self._df = df
 
     def get_available_wells(self) -> List[str]:
-        wells = set(self._df["well_id"].dropna().unique().tolist()) if "well_id" in self._df.columns else set()
-        if not wells:
-            wells = {"15/9-F-15", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10", "15/9-F-15S"}
+        wells = set(self._df["well_id"].dropna().unique().tolist()) if "well_id" in self._df.columns and len(self._df) > 0 else set()
+        canonical_wells = {"15/9-F-15", "15/9-F-15S", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10"}
+        wells.update(canonical_wells)
         return sorted(wells)
 
     def stream_records(
@@ -129,7 +129,12 @@ class VolveReplaySensorSource(BaseSensorSource):
                 from ertmac.auth.supabase_client import get_supabase_admin
                 db = get_supabase_admin()
                 if db:
-                    res = db.table("telemetry_readings").select("*").eq("well_id", well_id).order("md").limit(20000).execute()
+                    query = db.table("telemetry_readings").select("*").eq("well_id", well_id)
+                    if start_md is not None:
+                        query = query.gte("md", start_md)
+                    if end_md is not None:
+                        query = query.lte("md", end_md)
+                    res = query.order("md").limit(20000).execute()
                     if res.data and len(res.data) > 0:
                         df_well = pd.DataFrame(res.data)
                         cols_lower = {col: col.lower().strip() for col in df_well.columns}
@@ -138,6 +143,11 @@ class VolveReplaySensorSource(BaseSensorSource):
                         well_df = df_well.sort_values(by=["md"]).reset_index(drop=True)
             except Exception:
                 pass
+
+        if start_md is not None and len(well_df) > 0:
+            well_df = well_df[well_df["md"] >= start_md]
+        if end_md is not None and len(well_df) > 0:
+            well_df = well_df[well_df["md"] <= end_md]
 
         if len(well_df) == 0:
             raise ValueError(

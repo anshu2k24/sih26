@@ -31,12 +31,20 @@ export interface NoteStructuredData {
   tasks: string[];
   entities: NoteEntity[];
   tags: string[];
+  well_id?: string | null;
+  depth?: string | null;
+  water_depth?: string | null;
+  report_period?: string | null;
+  abnormal_remarks?: string | null;
+  current_operation?: string | null;
 }
 
 export interface HandwrittenNote {
   id: string;
   organization_id?: string;
   title: string;
+  well_id?: string;
+  original_filename?: string;
   raw_ocr_text: string;
   verified_text: string;
   source: "handwritten";

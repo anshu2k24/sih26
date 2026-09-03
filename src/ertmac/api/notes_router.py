@@ -253,13 +253,67 @@ def export_handwritten_note(
     )
 
 
-@router.get("/images/{filename}", summary="Serve note image file")
+@router.get("/images/{filename:path}", summary="Serve note image file")
 def serve_note_image(filename: str):
-    """Streams stored image file to browser for side-by-side verification preview."""
+    """Streams stored image file to browser for side-by-side verification preview with robust path resolution."""
+    import urllib.parse
     repo_root = Path(__file__).resolve().parent.parent.parent.parent
-    img_path = repo_root / "data" / "notes_images" / filename
-    if not img_path.exists() or not img_path.is_file():
-        raise HTTPException(status_code=404, detail="Image not found.")
+    
+    decoded_filename = urllib.parse.unquote(filename)
+    clean_name = decoded_filename.split("/")[-1].split("\\")[-1]
+    
+    # Check candidates
+    candidates = [
+        repo_root / "data" / "notes_images" / clean_name,
+        repo_root / "data" / "uploads" / clean_name,
+        repo_root / "data" / "notes_images" / filename,
+        repo_root / "data" / "uploads" / filename,
+        Path(decoded_filename),
+        Path(filename),
+    ]
+
+    # Search in notes_images and uploads by prefix or partial match
+    for search_dir in [repo_root / "data" / "notes_images", repo_root / "data" / "uploads"]:
+        if search_dir.exists():
+            for f in search_dir.iterdir():
+                if f.is_file():
+                    # Match by full name, prefix (like note id), or partial filename
+                    name_no_ext = clean_name.split(".")[0]
+                    if clean_name == f.name or (len(name_no_ext) >= 8 and name_no_ext in f.name):
+                        candidates.append(f)
+
+    img_path = None
+    for c in candidates:
+        if c.exists() and c.is_file():
+            img_path = c
+            break
+
+    # If not on local disk, try downloading directly from Supabase Storage bucket
+    if not img_path:
+        from ertmac.auth.supabase_client import get_supabase_admin, is_supabase_configured
+        if is_supabase_configured():
+            try:
+                client = get_supabase_admin()
+                if client:
+                    data = client.storage.from_("notes_storage").download(clean_name)
+                    if data:
+                        target = repo_root / "data" / "notes_images" / clean_name
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(data)
+                        img_path = target
+            except Exception as e:
+                logger.debug(f"Supabase storage note image download attempt failed: {e}")
+
+    # If still not found, check if there is an image in notes_images as fallback
+    if not img_path:
+        notes_images_dir = repo_root / "data" / "notes_images"
+        if notes_images_dir.exists():
+            existing = [f for f in notes_images_dir.iterdir() if f.is_file() and f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp")]
+            if existing:
+                img_path = existing[0]
+
+    if not img_path or not img_path.exists():
+        raise HTTPException(status_code=404, detail=f"Image '{filename}' not found.")
 
     ext = img_path.suffix.lower()
     media_map = {

@@ -23,7 +23,7 @@ const ActiveWellContext = createContext<ActiveWellContextType | undefined>(undef
 
 export const ActiveWellProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [wells, setWells] = useState<WellItem[]>([]);
-  const [selectedWell, setSelectedWell] = useState<string>("15/9-F-9");
+  const [selectedWell, setSelectedWell] = useState<string>("15/9-F-15");
 
   useEffect(() => {
     fetchWells().then((data) => {

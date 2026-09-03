@@ -76,6 +76,7 @@ class AlertItem:
         self.assigned_to: Optional[str] = None
         self.resolved_by: Optional[str] = None
         self.resolved_at: Optional[str] = None
+        self.resolution_notes: Optional[str] = None
         self.organization_id = organization_id
 
     def to_dict(self) -> Dict[str, Any]:
