@@ -665,7 +665,6 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
             </span>
           </div>
 
-
           {/* Bottom-Right Legend */}
           <div
             className="absolute bottom-3 right-12 z-[10] p-2.5 rounded-xl text-[10px] font-mono text-[#D4D4D8] shadow-lg pointer-events-none flex flex-col gap-1.5"

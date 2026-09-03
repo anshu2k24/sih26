@@ -144,82 +144,90 @@ export const HistoricalProximityPanel: React.FC<HistoricalProximityPanelProps> =
           {matches.map((m: HistoricalProximityMatch, idx: number) => (
             <div
               key={m.event_episode_id || idx}
-              className="bg-[#0B101E]/80 backdrop-blur-md border border-amber-500/30 rounded-xl p-4 shadow-lg space-y-3 relative overflow-hidden group hover:-translate-y-1 hover:border-orange-500/60 hover:shadow-[0_0_20px_rgba(255,140,0,0.2)] hover:bg-[#0B101E] transition-all duration-300"
+              className="rounded-[14px] p-5 space-y-4 relative overflow-hidden transition-all duration-300 flex flex-col group"
+              style={{ background: "rgba(10,10,10,0.65)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,122,0,0.3)", boxShadow: "0 0 15px rgba(255,122,0,0.05)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "rgba(255,122,0,0.8)";
+                e.currentTarget.style.boxShadow = "0 0 25px rgba(255,122,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "rgba(255,122,0,0.3)";
+                e.currentTarget.style.boxShadow = "0 0 15px rgba(255,122,0,0.05)";
+              }}
             >
               {/* Card Top Banner */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center justify-between pb-3" style={{ borderBottom: "1px solid rgba(255,122,0,0.15)" }}>
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs px-2.5 py-0.5 rounded font-mono font-bold border ${getEventBadgeStyle(
-                      m.event_type
-                    )}`}
-                  >
+                  <span className="text-xs px-2.5 py-1 rounded font-mono font-bold transition-colors" style={{ border: "1px solid rgba(255,122,0,0.4)", color: "#8A8A8A", background: "transparent" }}>
                     {m.event_type}
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-amber-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                  <span className="text-[11px] font-mono px-2 py-1 rounded transition-colors" style={{ color: "#FF7A00", background: "rgba(255,122,0,0.05)", border: "1px solid rgba(255,122,0,0.2)" }}>
                     {m.proximity_classification}
                   </span>
                 </div>
 
-                <div className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="text-xs font-mono font-bold flex items-center gap-1.5" style={{ color: "#FF7A00" }}>
+                  <MapPin className="w-3.5 h-3.5" />
                   {m.offset_well_id} ({m.offset_well_distance_km} km)
                 </div>
               </div>
 
               {/* Depth Comparison Ruler Diagram */}
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-850 space-y-2 font-mono text-xs">
-                <div className="flex items-center justify-between text-slate-300">
-                  <span className="flex items-center gap-1 text-amber-400 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <div className="p-3.5 rounded-lg space-y-2.5 font-mono text-xs" style={{ background: "rgba(15,15,15,0.7)", border: "1px solid rgba(255,122,0,0.2)" }}>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-bold uppercase tracking-wide" style={{ color: "#FF7A00" }}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: "#FF7A00", boxShadow: "0 0 8px #FF7A00" }}></span>
                     ACTIVE DRILLING ({activeWellId}):
                   </span>
-                  <strong className="text-amber-400 text-sm">{m.current_md.toFixed(1)} m</strong>
+                  <strong className="text-[13px]" style={{ color: "#FF7A00" }}>{m.current_md.toFixed(1)} m</strong>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 py-0.5 border-y border-slate-800">
-                  <ArrowDown className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
-                  <span>Depth Difference: <strong className="text-white font-bold">Δ {m.delta_md.toFixed(1)} m</strong></span>
+                <div className="flex items-center justify-center gap-2 text-[11px] py-2" style={{ color: "#8A8A8A", borderTop: "1px dashed rgba(255,122,0,0.2)", borderBottom: "1px dashed rgba(255,122,0,0.2)" }}>
+                  <ArrowDown className="w-3.5 h-3.5 animate-bounce" style={{ color: "#FF7A00" }} />
+                  <span>Depth Difference: <strong className="font-bold tracking-wide" style={{ color: "#F5F5F5" }}>Δ {m.delta_md.toFixed(1)} m</strong></span>
                 </div>
 
-                <div className="flex items-center justify-between text-slate-300">
-                  <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-bold uppercase tracking-wide" style={{ color: "#10B981" }}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: "#10B981", boxShadow: "0 0 8px #10B981" }}></span>
                     OFFSET EVENT ({m.offset_well_id}):
                   </span>
-                  <strong className="text-emerald-400 text-sm">{m.event_md.toFixed(1)} m</strong>
+                  <strong className="text-[13px]" style={{ color: "#10B981" }}>{m.event_md.toFixed(1)} m</strong>
                 </div>
               </div>
 
               {/* Primary Evidence Excerpt */}
-              <div className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/60 p-2.5 rounded-lg border border-slate-850">
-                <strong className="text-slate-400 font-mono text-[10px] uppercase block mb-0.5">
+              <div className="text-[12px] leading-relaxed font-sans mt-2" style={{ color: "#8A8A8A" }}>
+                <strong className="font-mono text-[10px] uppercase block mb-1 tracking-wider" style={{ color: "#6A6A6A" }}>
                   Primary DDR Activity Text:
                 </strong>
                 {m.primary_evidence}
               </div>
 
               {/* Source Tag & Explicit Scientific Disclaimer */}
-              <div className="pt-2 border-t border-slate-800 space-y-2">
+              <div className="mt-auto pt-4 space-y-3">
                 <div className="flex items-center justify-between text-[11px] font-mono">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Shield className="w-3.5 h-3.5 text-blue-400" />
-                    Source: <code className="text-slate-200">{m.source_label}</code>
+                  <span className="flex items-center gap-1.5" style={{ color: "#8A8A8A" }}>
+                    <Shield className="w-3.5 h-3.5" style={{ color: "#FF7A00" }} />
+                    Source: <code style={{ color: "#D4D4D4" }}>{m.source_label}</code>
                   </span>
-                  <span className="text-emerald-400 font-bold">Verified DDR Record</span>
+                  <span className="font-bold" style={{ color: "#10B981" }}>Verified DDR Record</span>
                 </div>
 
                 {/* MANDATORY SCIENTIFIC RULE DISCLAIMER BANNER */}
-                <div className="bg-amber-950/80 border border-amber-500/50 rounded p-2 text-center text-[11px] font-mono font-bold text-amber-300 tracking-wide uppercase">
+                <div className="rounded-lg p-2.5 text-center text-[11px] font-mono font-bold tracking-wider uppercase" style={{ background: "rgba(255,122,0,0.05)", border: "1px solid rgba(255,122,0,0.4)", color: "#FF7A00", boxShadow: "inset 0 0 10px rgba(255,122,0,0.05)" }}>
                   ⚠ {m.disclaimer}
                 </div>
               </div>
 
               {/* Card Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2 text-xs font-mono">
+              <div className="pt-3 flex items-center justify-end gap-3 text-xs font-mono mt-1">
                 <button
                   onClick={() => onOpenWellIntelligence(m.offset_well_id)}
-                  className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded border border-slate-700 font-bold transition-all flex items-center gap-1"
+                  className="px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 tracking-wide"
+                  style={{ background: "transparent", border: "1px solid rgba(255,122,0,0.3)", color: "#A0A0A0" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FF7A00"; e.currentTarget.style.color = "#FF7A00"; e.currentTarget.style.boxShadow = "0 0 10px rgba(255,122,0,0.15)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,122,0,0.3)"; e.currentTarget.style.color = "#A0A0A0"; e.currentTarget.style.boxShadow = "none"; }}
                 >
                   View Well ➔
                 </button>
@@ -242,7 +250,10 @@ export const HistoricalProximityPanel: React.FC<HistoricalProximityPanelProps> =
                       source_label: m.source_label,
                     })
                   }
-                  className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded border border-emerald-500/40 font-bold transition-all flex items-center gap-1 shadow-md"
+                  className="px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 font-bold tracking-wide"
+                  style={{ background: "linear-gradient(180deg, rgba(255,122,0,0.65) 0%, rgba(200,90,0,0.9) 100%)", border: "1px solid rgba(255,122,0,0.8)", color: "#FFF", boxShadow: "0 0 15px rgba(255,122,0,0.25)" }}
+                  onMouseEnter={(e) => e.currentTarget.style.boxShadow = "0 0 25px rgba(255,122,0,0.45)"}
+                  onMouseLeave={(e) => e.currentTarget.style.boxShadow = "0 0 15px rgba(255,122,0,0.25)"}
                 >
                   View Event Details →
                 </button>
