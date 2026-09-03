@@ -89,45 +89,9 @@ export const DashboardPage: React.FC = () => {
           />
         </div>
 
-        {/* 4. Map & Drilling Parameters */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Map Preview (1/3) */}
-          <div 
-            className="rounded-2xl p-5 shadow-2xl space-y-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)]"
-            style={{
-              background: "rgba(7, 15, 29, 0.70)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
-              border: "1px solid rgba(100, 150, 220, 0.18)"
-            }}
-          >
-            <div className="flex items-center justify-between border-b border-[rgba(100,150,220,0.18)] pb-3 font-mono">
-              <div className="flex items-center gap-2">
-                <Map className="w-4 h-4 text-emerald-400" />
-                <span className="font-bold text-white text-xs uppercase tracking-wider">Field Map Preview</span>
-              </div>
-              <Link
-                to="/map"
-                className="text-xs text-blue-400 hover:text-orange-400 font-bold flex items-center gap-1 hover:underline transition-colors"
-              >
-                FULL MAP <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="h-[280px] rounded-xl overflow-hidden border border-slate-800/50 shadow-inner">
-              <NearbyWellsMap
-                wells={wells}
-                selectedWell={selectedWell}
-                onSelectWell={(wId) => setSelectedWell(wId)}
-                onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
-              />
-            </div>
-          </div>
-
-          {/* Real-time Telemetry Grid (2/3) */}
-          <div className="lg:col-span-2 self-start transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
-            <TelemetryCards latestSensor={latestSensor} />
-          </div>
+        {/* 4. Real-time Telemetry Grid */}
+        <div className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+          <TelemetryCards latestSensor={latestSensor} />
         </div>
 
         {/* 5. System Status */}

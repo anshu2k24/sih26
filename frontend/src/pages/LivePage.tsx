@@ -62,13 +62,11 @@ export const LivePage: React.FC = () => {
               <h1 className="text-lg font-bold text-white uppercase tracking-wider">
                 REAL-TIME TELEMETRY CONSOLE
               </h1>
-              <span className={`text-xs px-2.5 py-0.5 rounded font-bold border ${
-                isStreaming
-                  ? "bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40 animate-pulse"
-                  : "bg-amber-950/60 text-amber-400 border-amber-500/30"
-              }`}>
-                {isStreaming ? "🟢 DRILLING ACTIVE" : "⏸️ STANDBY"}
-              </span>
+              {isStreaming && (
+                <span className="text-xs px-2.5 py-0.5 rounded font-bold border bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40 animate-pulse">
+                  🟢 DRILLING ACTIVE
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400 mt-1">
               Active Well: <strong className="text-white">{selectedWell}</strong> | Samples Received: <strong>{samplesReceived.toLocaleString()}</strong> | MD: <strong>{currentMd.toFixed(1)} m</strong>
@@ -144,7 +142,7 @@ export const LivePage: React.FC = () => {
         </div>
 
         {/* Operational Shift Timeline (Right Column, narrower) */}
-        <div className="xl:col-span-4">
+        <div className="xl:col-span-4 h-[calc(100vh-260px)] min-h-[500px]">
           <OperationalTimelineView wellId={selectedWell} currentMd={currentMd} />
         </div>
       </div>
