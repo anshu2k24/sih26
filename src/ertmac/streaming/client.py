@@ -28,8 +28,8 @@ class SensorStreamClient:
         self.max_history = max_history
 
         self.status = "STREAM DISCONNECTED"
-        self.is_streaming = False
-        self.well_id = "N/A"
+        self.is_streaming = True
+        self.well_id = "15/9-F-15"
         self.current_md = 0.0
         self.tvd: Optional[float] = None
         self.last_timestamp = "N/A"
@@ -138,17 +138,19 @@ class SensorStreamClient:
                 try:
                     from ertmac.streaming.sources import VolveReplaySensorSource
                     source = VolveReplaySensorSource()
-                    active_well = self.well_id or "15/9-F-15"
+                    active_well = self.well_id if (self.well_id and self.well_id != "N/A") else "15/9-F-15"
                     with self._lock:
                         self.well_id = active_well
                         self.status = "LIVE"
+                        self.is_streaming = True
 
                     logger.info(f"In-process stream replay active for well '{active_well}'")
+                    current_streaming_well = active_well
                     for rec in source.stream_records(active_well):
-                        if not self._running:
+                        if not self._running or self.well_id != current_streaming_well:
                             break
                         # If user paused, wait until unpaused
-                        while not self.is_streaming and self._running:
+                        while not self.is_streaming and self._running and self.well_id == current_streaming_well:
                             time.sleep(0.5)
                         self._process_message(json.dumps(rec.to_dict()))
                         time.sleep(0.1)
@@ -212,6 +214,18 @@ class SensorStreamClient:
                 logger.warning(f"Failed to dispatch command to stream server: {e}")
                 return {"success": True, "action": action, "dispatched": False, "error": str(e)}
         return {"success": True, "action": action, "dispatched": False, "note": "Local state updated"}
+
+    def set_well(self, well_id: str) -> None:
+        """Dynamically switches the active well for in-process streaming and causal telemetry."""
+        if well_id and well_id != "N/A" and well_id != self.well_id:
+            with self._lock:
+                self.well_id = well_id
+                self.current_md = 0.0
+                self.samples_received = 0
+                self.history.clear()
+                self.current_record = None
+                self.is_streaming = True
+                logger.info(f"Active stream well switched to '{well_id}'")
 
     def get_state(self) -> Dict[str, Any]:
         with self._lock:
