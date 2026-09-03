@@ -268,9 +268,9 @@ export const RiskCenter: React.FC<RiskCenterProps> = ({ mlState, latestSensor, c
         </div>
 
         {/* Column headers */}
-        <div style={{ background: "rgba(255,255,255,0.03)", borderBottomColor: "rgba(255,255,255,0.06)" }}
+        <div
           className="grid grid-cols-9 gap-0 px-4 py-2 border-b text-[10px] font-bold uppercase tracking-widest"
-          style={{ color: "rgba(255,255,255,0.3)" } as React.CSSProperties}>
+          style={{ background: "rgba(255,255,255,0.03)", borderBottomColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" }}>
           <span>TIME</span>
           <span>MD (m)</span>
           <span>ROP m/h</span>

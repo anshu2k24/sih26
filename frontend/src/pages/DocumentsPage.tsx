@@ -101,7 +101,7 @@ export const DocumentsPage: React.FC = () => {
     {
       id: "welcome-1",
       sender: "gemini",
-      text: "Hello! I am your AI Technical Assistant powered by Google Gemini and Grounded RAG. Ask me anything about your uploaded drilling reports, logbooks, or handwritten notes.",
+      text: "Hello! I am your AI Technical Assistant powered by Grounded RAG. Ask me anything about your uploaded drilling reports, logbooks, or handwritten notes.",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -596,7 +596,7 @@ export const DocumentsPage: React.FC = () => {
           }}
         >
           <Sparkles className="w-4 h-4 text-[#FF9D1A] group-hover:rotate-12 transition-transform group-hover:brightness-125" />
-          <span className="tracking-wider group-hover:brightness-125">ASK AI (GEMINI RAG)</span>
+          <span className="tracking-wider group-hover:brightness-125">ChatBot</span>
           <span className="w-2 h-2 rounded-full bg-[#FF9D1A] animate-pulse" />
         </button>
       </div>
@@ -1009,32 +1009,33 @@ export const DocumentsPage: React.FC = () => {
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
-                  {activeItem.sourceType === "DIGITAL_DOC" ? <FileText className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+                <div className="p-2.5 bg-blue-950 border border-blue-500/40 rounded-xl text-blue-400 shadow-sm">
+                  {activeItem.sourceType === "DIGITAL_DOC" ? <FileCode className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white uppercase tracking-wider">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
                     {activeItem.title}
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                      {activeItem.sourceType === "DIGITAL_DOC" ? `DIGITAL ${activeItem.fileType}` : "HANDWRITTEN OCR"}
+                    </span>
                   </h3>
-                  <span className="text-[11px] text-slate-400">
-                    {activeItem.sourceType === "DIGITAL_DOC" ? "Digital Document Details (Auto-Verified)" : "Handwritten OCR Review & Verification"}
-                  </span>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {activeItem.id}</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveItem(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               {itemDetailLoading ? (
-                <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
-                  <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
-                  <span>Loading document contents...</span>
+                <div className="py-20 text-center text-slate-400 space-y-3">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-400" />
+                  <p className="text-sm">Loading document details & verified evidence...</p>
                 </div>
               ) : activeItem.sourceType === "DIGITAL_DOC" && digitalDocDetails ? (
                 /* Digital Document Content */
@@ -1101,11 +1102,11 @@ export const DocumentsPage: React.FC = () => {
                         
                         {digitalDocDetails.document.source_metadata?.tags?.length > 0 && (
                           <div>
-                            <h4 className="text-xs font-bold text-cyan-400 mb-1.5">Tags</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Semantic Tags</h4>
                             <div className="flex flex-wrap gap-1.5">
-                              {digitalDocDetails.document.source_metadata.tags.map((tag: string, idx: number) => (
-                                <span key={idx} className="px-2 py-0.5 rounded-lg bg-cyan-900/40 text-cyan-300 text-[10px] font-bold border border-cyan-700/50">
-                                  {tag}
+                              {digitalDocDetails.document.source_metadata.tags.map((tag: string, i: number) => (
+                                <span key={i} className="px-2 py-0.5 rounded-full text-[10px] bg-cyan-950/60 text-cyan-300 border border-cyan-700/40">
+                                  #{tag}
                                 </span>
                               ))}
                             </div>
@@ -1117,40 +1118,16 @@ export const DocumentsPage: React.FC = () => {
                 </div>
 
                   {/* Extracted Events Section */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-300 uppercase mb-3 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-cyan-400" /> Extracted Event Episodes ({digitalDocDetails.extracted_events?.length || 0})
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase">
+                      Extracted Events & Operational Episodes ({digitalDocDetails.extracted_events?.length || 0})
                     </h4>
-                    <div className="space-y-3">
-                      {digitalDocDetails.extracted_events?.length === 0 && (
-                        <p className="text-xs text-slate-500 italic">No structured events extracted from this file.</p>
-                      )}
+                    <div className="space-y-2">
                       {digitalDocDetails.extracted_events?.map((ev: any) => (
-                        <div key={ev.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-white uppercase">{ev.event_type || "OPERATION LOG"}</span>
-                            <div className="flex items-center gap-2">
-                              {ev.verification_status === "VERIFIED" ? (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/30">
-                                  VERIFIED
-                                </span>
-                              ) : (
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={() => handleVerifyEvent(digitalDocDetails.document.id, ev.id)}
-                                    className="px-2 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1"
-                                  >
-                                    <Check className="w-3 h-3" /> VERIFY
-                                  </button>
-                                  <button
-                                    onClick={() => handleRejectEvent(digitalDocDetails.document.id, ev.id)}
-                                    className="px-2 py-1 rounded bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1"
-                                  >
-                                    <X className="w-3 h-3" /> REJECT
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                        <div key={ev.id} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-cyan-400">{ev.event_type || "Drilling Event"}</span>
+                            <span className="text-[10px] font-mono text-slate-500">MD: {ev.onset_md ? `${ev.onset_md}m` : "N/A"}</span>
                           </div>
                           <p className="text-xs text-slate-300">{ev.summary || ev.raw_text}</p>
                         </div>
@@ -1168,9 +1145,23 @@ export const DocumentsPage: React.FC = () => {
                         <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">Scanned Note Image</h4>
                         <div className="w-full max-h-[400px] bg-black/40 rounded flex items-center justify-center overflow-hidden">
                           <img
-                            src={`${API_BASE_URL}/api/v1/notes/images/${noteDetails.metadata?.storage?.stored_filename || noteDetails.storage_path?.split('/').pop() || activeItem.filename}`}
+                            src={`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
+                              (noteDetails.metadata?.storage as any)?.stored_filename ||
+                              noteDetails.storage_path?.split('/').pop() ||
+                              noteDetails.public_url?.split('/').pop() ||
+                              (noteDetails.metadata?.storage as any)?.filename ||
+                              activeItem.filename ||
+                              noteDetails.id
+                            )}`}
                             alt="Scanned Handwritten Note"
                             className="max-w-full max-h-full object-contain"
+                            onError={(e) => {
+                              // Fallback if specific image file lookup fails
+                              const target = e.currentTarget;
+                              if (!target.src.includes("fallback")) {
+                                target.src = `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(noteDetails.id)}?fallback=1`;
+                              }
+                            }}
                           />
                         </div>
                       </div>
@@ -1188,59 +1179,122 @@ export const DocumentsPage: React.FC = () => {
 
                     {/* Right Column: Details */}
                     <div className="space-y-5 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                      {/* Note Information */}
                       <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase">Handwritten Note Details</h4>
+                        <h4 className="text-xs font-bold text-slate-300 uppercase">Note Information</h4>
                         <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div><span className="text-slate-500 block text-[10px]">NOTE ID:</span><span className="text-slate-200 break-words">{noteDetails.id.slice(0, 12)}...</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">CONFIDENCE:</span><span className="text-cyan-400">{noteDetails.confidence_level}</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">STATUS:</span><span className="text-amber-400 font-bold">{noteDetails.verification_status}</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">SOURCE:</span><span className="text-slate-200">{noteDetails.source}</span></div>
+                          <div><span className="text-slate-500 block text-[10px]">ID:</span><span className="text-slate-200 break-words">{noteDetails.id}</span></div>
+                          <div><span className="text-slate-500 block text-[10px]">SOURCE:</span><span className="text-slate-200 break-words">HANDWRITTEN OCR</span></div>
+                          <div><span className="text-slate-500 block text-[10px]">STATUS:</span>
+                            <span className={noteDetails.verification_status === "VERIFIED" ? "text-emerald-400 font-bold" : noteDetails.verification_status === "REJECTED" ? "text-rose-400 font-bold" : "text-amber-400 font-bold"}>
+                              {noteDetails.verification_status === "VERIFIED" ? "VERIFIED" : noteDetails.verification_status === "REJECTED" ? "REJECTED" : "YET TO BE VERIFIED"}
+                            </span>
+                          </div>
+                          <div><span className="text-slate-500 block text-[10px]">CONFIDENCE:</span><span className="text-slate-200">{noteDetails.confidence ? `${(noteDetails.confidence * 100).toFixed(1)}%` : "HIGH"}</span></div>
                         </div>
                       </div>
 
-                      {/* OCR Metadata Details instead of Transcribed Text */}
+                      {/* Imported Note Details */}
                       <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200">{noteDetails.original_filename || activeItem.filename}</span></div>
-                      <div><span className="text-slate-500 block text-[10px]">WELL ID:</span><span className="text-slate-200">{noteDetails.well_id || noteDetails.structured_data?.well_id || "N/A"}</span></div>
-                      <div><span className="text-slate-500 block text-[10px]">DEPTH:</span><span className="text-slate-200">{noteDetails.structured_data?.depth || "N/A"}</span></div>
-                      <div><span className="text-slate-500 block text-[10px]">WATER DEPTH:</span><span className="text-slate-200">{noteDetails.structured_data?.water_depth || "N/A"}</span></div>
-                      <div className="col-span-2"><span className="text-slate-500 block text-[10px]">REPORT PERIOD:</span><span className="text-slate-200">{noteDetails.structured_data?.report_period || "N/A"}</span></div>
-                      <div className="col-span-2"><span className="text-slate-500 block text-[10px]">ABNORMAL REMARKS:</span><span className="text-slate-200">{noteDetails.structured_data?.abnormal_remarks || "None"}</span></div>
-                    </div>
-                  </div>
+                        <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200 break-words">{noteDetails.title || noteDetails.metadata?.storage?.filename || activeItem.filename}</span></div>
+                          <div><span className="text-slate-500 block text-[10px]">WELL ID:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.well_id || noteDetails.well_id || "N/A"}</span></div>
+                          <div><span className="text-slate-500 block text-[10px]">DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.depth || "N/A"}</span></div>
+                          <div><span className="text-slate-500 block text-[10px]">WATER DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.water_depth || "N/A"}</span></div>
+                          <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">REPORT PERIOD:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.report_period || "N/A"}</span></div>
+                          <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">ABNORMAL REMARKS:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.abnormal_remarks || "None"}</span></div>
+                        </div>
+                      </div>
 
-                      {/* Side-by-side or Edit View is removed per user request */}
-                      {noteDetails.verification_status !== "VERIFIED" && (
-                        <div className="flex items-center justify-end gap-3 pt-2">
-                          <button
-                            onClick={handleRejectNote}
-                            disabled={verifyingAction}
-                            className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 shadow-lg shadow-rose-600/20 disabled:opacity-50 transition flex items-center gap-2"
-                          >
-                            {verifyingAction ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <X className="w-4 h-4" />
-                            )}
-                            <span>REJECT OCR</span>
-                          </button>
-                          
+                      {/* OCR Structured Entities & Measurements */}
+                      <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-4">
+                        <h4 className="text-xs font-bold text-slate-300 uppercase">Structured Extraction (Mistral OCR)</h4>
+                        
+                        {/* Summary & Tags */}
+                        {noteDetails.structured_data?.summary && (
+                          <div className="space-y-1">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold">Summary</span>
+                            <p className="text-xs text-slate-300 leading-relaxed">{noteDetails.structured_data.summary}</p>
+                          </div>
+                        )}
+                        {noteDetails.structured_data?.tags && noteDetails.structured_data.tags.length > 0 && (
+                          <div className="space-y-1">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold">Tags</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {noteDetails.structured_data.tags.map((t, idx) => (
+                                <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                                  #{t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Measurements List */}
+                        {noteDetails.structured_data?.measurements && noteDetails.structured_data.measurements.length > 0 && (
+                          <div className="space-y-2">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Measurements ({noteDetails.structured_data.measurements.length})</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {noteDetails.structured_data.measurements.map((m, idx) => (
+                                <div key={idx} className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs">
+                                  <span className="text-slate-400 block text-[10px]">{m.parameter}</span>
+                                  <span className="font-bold text-cyan-400">{m.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Identified Entities */}
+                        {noteDetails.structured_data?.entities && noteDetails.structured_data.entities.length > 0 && (
+                          <div className="space-y-2">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Entities ({noteDetails.structured_data.entities.length})</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {noteDetails.structured_data.entities.map((ent, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300">
+                                  <strong className="text-cyan-400">{ent.type}:</strong> {ent.value}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Human Verification & Editing Action */}
+                      <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-slate-300 uppercase">Human Verification & Text Edit</h4>
+                          <span className="text-[10px] text-slate-500">Edit and confirm to promote to RAG Ground Truth</span>
+                        </div>
+                        <textarea
+                          rows={6}
+                          value={editableVerifiedText}
+                          onChange={(e) => setEditableVerifiedText(e.target.value)}
+                          placeholder="Edit or correct OCR transcribed text before human verification..."
+                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition"
+                        />
+                        <div className="flex items-center justify-end gap-2 pt-2">
+                          {noteDetails.verification_status !== "REJECTED" && (
+                            <button
+                              onClick={handleRejectNote}
+                              disabled={verifyingAction}
+                              className="px-4 py-2 text-xs font-bold bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50 rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>REJECT OCR</span>
+                            </button>
+                          )}
                           <button
                             onClick={handleVerifyNote}
                             disabled={verifyingAction}
-                            className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition flex items-center gap-2"
+                            className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition flex items-center gap-1.5 disabled:opacity-50 shadow-md shadow-emerald-600/20"
                           >
-                            {verifyingAction ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <ShieldCheck className="w-4 h-4" />
-                            )}
-                            <span>APPROVE & MARK AS VERIFIED (INDEX IN RAG)</span>
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>VERIFY OCR AS GROUND TRUTH</span>
                           </button>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1250,19 +1304,19 @@ export const DocumentsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── ASK AI (GEMINI RAG CHAT) SLIDING DRAWER ── */}
+      {/* ── CHATBOT SLIDING DRAWER ── */}
       {showChatDrawer && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-end">
+        <div className="fixed inset-0 top-[70px] z-[100] bg-black/70 backdrop-blur-sm flex justify-end">
           <div className="bg-slate-900 border-l border-slate-800 w-full max-w-xl h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-cyan-950 border border-cyan-500/40 rounded-xl text-cyan-400 shadow-sm">
+            {/* Drawer Header with Title and Clear/Exit Actions */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-cyan-950/80 border border-cyan-500/40 rounded-xl text-cyan-400 shadow-sm">
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    Gemini AI Technical Assistant
+                    AI Technical Assistant
                     <span className="px-2 py-0.5 rounded text-[9px] bg-cyan-950 text-cyan-400 border border-cyan-500/30">
                       RAG Active
                     </span>
@@ -1270,28 +1324,30 @@ export const DocumentsPage: React.FC = () => {
                   <p className="text-[10px] text-slate-400">Grounded exclusively on your verified documents & notes</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
                     setChatMessages([
                       {
                         id: `welcome-${Date.now()}`,
                         sender: "gemini",
-                        text: "Hello! I am your AI Technical Assistant powered by Google Gemini and Grounded RAG. Ask me anything about your uploaded drilling reports, logbooks, or handwritten notes.",
+                        text: "Hello! I am your AI Technical Assistant powered by Grounded RAG. Ask me anything about your uploaded drilling reports, logbooks, or handwritten notes.",
                         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
                       },
                     ]);
                   }}
-                  className="px-2.5 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 bg-slate-800/80 hover:bg-slate-700 rounded-lg border border-slate-700/60 transition"
+                  className="px-2.5 py-1.5 text-[10px] font-bold text-slate-300 hover:text-white bg-slate-800/90 hover:bg-slate-700 rounded-lg border border-slate-700 transition"
                   title="Clear conversation history"
                 >
                   Clear Chat
                 </button>
                 <button
                   onClick={() => setShowChatDrawer(false)}
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-200 hover:text-white bg-rose-950/70 hover:bg-rose-900/90 border border-rose-700/50 rounded-xl transition shadow-sm"
+                  title="Exit Chat"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 text-rose-400" />
+                  <span>EXIT</span>
                 </button>
               </div>
             </div>
@@ -1359,7 +1415,7 @@ export const DocumentsPage: React.FC = () => {
               {chatLoading && (
                 <div className="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl rounded-bl-none text-xs text-cyan-400 max-w-[75%] animate-pulse">
                   <Sparkles className="w-4 h-4 animate-spin" />
-                  <span>Gemini is querying verified knowledge index...</span>
+                  <span>AI assistant is querying verified knowledge index...</span>
                 </div>
               )}
             </div>
