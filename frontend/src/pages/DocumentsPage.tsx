@@ -4,6 +4,8 @@ import {
   uploadDocumentApi,
   fetchDocumentsApi,
   fetchDocumentDetailsApi,
+  fetchDocumentContentBlobApi,
+  fetchNoteImageBlobApi,
   verifyExtractedEventApi,
   rejectExtractedEventApi,
   API_BASE_URL,
@@ -295,26 +297,48 @@ export const DocumentsPage: React.FC = () => {
   };
 
   // Open item inspection & review
+  const [docContentBlobUrl, setDocContentBlobUrl] = useState<string | null>(null);
+  const [noteImageBlobUrl, setNoteImageBlobUrl] = useState<string | null>(null);
+
   const openItemDetails = async (item: UnifiedDocumentItem) => {
     setActiveItem(item);
     setItemDetailLoading(true);
     setDigitalDocDetails(null);
     setNoteDetails(null);
+    setDocContentBlobUrl(null);
+    setNoteImageBlobUrl(null);
 
     try {
       if (item.sourceType === "DIGITAL_DOC") {
-        const data = await fetchDocumentDetailsApi(item.id);
+        const [data, blobUrl] = await Promise.all([
+          fetchDocumentDetailsApi(item.id),
+          fetchDocumentContentBlobApi(item.id),
+        ]);
         if (data) {
           setDigitalDocDetails(data);
         }
+        if (blobUrl) {
+          setDocContentBlobUrl(blobUrl);
+        }
       } else {
         const data = await fetchNoteDetailApi(item.id);
-        if (data && data.note) {
-          setNoteDetails(data.note);
-          setEditableVerifiedText(data.note.verified_text || data.note.raw_ocr_text || "");
-        } else if (item.rawNote) {
-          setNoteDetails(item.rawNote);
-          setEditableVerifiedText(item.rawNote.verified_text || item.rawNote.raw_ocr_text || "");
+        const resolvedNote = data?.note || item.rawNote;
+        if (resolvedNote) {
+          setNoteDetails(resolvedNote);
+          setEditableVerifiedText(resolvedNote.verified_text || resolvedNote.raw_ocr_text || "");
+
+          const filenameToFetch =
+            (resolvedNote.metadata?.storage as any)?.stored_filename ||
+            resolvedNote.storage_path?.split("/").pop() ||
+            resolvedNote.public_url?.split("/").pop() ||
+            (resolvedNote.metadata?.storage as any)?.filename ||
+            item.filename ||
+            resolvedNote.id;
+
+          const imgBlob = await fetchNoteImageBlobApi(filenameToFetch);
+          if (imgBlob) {
+            setNoteImageBlobUrl(imgBlob);
+          }
         }
       }
     } catch (err) {
@@ -1267,14 +1291,14 @@ export const DocumentsPage: React.FC = () => {
                         {activeItem.filename?.toLowerCase().match(/\.(png|jpe?g|gif|webp)$/i) || ["PNG", "JPEG", "JPG", "GIF"].includes((digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "").toUpperCase()) ? (
                           <div className="w-full h-full flex items-center justify-center p-2">
                             <img 
-                              src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content`}
+                              src={docContentBlobUrl || `${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content`}
                               alt="Document Preview"
                               className="max-w-full max-h-full object-contain"
                             />
                           </div>
                         ) : (
                           <iframe
-                            src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
+                            src={docContentBlobUrl ? `${docContentBlobUrl}#view=Fit` : `${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
                             className="w-full h-full bg-white border-0"
                             title="Document Preview"
                           />
@@ -1389,7 +1413,7 @@ export const DocumentsPage: React.FC = () => {
                       <div className="flex-1 min-h-0 relative p-4 flex flex-col">
                         <div className="w-full flex-1 min-h-0 rounded-xl flex items-center justify-center overflow-hidden border bg-[#0A0A0A]" style={{ borderColor: "rgba(255,122,0,0.1)" }}>
                           <img
-                            src={`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
+                            src={noteImageBlobUrl || `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
                               (noteDetails.metadata?.storage as any)?.stored_filename ||
                               noteDetails.storage_path?.split('/').pop() ||
                               noteDetails.public_url?.split('/').pop() ||
