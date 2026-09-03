@@ -83,6 +83,9 @@ class ApplicationStateManager:
         return results
 
     def get_well_state(self, well_id: str) -> Dict[str, Any]:
+        if well_id and well_id != "N/A" and hasattr(self.stream_client, "set_well"):
+            if self.stream_client.well_id != well_id:
+                self.stream_client.set_well(well_id)
         st = self.stream_client.get_state()
         active_well = st["well_id"] if st["well_id"] != "N/A" else well_id
         return {
