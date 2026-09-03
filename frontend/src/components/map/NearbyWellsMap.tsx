@@ -599,36 +599,7 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
             </span>
           </div>
 
-          {/* Floating On-Map Quick Style Switcher (Top-Center) */}
-          <div
-            className="absolute top-3 right-14 z-[10] flex items-center gap-1 p-1 rounded-xl text-[10px] font-mono"
-            style={{
-              background: "rgba(14, 13, 12, 0.85)",
-              border: "1px solid rgba(255, 122, 0, 0.3)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
-            }}
-          >
-            {(["dark", "osm", "ocean", "satellite"] as MapLayerType[]).map((layerKey) => (
-              <button
-                key={layerKey}
-                onClick={() => setSelectedLayer(layerKey)}
-                className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
-                  selectedLayer === layerKey
-                    ? "bg-[#FF7A00] text-black shadow-[0_0_8px_rgba(255,122,0,0.5)]"
-                    : "text-[#D4D4D8] hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {layerKey === "dark"
-                  ? "🌙 Dark"
-                  : layerKey === "osm"
-                  ? "🗺️ OSM"
-                  : layerKey === "ocean"
-                  ? "🌊 Ocean"
-                  : "🛰️ Sat"}
-              </button>
-            ))}
-          </div>
+
 
           {/* Bottom-Right Legend */}
           <div

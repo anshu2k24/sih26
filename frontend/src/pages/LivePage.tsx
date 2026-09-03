@@ -67,7 +67,7 @@ export const LivePage: React.FC = () => {
                   ? "bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40 animate-pulse"
                   : "bg-amber-950/60 text-amber-400 border-amber-500/30"
               }`}>
-                {isStreaming ? "🟢 DRILLING ACTIVE" : "⏸️ STANDBY (CLICK START)"}
+                {isStreaming ? "🟢 DRILLING ACTIVE" : "⏸️ STANDBY"}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">

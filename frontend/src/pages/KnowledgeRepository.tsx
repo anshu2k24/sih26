@@ -144,22 +144,21 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
   };
 
   const glassCardStyle = {
-    background: "linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,122,0,0.018) 40%, rgba(22, 22, 22, 0.55))",
-    backdropFilter: "blur(18px) saturate(120%)",
-    WebkitBackdropFilter: "blur(18px) saturate(120%)",
-    border: "1px solid rgba(255, 122, 0, 0.28)",
+    background: "rgba(10,10,10,0.65)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,122,0,0.3)",
     borderRadius: "14px",
-    boxShadow: "0 5px 25px rgba(0,0,0,0.35)",
+    boxShadow: "0 0 15px rgba(255,122,0,0.05)",
     transition: "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease, background 200ms ease",
   };
 
   const evidencePanelStyle = {
-    background: "rgba(5, 6, 7, 0.50)",
-    border: "1px solid rgba(255, 122, 0, 0.20)",
+    background: "rgba(15,15,15,0.7)",
+    border: "1px solid rgba(255,122,0,0.2)",
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",
     borderRadius: "10px",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)",
   };
 
   const inputStyle = {
@@ -523,15 +522,13 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
                   style={glassCardStyle}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.borderColor = "rgba(255, 122, 0, 0.70)";
-                    e.currentTarget.style.boxShadow = "0 12px 35px rgba(255,122,0,0.12), 0 0 22px rgba(255,122,0,0.10)";
-                    e.currentTarget.style.background = "rgba(28, 24, 20, 0.68)";
+                    e.currentTarget.style.borderColor = "rgba(255,122,0,0.8)";
+                    e.currentTarget.style.boxShadow = "0 0 25px rgba(255,122,0,0.15)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.borderColor = "rgba(255, 122, 0, 0.28)";
-                    e.currentTarget.style.boxShadow = "0 5px 25px rgba(0,0,0,0.35)";
-                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,122,0,0.018) 40%, rgba(22, 22, 22, 0.55))";
+                    e.currentTarget.style.borderColor = "rgba(255,122,0,0.3)";
+                    e.currentTarget.style.boxShadow = "0 0 15px rgba(255,122,0,0.05)";
                   }}
                 >
                   <div className="space-y-[16px]">
@@ -539,15 +536,14 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-[11px] px-[8px] py-[4px] rounded-[6px] font-[600] tracking-wide border ${getEventBadgeStyle(
-                            ev.event_type
-                          )}`}
+                          className="text-[11px] px-[8px] py-[4px] rounded-[6px] font-[600] tracking-wide"
+                          style={{ border: "1px solid rgba(255,122,0,0.4)", color: "#8A8A8A", background: "transparent" }}
                         >
                           {ev.event_type}
                         </span>
                         <div 
-                          className="flex items-center gap-1.5 px-[8px] py-[4px] rounded-[6px] text-[11px] font-mono font-[600] text-[#9A9A9A]"
-                          style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.05)" }}
+                          className="flex items-center gap-1.5 px-[8px] py-[4px] rounded-[6px] text-[11px] font-mono font-[600]"
+                          style={{ background: "rgba(255,122,0,0.05)", border: "1px solid rgba(255,122,0,0.2)", color: "#FF7A00" }}
                         >
                           <MapPin className="w-3 h-3 text-[#FF7A00]" />
                           {ev.well_id}
@@ -602,21 +598,19 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
                         onClick={() => onOpenWellIntelligence && onOpenWellIntelligence(ev.well_id.replace("NO ", ""))}
                         className="px-[12px] py-[6px] rounded-[6px] text-[11px] font-[500] text-[#9A9A9A]"
                         style={{
-                          background: "rgba(10, 10, 10, 0.6)",
-                          border: "1px solid rgba(255,255,255,0.1)",
+                          background: "transparent",
+                          border: "1px solid rgba(255,122,0,0.3)",
                           transition: "all 180ms ease"
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = "rgba(255, 122, 0, 0.5)";
-                          e.currentTarget.style.boxShadow = "0 0 10px rgba(255,122,0,0.1)";
-                          e.currentTarget.style.color = "#FFF";
-                          e.currentTarget.style.background = "rgba(20, 20, 20, 0.8)";
+                          e.currentTarget.style.borderColor = "#FF7A00";
+                          e.currentTarget.style.boxShadow = "0 0 10px rgba(255,122,0,0.15)";
+                          e.currentTarget.style.color = "#FF7A00";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                          e.currentTarget.style.borderColor = "rgba(255,122,0,0.3)";
                           e.currentTarget.style.boxShadow = "none";
                           e.currentTarget.style.color = "#9A9A9A";
-                          e.currentTarget.style.background = "rgba(10, 10, 10, 0.6)";
                         }}
                       >
                         View Well &rarr;
@@ -629,25 +623,21 @@ export const KnowledgeRepository: React.FC<KnowledgeRepositoryProps> = ({
                             setSelectedEventModal(ev);
                           }
                         }}
-                        className="px-[12px] py-[6px] rounded-[6px] text-[11px] font-[600] text-[#FF7A00] group-btn"
+                        className="px-[12px] py-[6px] rounded-[6px] text-[11px] font-[600] tracking-wide"
                         style={{
-                          background: "rgba(10, 10, 10, 0.8)",
-                          border: "1px solid rgba(255, 122, 0, 0.4)",
+                          background: "linear-gradient(180deg, rgba(255,122,0,0.65) 0%, rgba(200,90,0,0.9) 100%)",
+                          border: "1px solid rgba(255,122,0,0.8)",
+                          color: "#FFF",
+                          boxShadow: "0 0 15px rgba(255,122,0,0.25)",
                           transition: "all 180ms ease"
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = "#FF8C00";
-                          e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.25)";
-                          e.currentTarget.style.color = "#FFF";
+                          e.currentTarget.style.boxShadow = "0 0 25px rgba(255,122,0,0.45)";
                           e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.background = "rgba(255,122,0,0.08)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = "rgba(255, 122, 0, 0.4)";
-                          e.currentTarget.style.boxShadow = "none";
-                          e.currentTarget.style.color = "#FF7A00";
+                          e.currentTarget.style.boxShadow = "0 0 15px rgba(255,122,0,0.25)";
                           e.currentTarget.style.transform = "none";
-                          e.currentTarget.style.background = "rgba(10, 10, 10, 0.8)";
                         }}
                       >
                         View Event Details &rarr;
