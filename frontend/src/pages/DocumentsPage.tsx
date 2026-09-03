@@ -1263,22 +1263,7 @@ export const DocumentsPage: React.FC = () => {
                     </div>
                     
                     <div className="flex-1 min-h-0 relative p-4 flex flex-col">
-                      <div className="flex items-center justify-between px-4 py-2 rounded-t-xl shrink-0" style={{ background: "rgba(20,20,20,0.8)", border: "1px solid rgba(255,122,0,0.1)", borderBottom: "none" }}>
-                        <div className="flex items-center gap-2 text-xs text-[#8A8A8A] font-mono">
-                          <span>Pretty-print</span>
-                          <div className="w-3 h-3 border border-[#8A8A8A] rounded-sm"></div>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-[#8A8A8A]">
-                          <button className="hover:text-[#FF7A00] transition-colors"><Minus className="w-4 h-4" /></button>
-                          <span className="font-mono">100%</span>
-                          <button className="hover:text-[#FF7A00] transition-colors"><Plus className="w-4 h-4" /></button>
-                          <div className="w-px h-4 bg-slate-800 mx-1"></div>
-                          <button className="hover:text-[#FF7A00] transition-colors"><Maximize className="w-4 h-4" /></button>
-                          <button className="hover:text-[#FF7A00] transition-colors"><RotateCcw className="w-4 h-4" /></button>
-                          <button className="hover:text-[#FF7A00] transition-colors"><MoreVertical className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                      <div className="flex-1 min-h-0 bg-[#0A0A0A] rounded-b-xl overflow-hidden border" style={{ borderColor: "rgba(255,122,0,0.1)" }}>
+                      <div className="flex-1 min-h-0 bg-[#0A0A0A] rounded-xl overflow-hidden border" style={{ borderColor: "rgba(255,122,0,0.15)" }}>
                         {activeItem.filename?.toLowerCase().match(/\.(png|jpe?g|gif|webp)$/i) || ["PNG", "JPEG", "JPG", "GIF"].includes((digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "").toUpperCase()) ? (
                           <div className="w-full h-full flex items-center justify-center p-2">
                             <img 
@@ -1290,7 +1275,7 @@ export const DocumentsPage: React.FC = () => {
                         ) : (
                           <iframe
                             src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
-                            className="w-full h-full bg-white"
+                            className="w-full h-full bg-white border-0"
                             title="Document Preview"
                           />
                         )}
