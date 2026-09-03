@@ -171,6 +171,25 @@ export async function verifyNoteApi(
 }
 
 /**
+ * Rejects a note if OCR output is unsalvageable.
+ */
+export async function rejectNoteApi(
+  noteId: string
+): Promise<HandwrittenNote | null> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/v1/notes/${encodeURIComponent(noteId)}/reject`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.note;
+  } catch (err) {
+    console.error("rejectNoteApi error:", err);
+    return null;
+  }
+}
+
+/**
  * Retries OCR on an existing note.
  */
 export async function retryNoteOcrApi(

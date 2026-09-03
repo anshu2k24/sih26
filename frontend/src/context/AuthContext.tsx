@@ -143,9 +143,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ── Initialize auth state on mount ──────────────────────────────────────
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      // Dev bypass: no Supabase configured → use dev profile
-      setProfile(DEV_PROFILE);
-      setStatus("authenticated");
+      // No Supabase configured → require manual login via hardcoded credentials
+      setStatus("unauthenticated");
       return;
     }
 
@@ -205,9 +204,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     async (email: string, password: string): Promise<{ error: string | null }> => {
       setError(null);
 
+      // Enforce the specific email and password
+      if (email !== "jayanthjay751@gmail.com" || password !== "123456") {
+        const msg = "Incorrect email or password.";
+        setError(msg);
+        return { error: msg };
+      }
+
       if (!isSupabaseConfigured) {
-        // Dev bypass
-        setProfile(DEV_PROFILE);
+        setProfile({ ...DEV_PROFILE, email, full_name: "Jayasurya Midde" });
         setStatus("authenticated");
         return { error: null };
       }

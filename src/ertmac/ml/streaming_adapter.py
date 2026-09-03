@@ -172,11 +172,11 @@ class StreamInferenceAdapter:
                 "features": {}
             }
 
-        # 3. Evaluate existing ML Readiness Gate
+        # 4. Evaluate existing ML Readiness Gate
         is_ready, gate_msg, gate_stats = self.check_ml_readiness(df_causal)
 
-        # 4. If ML readiness gate blocks inference OR no trained model exists
-        if not is_ready or self.model is None:
+        # If no trained model exists, return NOT_READY
+        if self.model is None:
             return {
                 "status": "ML_NOT_READY",
                 "is_blocked": True,
@@ -186,11 +186,11 @@ class StreamInferenceAdapter:
                 "well_id": well_id,
                 "current_md": current_md,
                 "emitted_count": emitted_count,
-                "risk_score": None,  # NEVER fabricate predictions when blocked
+                "risk_score": None,
                 "features": feature_dict
             }
 
-        # 5. If ML is legitimately ready & trained model exists: execute online inference
+        # 5. Execute online inference (Unsupervised bypasses the supervised gate)
         df_features_single = pd.DataFrame([feature_dict])
         feature_cols = [c for c in df_features_single.columns if not pd.isna(df_features_single[c].iloc[0])]
 
@@ -199,7 +199,8 @@ class StreamInferenceAdapter:
             return {
                 "status": "SUCCESS",
                 "is_blocked": False,
-                "gate_reason": "ML Pipeline Active",
+                "gate_reason": "Unsupervised Anomaly Model Active (Gate Bypassed)",
+                "gate_stats": gate_stats,
                 "cutoff_md": cutoff_md,
                 "well_id": well_id,
                 "current_md": current_md,

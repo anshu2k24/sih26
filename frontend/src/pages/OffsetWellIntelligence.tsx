@@ -3,6 +3,8 @@ import type { WellIntelligenceResponse, HistoricalEventEpisode } from "../types/
 import { fetchWellFullIntelligence } from "../services/api";
 import {
   ArrowLeft,
+  ArrowRight,
+  ChevronRight,
   Database,
   FileText,
   Filter,
@@ -52,7 +54,6 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
       .then((res) => {
         if (res) {
           setData(res);
-          // Set min/max MD slider boundaries based on events if available
           if (res.events && res.events.length > 0) {
             const mds = res.events.map((e) => e.onset_md);
             setMinMdFilter(Math.floor(Math.min(...mds) / 100) * 100);
@@ -70,7 +71,6 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
       });
   }, [targetWellId, activeWellId]);
 
-  // Filtered events computation
   const filteredEvents = useMemo(() => {
     if (!data?.events) return [];
     return data.events.filter((ev) => {
@@ -80,22 +80,20 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
     });
   }, [data, selectedEventType, minMdFilter, maxMdFilter]);
 
-  // Event category badge color helper
   const getEventBadgeStyle = (eventType: string) => {
     switch (eventType) {
       case "FORMATION_MUD_LOSS":
       case "CEMENTING/OPERATIONAL_LOSS":
-        return "bg-rose-950/80 text-rose-400 border-rose-500/40";
+        return { color: "#FF5E5E", background: "rgba(255,94,94,0.05)", border: "1px solid rgba(255,94,94,0.3)" };
       case "Tight Hole":
       case "Pack-off":
-        return "bg-amber-950/80 text-amber-400 border-amber-500/40";
+        return { color: "#FF9A3D", background: "rgba(255,154,61,0.05)", border: "1px solid rgba(255,154,61,0.3)" };
       case "Stuck Pipe":
       case "Kick":
-        return "bg-purple-950/80 text-purple-400 border-purple-500/40";
+        return { color: "#D946EF", background: "rgba(217,70,239,0.05)", border: "1px solid rgba(217,70,239,0.3)" };
       case "Equipment Failure":
-        return "bg-blue-950/80 text-blue-400 border-blue-500/40";
       default:
-        return "bg-slate-800 text-slate-300 border-slate-700";
+        return { color: "#F5F5F5", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.15)" };
     }
   };
 
@@ -112,190 +110,296 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
     return Object.keys(data.event_counts);
   }, [data]);
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16 selection:bg-blue-500 selection:text-white">
-      {/* Top Banner Navigation */}
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 sticky top-0 z-50 shadow-xl">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onBackToMap}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3.5 py-1.5 rounded-lg border border-slate-700 font-mono text-xs font-bold transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Nearby Wells Map
-            </button>
+  // Premium Glass Styles
+  const glassPanelStyle = {
+    background: "rgba(15, 10, 5, 0.70)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    border: "1px solid rgba(255, 122, 0, 0.3)",
+    borderRadius: "22px",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,122,0,0.05), 0 0 15px rgba(255,122,0,0.1)",
+  };
 
-            <div>
+  const glassCardStyle = {
+    background: "rgba(20, 15, 10, 0.4)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(255, 122, 0, 0.2)",
+    borderRadius: "12px",
+    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+  };
+
+  const hoverEffectProps = {
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+      e.currentTarget.style.transform = "translateY(-2px) scale(1.01)";
+      e.currentTarget.style.border = "1px solid rgba(255,122,0,0.5)";
+      e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.15)";
+      e.currentTarget.style.background = "rgba(30,20,10,0.7)";
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
+      e.currentTarget.style.transform = "translateY(0px) scale(1)";
+      e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.2)";
+      e.currentTarget.style.boxShadow = "none";
+      e.currentTarget.style.background = "rgba(20, 15, 10, 0.4)";
+    }
+  };
+
+  const inputStyle = {
+    background: "rgba(10, 5, 0, 0.6)",
+    border: "1px solid rgba(255, 122, 0, 0.3)",
+    borderRadius: "8px",
+    color: "#F5F5F5",
+    outline: "none",
+    transition: "all 0.25s ease",
+  };
+
+  return (
+    <div 
+      className="min-h-screen text-[#F5F5F5] pb-16 selection:bg-[#FF7A00] selection:text-white relative overflow-hidden"
+      style={{ 
+        backgroundColor: "#030303",
+        backgroundImage: "radial-gradient(circle at center, rgba(3, 3, 3, 0.85) 0%, rgba(3, 3, 3, 0.98) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        fontFamily: "'Space Grotesk', 'Inter', sans-serif" 
+      }}
+    >
+      {/* Ambient Background Glows to enhance glass transparency */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.10] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF7A00 0%, transparent 70%)" }}></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-[0.08] blur-[180px] pointer-events-none" style={{ background: "radial-gradient(circle, #FFB000 0%, transparent 70%)" }}></div>
+      <div className="absolute top-[30%] right-[10%] w-[30%] h-[30%] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF5000 0%, transparent 70%)" }}></div>
+
+
+      <div className="relative z-10">
+      <main className="max-w-[1400px] mx-auto px-6 pt-4 space-y-8">
+        
+        {/* MAIN HEADER / INTELLIGENCE HEADER */}
+        <div className="flex flex-col xl:flex-row items-center justify-between w-full pb-4 border-b border-[rgba(255,122,0,0.15)]">
+          <div className="flex flex-col xl:flex-row items-center gap-8 w-full">
+            {/* CENTER: TITLE + BADGE */}
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col leading-none font-[800] text-[20px] sm:text-[24px] tracking-wide">
+                <span className="text-[#F5F5F5]">OFFSET WELL</span>
+                <span className="text-[#F5F5F5] mt-1">INTELLIGENCE:</span>
+              </div>
+              
+              <div 
+                className="flex flex-col justify-center ml-2 border-l pl-5"
+                style={{
+                  borderColor: "rgba(255, 122, 0, 0.3)",
+                }}
+              >
+                <span className="text-[#FF7A00] font-[700] text-[12px] tracking-wider uppercase leading-tight">HISTORICAL DDR / NWIS</span>
+                <span className="text-[#A0A0A0] font-[500] text-[11px] uppercase leading-tight mt-0.5">INTELLIGENCE</span>
+              </div>
+            </div>
+
+            <div className="flex-1"></div>
+
+            {/* RIGHT: ACTIVE OFFSET STATUS */}
+            <div 
+              className="flex items-center gap-5 px-6 h-[64px] whitespace-nowrap shrink-0"
+              style={{
+                background: "rgba(10, 5, 0, 0.6)",
+                border: "1px solid rgba(255, 122, 0, 0.3)",
+                borderRadius: "14px"
+              }}
+            >
               <div className="flex items-center gap-3">
-                <h1 className="text-lg font-bold tracking-tight text-white font-mono flex items-center gap-2">
-                  <Database className="w-5 h-5 text-blue-400" />
-                  OFFSET WELL INTELLIGENCE: <span className="text-emerald-400">{offsetWellId}</span>
-                </h1>
-                <span className="text-xs px-2.5 py-0.5 rounded bg-blue-950/80 text-blue-400 border border-blue-500/30 font-mono">
-                  HISTORICAL DDR / NWIS INTELLIGENCE
+                <span className="w-3 h-3 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]"></span>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-[#FF7A00] font-[700] text-[12px] tracking-wider uppercase">ACTIVE: {activeWellId}</span>
+                  <span className="text-[#A0A0A0] font-[500] text-[11px]">({currentMd.toFixed(1)}m)</span>
+                </div>
+              </div>
+              
+              <ArrowRight className="w-4 h-4 text-[#6F6F6F]" />
+              
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#FF7A00]" />
+                <span className="text-[#FF7A00] font-[700] text-[12px] tracking-wider uppercase">OFFSET:</span>
+              </div>
+
+              <div className="w-[1px] h-8 bg-[#FF7A00] opacity-20"></div>
+
+              <div className="flex flex-col leading-tight items-start">
+                <span className="text-[#F5F5F5] font-[600] text-[12px] tracking-wider">
+                  {formatDistance(data?.distance_km, data?.distance_m) === "Same Platform Complex" ? "Dist: Same" : `Dist: ${formatDistance(data?.distance_km, data?.distance_m)?.split(' ')[0]}`}
+                </span>
+                <span className="text-[#F5F5F5] font-[600] text-[12px] tracking-wider">
+                  {formatDistance(data?.distance_km, data?.distance_m) === "Same Platform Complex" ? "Platform" : formatDistance(data?.distance_km, data?.distance_m)?.split(' ')[1] || ''}
                 </span>
               </div>
             </div>
           </div>
-
-          {/* Active Drilling Well vs Historical Offset Well Comparison Banner */}
-          <div className="flex items-center gap-3 bg-slate-950/90 px-4 py-2 rounded-lg border border-slate-800 text-xs font-mono">
-            <div className="flex items-center gap-1.5 text-amber-400 font-medium">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-              <span>ACTIVE: <strong>{activeWellId}</strong> ({currentMd.toFixed(1)}m)</span>
-            </div>
-            <span className="text-slate-600">➔</span>
-            <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-              <span>OFFSET: <strong>{offsetWellId}</strong></span>
-            </div>
-            <span className="text-slate-600">|</span>
-            <div className="text-slate-300 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-              Dist: {formatDistance(data?.distance_km, data?.distance_m)}
-            </div>
-          </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-6 space-y-6">
-        {/* Loading State */}
         {loading && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center font-mono text-sm text-slate-400 animate-pulse space-y-2">
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <div>Loading historical DDR offset intelligence for <strong>{offsetWellId}</strong>...</div>
+          <div className="text-center p-12 text-[#A1A1A1] text-[13px] animate-pulse" style={glassPanelStyle}>
+            Loading historical DDR offset intelligence for <strong>{offsetWellId}</strong>...
           </div>
         )}
 
-        {/* Error State */}
         {error && !loading && (
-          <div className="bg-rose-950/40 border border-rose-500/40 rounded-xl p-6 text-rose-300 text-xs font-mono flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
-              <span>{error}</span>
+          <div 
+            className="w-full p-6 flex items-center justify-between" 
+            style={{
+              background: "rgba(15, 5, 5, 0.70)",
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+              border: "1px solid rgba(255, 77, 94, 0.4)",
+              borderRadius: "22px",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,77,94,0.05), 0 0 15px rgba(255,77,94,0.1)",
+            }}
+          >
+            <div className="flex items-center gap-5 text-[#FF4D5E]">
+              <div 
+                className="w-14 h-14 flex items-center justify-center rounded-xl shrink-0"
+                style={{
+                  background: "rgba(255, 77, 94, 0.05)",
+                  border: "1px solid rgba(255, 77, 94, 0.3)",
+                }}
+              >
+                <AlertTriangle className="w-7 h-7 text-[#FF4D5E]" />
+              </div>
+              <span className="text-[17px] font-[500] leading-tight">{error}</span>
             </div>
-            <button
+            
+            <button 
               onClick={onBackToMap}
-              className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded border border-slate-700"
+              className="px-6 py-3 rounded-xl font-[700] text-[15px] flex items-center gap-3 transition-all duration-250 cursor-pointer shrink-0"
+              style={{
+                background: "rgba(255, 122, 0, 0.1)",
+                border: "1px solid #FF7A00",
+                color: "#FFB000"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#FF7A00";
+                e.currentTarget.style.color = "#030303";
+                e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.4)";
+                e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 122, 0, 0.1)";
+                e.currentTarget.style.color = "#FFB000";
+                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.transform = "translateY(0) scale(1)";
+              }}
             >
               Return to Map
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         )}
 
         {!loading && !error && data && (
           <>
-            {/* Section 1: Well Summary & Provenance Banner */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-2">
-                    <Info className="w-4 h-4 text-blue-400" />
-                    Well Summary & Metadata
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1 font-mono">
-                    Deterministic intelligence extracted from Equinor Volve historical drilling records.
-                  </p>
-                </div>
+            {/* 10. WELL SUMMARY & METADATA */}
+            <div style={{ ...glassPanelStyle, padding: "20px" }}>
+              <h2 className="text-[14px] font-[600] text-[#F2F2F2] uppercase tracking-wider flex items-center gap-2">
+                <Info className="w-4 h-4 text-[#FF7A00]" />
+                WELL SUMMARY & METADATA
+              </h2>
+              <p className="text-[12px] text-[#A1A1A1] mt-1 mb-4">
+                Deterministic intelligence extracted from Equinor Volve historical drilling records.
+              </p>
 
-                <div className="flex items-center gap-2">
-                  {onSelectWell && (
-                    <button
-                      onClick={() => onSelectWell(targetWellId)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-bold px-3.5 py-1.5 rounded-lg border border-emerald-500/40 transition-all flex items-center gap-1.5"
-                    >
-                      Set as Active Well in Telemetry Console ➔
-                    </button>
-                  )}
+              {/* 11. METADATA CARDS */}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">WELL ID</span>
+                  <span className="text-[#FF7A00] font-[700] text-[16px]">{offsetWellId}</span>
                 </div>
-              </div>
-
-              {/* Metadata Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-xs font-mono">
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">WELL ID</span>
-                  <strong className="text-white text-sm">{offsetWellId}</strong>
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">STATUS</span>
+                  <span className="text-[#FF7A00] font-[600] text-[13px] leading-tight">{metadata?.status || "Historical Surface Section"}</span>
                 </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">STATUS</span>
-                  <strong className="text-emerald-400">{metadata?.status || "Historical Wellbore"}</strong>
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">FIELD</span>
+                  <span className="text-[#FF7A00] font-[600] text-[16px]">{metadata?.field || "Volve"}</span>
                 </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">FIELD</span>
-                  <strong className="text-slate-200">{metadata?.field || "Volve (Block 15/9)"}</strong>
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">OPERATOR</span>
+                  <span className="text-[#FF7A00] font-[600] text-[16px]">{metadata?.operator || "Equinor"}</span>
                 </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">OPERATOR</span>
-                  <strong className="text-slate-200">{metadata?.operator || "Equinor"}</strong>
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">WATER DEPTH</span>
+                  <span className="text-[#FF7A00] font-[600] text-[16px]">{metadata?.water_depth_m ? `${metadata.water_depth_m} m` : "84 m"}</span>
                 </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">WATER DEPTH</span>
-                  <strong className="text-slate-200">{metadata?.water_depth_m ? `${metadata.water_depth_m} m` : "84.0 m"}</strong>
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">SLOT</span>
+                  <span className="text-[#FF7A00] font-[600] text-[16px]">{metadata?.slot_name || "Slot 5"}</span>
                 </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">SLOT</span>
-                  <strong className="text-slate-200">{metadata?.slot_name || "Platform Slot"}</strong>
-                </div>
-
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-slate-400 block text-[10px]">TOTAL EVENTS</span>
-                  <strong className="text-amber-400 text-sm">{data.total_events} Verified Episodes</strong>
+                <div style={glassCardStyle} className="p-4 flex flex-col" {...hoverEffectProps}>
+                  <span className="text-[#737373] text-[10px] font-[600] uppercase tracking-wider mb-1">TOTAL EVENTS</span>
+                  <span className="text-[#FF7A00] font-[600] text-[14px] leading-tight">{data.total_events} Verified Episodes</span>
                 </div>
               </div>
             </div>
 
-            {/* Section 2: Event Summary Breakdown Cards */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-2">
-                <Layers className="w-4 h-4 text-purple-400" />
-                Historical Event Breakdown ({data.total_events} Total)
+            {/* 12. HISTORICAL EVENT BREAKDOWN */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-[13px] font-[600] text-[#F2F2F2] uppercase tracking-wider flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#FF7A00]" />
+                HISTORICAL EVENT BREAKDOWN ({data.total_events} TOTAL)
               </h3>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 font-mono">
+              <div className="flex flex-wrap gap-4">
                 {availableEventTypes.map((type) => {
                   const count = data.event_counts[type];
+                  const isActive = selectedEventType === type;
                   return (
                     <div
                       key={type}
-                      onClick={() => setSelectedEventType(selectedEventType === type ? "ALL" : type)}
-                      className={`p-3 rounded-lg border transition-all cursor-pointer ${
-                        selectedEventType === type
-                          ? "bg-purple-950/60 border-purple-500/60 text-white shadow-md shadow-purple-500/10"
-                          : "bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300"
-                      }`}
+                      onClick={() => setSelectedEventType(isActive ? "ALL" : type)}
+                      className="p-4 flex flex-col min-w-[200px] cursor-pointer"
+                      style={{
+                        ...glassCardStyle,
+                        border: isActive ? "1px solid rgba(255,122,0,0.6)" : glassCardStyle.border,
+                        boxShadow: isActive ? "0 0 20px rgba(255,122,0,0.1)" : "none",
+                      }}
+                      onMouseEnter={(e) => { if (!isActive) hoverEffectProps.onMouseEnter(e); }}
+                      onMouseLeave={(e) => { if (!isActive) hoverEffectProps.onMouseLeave(e); }}
                     >
-                      <div className="text-[11px] text-slate-400 truncate">{type}</div>
-                      <div className="text-lg font-bold text-amber-400 mt-0.5">{count}</div>
+                      <span className="text-[#A1A1A1] text-[11px] font-[500] truncate">{type}</span>
+                      <span className="text-[#FF7A00] font-[700] text-[18px] mt-1">{count}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Section 3: Filter & Control Toolbar */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+            {/* 13. FILTER BAR */}
+            <div 
+              className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 mt-2"
+              style={glassPanelStyle}
+            >
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-emerald-400" />
-                <span className="font-bold text-slate-300">Filter Events:</span>
+                <Filter className="w-4 h-4 text-[#FF7A00]" />
+                <span className="font-[600] text-[13px] text-[#F2F2F2]">Filter Events:</span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-6">
                 {/* Event Type Filter */}
-                <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                  <span className="text-slate-400">Type:</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A1A1A1] text-[12px]">Type:</span>
                   <select
                     value={selectedEventType}
                     onChange={(e) => setSelectedEventType(e.target.value)}
-                    className="bg-slate-900 text-white font-mono text-xs px-2 py-1 rounded border border-slate-700 focus:outline-none focus:border-emerald-500"
+                    className="px-3 py-1.5 cursor-pointer appearance-none pr-8"
+                    style={{
+                      ...inputStyle,
+                      backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23F2F2F2%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 10px center",
+                    }}
+                    onFocus={(e) => e.currentTarget.style.border = "1px solid rgba(255,122,0,0.6)"}
+                    onBlur={(e) => e.currentTarget.style.border = "1px solid rgba(255,122,0,0.25)"}
                   >
-                    <option value="ALL">All Event Types ({data.total_events})</option>
+                    <option value="ALL" className="bg-[#121212]">All Event Types ({data.total_events})</option>
                     {availableEventTypes.map((t) => (
-                      <option key={t} value={t}>
+                      <option key={t} value={t} className="bg-[#121212]">
                         {t} ({data.event_counts[t]})
                       </option>
                     ))}
@@ -303,24 +407,31 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
                 </div>
 
                 {/* Depth Range Controls */}
-                <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                  <span className="text-slate-400">Min MD:</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A1A1A1] text-[12px]">Min MD:</span>
                   <input
                     type="number"
                     value={minMdFilter}
                     onChange={(e) => setMinMdFilter(Number(e.target.value))}
-                    className="w-20 bg-slate-900 text-white text-xs font-mono px-2 py-1 rounded border border-slate-700 focus:outline-none"
+                    className="w-20 px-2 py-1.5 font-mono text-[12px]"
+                    style={inputStyle}
+                    onFocus={(e) => e.currentTarget.style.border = "1px solid rgba(255,122,0,0.6)"}
+                    onBlur={(e) => e.currentTarget.style.border = "1px solid rgba(255,122,0,0.25)"}
                   />
-                  <span className="text-slate-400">m — Max MD:</span>
+                  <span className="text-[#A1A1A1] text-[12px]">m &nbsp;&nbsp;−&nbsp;&nbsp; Max MD:</span>
                   <input
                     type="number"
                     value={maxMdFilter}
                     onChange={(e) => setMaxMdFilter(Number(e.target.value))}
-                    className="w-20 bg-slate-900 text-white text-xs font-mono px-2 py-1 rounded border border-slate-700 focus:outline-none"
+                    className="w-20 px-2 py-1.5 font-mono text-[12px]"
+                    style={inputStyle}
+                    onFocus={(e) => e.currentTarget.style.border = "1px solid rgba(255,122,0,0.6)"}
+                    onBlur={(e) => e.currentTarget.style.border = "1px solid rgba(255,122,0,0.25)"}
                   />
-                  <span className="text-slate-400">m</span>
+                  <span className="text-[#A1A1A1] text-[12px]">m</span>
                 </div>
 
+                {/* 14. RESET FILTERS */}
                 {(selectedEventType !== "ALL" || minMdFilter > 0 || maxMdFilter < 5000) && (
                   <button
                     onClick={() => {
@@ -328,7 +439,8 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
                       setMinMdFilter(0);
                       setMaxMdFilter(5000);
                     }}
-                    className="text-xs text-rose-400 hover:underline font-bold"
+                    className="text-[13px] text-[#FF7A00] hover:text-[#FF8C00] font-[600] transition-all ml-2"
+                    style={{ textShadow: "0 0 10px rgba(255,122,0,0.2)" }}
                   >
                     Reset Filters
                   </button>
@@ -336,51 +448,60 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
               </div>
             </div>
 
-            {/* Section 4: Main Content — Vertical Depth Timeline (1/3) + Historical Events List (2/3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Depth Timeline Column */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col h-[600px]">
-                <div className="border-b border-slate-800 pb-3 mb-4">
-                  <h3 className="text-xs font-bold text-slate-200 uppercase font-mono tracking-wider flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-emerald-400" />
-                    Vertical Depth Timeline
+            {/* 15. LOWER CONTENT — TWO COLUMN LAYOUT */}
+            <div className="flex flex-col lg:flex-row gap-6 mt-4">
+              
+              {/* 16. VERTICAL DEPTH TIMELINE */}
+              <div 
+                className="w-full lg:w-[34%] p-5 flex flex-col h-[700px]"
+                style={glassPanelStyle}
+              >
+                <div className="pb-4 mb-4" style={{ borderBottom: "1px solid rgba(255,122,0,0.15)" }}>
+                  <h3 className="text-[13px] font-[600] text-[#F2F2F2] uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#FF7A00]" />
+                    VERTICAL DEPTH TIMELINE
                   </h3>
-                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  <p className="text-[11px] text-[#A1A1A1] mt-1.5">
                     Events plotted chronologically by Measured Depth (MD).
                   </p>
                 </div>
 
                 {filteredEvents.length > 0 ? (
-                  <div className="relative flex-1 overflow-y-auto pr-2 pl-4">
-                    {/* Continuous vertical line */}
-                    <div className="absolute left-6 top-3 bottom-3 w-0.5 bg-slate-800"></div>
+                  <div className="relative flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                    {/* Orange Vertical Line */}
+                    <div className="absolute left-[11px] top-4 bottom-4 w-px bg-gradient-to-b from-[rgba(255,122,0,0.5)] via-[rgba(255,122,0,0.2)] to-transparent"></div>
 
-                    <div className="space-y-6 relative z-10">
+                    <div className="space-y-6 relative z-10 pl-8 pb-4">
                       {filteredEvents.map((ev, idx) => (
                         <div
                           key={ev.event_episode_id || idx}
                           onClick={() => setSelectedEventModal(ev)}
-                          className="flex items-start gap-4 cursor-pointer group"
+                          className="relative cursor-pointer group"
                         >
-                          {/* Node Badge */}
-                          <div className="w-5 h-5 rounded-full bg-slate-900 border-2 border-emerald-400 flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 group-hover:border-amber-400 transition-all">
-                            <div className="w-2 h-2 rounded-full bg-emerald-400 group-hover:bg-amber-400"></div>
+                          {/* Timeline Node */}
+                          <div className="absolute -left-[32px] top-[14px] w-[22px] h-[22px] rounded-full border border-[#FF7A00] flex items-center justify-center bg-[#050607] shadow-[0_0_10px_rgba(255,122,0,0.2)] group-hover:shadow-[0_0_15px_rgba(255,122,0,0.4)] transition-all">
+                            <div className="w-[8px] h-[8px] rounded-full bg-[#FF7A00]"></div>
                           </div>
 
-                          {/* Event Timeline Content Item */}
-                          <div className="bg-slate-950 border border-slate-800 group-hover:border-emerald-500/50 p-3 rounded-lg flex-1 space-y-1 transition-all shadow-sm">
-                            <div className="flex items-center justify-between font-mono">
-                              <span className="font-bold text-emerald-400 text-xs">
+                          {/* 17. TIMELINE EVENT CARDS */}
+                          <div 
+                            className="p-3" 
+                            style={glassCardStyle}
+                            onMouseEnter={hoverEffectProps.onMouseEnter}
+                            onMouseLeave={hoverEffectProps.onMouseLeave}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-mono font-[700] text-[#FF7A00] text-[12px]">
                                 {ev.onset_md.toFixed(1)} m
                               </span>
-                              <span className="text-[10px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                              <span className="text-[#FF7A00] text-[9px] font-mono border border-[rgba(255,122,0,0.3)] bg-[rgba(255,122,0,0.05)] px-1.5 py-0.5 rounded">
                                 {ev.primary_source_record}
                               </span>
                             </div>
-                            <div className="text-xs font-bold text-slate-200 truncate">
+                            <div className="text-[13px] font-[600] text-[#F2F2F2] mb-1 truncate">
                               {ev.event_type}
                             </div>
-                            <div className="text-[11px] text-slate-400 line-clamp-2 leading-tight">
+                            <div className="text-[11px] text-[#A1A1A1] line-clamp-2 leading-snug">
                               {ev.primary_evidence}
                             </div>
                           </div>
@@ -389,112 +510,115 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-center p-6 text-slate-400 font-mono text-xs border border-dashed border-slate-850 rounded-lg">
+                  <div className="flex-1 flex items-center justify-center text-center p-6 text-[#737373] text-[12px] border border-dashed border-[rgba(255,122,0,0.2)] rounded-lg">
                     No historical events fall within the current depth filter range.
                   </div>
                 )}
               </div>
 
-              {/* Event Cards & Details Column */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="flex items-center justify-between font-mono text-xs">
-                  <span className="font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    Historical DDR Events ({filteredEvents.length})
-                  </span>
-                  <span className="text-slate-400">
+              {/* 18. HISTORICAL DDR EVENTS */}
+              <div className="w-full lg:w-[66%] space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[13px] font-[600] text-[#F2F2F2] uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#FF7A00]" />
+                    HISTORICAL DDR EVENTS ({filteredEvents.length})
+                  </h3>
+                  <span className="text-[11px] text-[#737373]">
                     Source: Verified Equinor Volve DDR Records
                   </span>
                 </div>
 
                 {filteredEvents.length > 0 ? (
-                  <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
-                    {filteredEvents.map((ev, idx) => (
-                      <div
-                        key={ev.event_episode_id || idx}
-                        className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg space-y-3 hover:border-slate-700 transition-all"
-                      >
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-xs px-2.5 py-1 rounded font-mono font-bold border ${getEventBadgeStyle(
-                                ev.event_type
-                              )}`}
-                            >
-                              {ev.event_type}
-                            </span>
-                            <span className="text-xs font-mono font-bold text-emerald-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                              MD: {ev.onset_md.toFixed(1)} m
-                            </span>
-                            {ev.onset_tvd && (
-                              <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                                TVD: {ev.onset_tvd.toFixed(1)} m
+                  <div className="space-y-4 max-h-[660px] overflow-y-auto pr-2 custom-scrollbar">
+                    {filteredEvents.map((ev, idx) => {
+                      const badgeStyle = getEventBadgeStyle(ev.event_type);
+                      return (
+                        // 19. DDR EVENT CARD
+                        <div
+                          key={ev.event_episode_id || idx}
+                          className="p-5 flex flex-col gap-3"
+                          style={glassPanelStyle}
+                        >
+                          <div className="flex items-center justify-between pb-3" style={{ borderBottom: "1px solid rgba(255,122,0,0.1)" }}>
+                            <div className="flex items-center gap-2">
+                              {/* 20. EVENT BADGES */}
+                              <span 
+                                className="text-[12px] font-[600] px-3 py-1 rounded border"
+                                style={badgeStyle}
+                              >
+                                {ev.event_type}
                               </span>
+                              <span className="text-[11px] font-mono font-[600] text-[#FF7A00] border border-[rgba(255,122,0,0.25)] px-2 py-1 rounded">
+                                MD: {ev.onset_md.toFixed(1)} m
+                              </span>
+                              {ev.onset_tvd && (
+                                <span className="text-[11px] font-mono text-[#A1A1A1] border border-[rgba(255,255,255,0.1)] px-2 py-1 rounded">
+                                  TVD: {ev.onset_tvd.toFixed(1)} m
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-mono text-[#737373]">
+                              {ev.onset_timestamp}
+                            </span>
+                          </div>
+
+                          {/* 21. PRIMARY EVIDENCE BOX */}
+                          <div 
+                            className="p-4 rounded-lg flex flex-col gap-1.5"
+                            style={{
+                              background: "rgba(10,10,10,0.4)",
+                              border: "1px solid rgba(255,122,0,0.15)"
+                            }}
+                          >
+                            <span className="text-[#A1A1A1] text-[10px] uppercase font-[600] tracking-wider">
+                              PRIMARY EVIDENCE:
+                            </span>
+                            <span className="text-[#F2F2F2] text-[12px] leading-relaxed">
+                              {ev.primary_evidence}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[12px]">
+                            {ev.mitigation_text && ev.mitigation_text !== "None recorded" && (
+                              <div className="p-3 rounded-lg border border-[rgba(255,122,0,0.2)] bg-[rgba(255,122,0,0.05)] text-[#F2F2F2]">
+                                <span className="text-[#FF7A00] text-[10px] uppercase font-[600] block mb-1">Mitigation Action:</span>
+                                {ev.mitigation_text}
+                              </div>
+                            )}
+                            {ev.resolution_text && ev.resolution_text !== "None recorded" && (
+                              <div className="p-3 rounded-lg border border-[rgba(255,122,0,0.2)] bg-[rgba(255,122,0,0.05)] text-[#F2F2F2]">
+                                <span className="text-[#FF7A00] text-[10px] uppercase font-[600] block mb-1">Resolution / Status:</span>
+                                {ev.resolution_text}
+                              </div>
                             )}
                           </div>
 
-                          <span className="text-[11px] font-mono text-slate-400">
-                            {ev.onset_timestamp}
-                          </span>
-                        </div>
-
-                        {/* Primary Evidence Excerpt */}
-                        <div className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-950/60 p-3 rounded-lg border border-slate-850">
-                          <strong className="text-slate-400 font-mono uppercase text-[11px] block mb-1">
-                            Primary Evidence:
-                          </strong>
-                          {ev.primary_evidence}
-                        </div>
-
-                        {/* Mitigation & Resolution */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-sans">
-                          {ev.mitigation_text && ev.mitigation_text !== "None recorded" && (
-                            <div className="bg-amber-950/20 border border-amber-500/20 p-2.5 rounded-lg text-amber-200/90">
-                              <strong className="text-amber-400 font-mono text-[11px] block mb-0.5">
-                                Mitigation Action:
-                              </strong>
-                              {ev.mitigation_text}
+                          {/* 22. PROVENANCE */}
+                          <div className="pt-3 flex items-center justify-between text-[11px] mt-1" style={{ borderTop: "1px solid rgba(255,122,0,0.1)" }}>
+                            <div className="flex items-center gap-1.5 text-[#737373]">
+                              <Shield className="w-3.5 h-3.5 text-[#FF7A00]" />
+                              <span>Source Record:</span>
+                              <span className="border border-[rgba(255,122,0,0.3)] text-[#FF7A00] bg-[rgba(255,122,0,0.05)] px-2 py-0.5 rounded font-mono">
+                                Equinor Volve DDR ({ev.primary_source_record})
+                              </span>
                             </div>
-                          )}
 
-                          {ev.resolution_text && ev.resolution_text !== "None recorded" && (
-                            <div className="bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-lg text-emerald-200/90">
-                              <strong className="text-emerald-400 font-mono text-[11px] block mb-0.5">
-                                Resolution / Status:
-                              </strong>
-                              {ev.resolution_text}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Source Traceability Badge & Detail Trigger */}
-                        <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono">
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <Shield className="w-3.5 h-3.5 text-blue-400" />
-                            <span>Source Record:</span>
-                            <code className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-200">
-                              {ev.source_label}
-                            </code>
+                            <button
+                              onClick={() => {
+                                if (onOpenEventDetail) onOpenEventDetail(ev);
+                                else setSelectedEventModal(ev);
+                              }}
+                              className="text-[#FF7A00] hover:text-[#FF8C00] font-[600] transition-colors"
+                            >
+                              View Full Provenance →
+                            </button>
                           </div>
-
-                          <button
-                            onClick={() => {
-                              if (onOpenEventDetail) {
-                                onOpenEventDetail(ev);
-                              } else {
-                                setSelectedEventModal(ev);
-                              }
-                            }}
-                            className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 hover:underline"
-                          >
-                            View Full Provenance →
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="p-12 text-center border border-dashed border-slate-800 rounded-xl text-slate-400 text-xs font-mono bg-slate-900/50">
+                  <div className="p-12 text-center text-[#737373] text-[12px] border border-dashed border-[rgba(255,122,0,0.2)] rounded-xl" style={{ background: "rgba(10,10,10,0.4)" }}>
                     No historical DDR events match the current filter criteria for {offsetWellId}.
                   </div>
                 )}
@@ -504,94 +628,117 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
         )}
       </main>
 
-      {/* Event Full Detail Modal */}
+      </div>
+
+      {/* EVENT MODAL */}
       {selectedEventModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div 
+            className="w-full max-w-2xl p-6 relative"
+            style={{
+              background: "rgba(15, 15, 15, 0.65)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              border: "1px solid rgba(255, 122, 0, 0.4)",
+              borderRadius: "16px",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,122,0,0.05)"
+            }}
+          >
             <button
               onClick={() => setSelectedEventModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800 hover:bg-slate-700"
+              className="absolute top-4 right-4 text-[#A1A1A1] hover:text-[#FF7A00] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <span
-                className={`text-xs px-2.5 py-1 rounded font-mono font-bold border ${getEventBadgeStyle(
-                  selectedEventModal.event_type
-                )}`}
+            <div className="flex items-center gap-3 pb-4 mb-4" style={{ borderBottom: "1px solid rgba(255,122,0,0.15)" }}>
+              <span 
+                className="text-[12px] font-[600] px-3 py-1 rounded border"
+                style={getEventBadgeStyle(selectedEventModal.event_type)}
               >
                 {selectedEventModal.event_type}
               </span>
-              <h3 className="text-base font-bold text-white font-mono">
+              <h3 className="text-[16px] font-[700] text-[#F2F2F2]">
                 Event Provenance & DDR Evidence Details
               </h3>
             </div>
 
-            <div className="space-y-3 text-xs font-mono">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-850">
+            <div className="space-y-4">
+              <div 
+                className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-lg"
+                style={{ background: "rgba(10,10,10,0.5)", border: "1px solid rgba(255,122,0,0.15)" }}
+              >
                 <div>
-                  <span className="text-slate-400 block text-[10px]">WELLBORE</span>
-                  <strong className="text-emerald-400">{selectedEventModal.wellbore_id}</strong>
+                  <span className="text-[#737373] text-[10px] uppercase font-[600] block mb-1">WELLBORE</span>
+                  <span className="text-[#F2F2F2] font-[600] text-[13px]">{selectedEventModal.wellbore_id}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">ONSET DEPTH (MD)</span>
-                  <strong className="text-amber-400">{selectedEventModal.onset_md.toFixed(1)} m</strong>
+                  <span className="text-[#737373] text-[10px] uppercase font-[600] block mb-1">ONSET DEPTH (MD)</span>
+                  <span className="text-[#FF7A00] font-mono font-[600] text-[13px]">{selectedEventModal.onset_md.toFixed(1)} m</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">ONSET TVD</span>
-                  <strong className="text-slate-200">
+                  <span className="text-[#737373] text-[10px] uppercase font-[600] block mb-1">ONSET TVD</span>
+                  <span className="text-[#F2F2F2] font-mono font-[600] text-[13px]">
                     {selectedEventModal.onset_tvd ? `${selectedEventModal.onset_tvd.toFixed(1)} m` : "Data unavailable"}
-                  </strong>
+                  </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">TIMESTAMP</span>
-                  <strong className="text-slate-200">{selectedEventModal.onset_timestamp}</strong>
+                  <span className="text-[#737373] text-[10px] uppercase font-[600] block mb-1">TIMESTAMP</span>
+                  <span className="text-[#F2F2F2] font-mono text-[12px]">{selectedEventModal.onset_timestamp}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">EVENT DOMAIN</span>
-                  <strong className="text-slate-200">{selectedEventModal.event_domain}</strong>
+                  <span className="text-[#737373] text-[10px] uppercase font-[600] block mb-1">EVENT DOMAIN</span>
+                  <span className="text-[#F2F2F2] text-[12px]">{selectedEventModal.event_domain}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">SOURCE RECORD</span>
-                  <strong className="text-blue-400">{selectedEventModal.primary_source_record}</strong>
+                  <span className="text-[#737373] text-[10px] uppercase font-[600] block mb-1">SOURCE RECORD</span>
+                  <span className="text-[#FF7A00] text-[12px] font-mono">{selectedEventModal.primary_source_record}</span>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <span className="font-bold text-slate-300 uppercase text-[11px]">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[#FF7A00] text-[11px] uppercase font-[600] tracking-wider">
                   Verified Primary DDR Text:
                 </span>
-                <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-850 text-slate-200 leading-relaxed font-sans text-xs font-medium">
+                <div 
+                  className="p-4 rounded-lg text-[#F2F2F2] text-[13px] leading-relaxed"
+                  style={{ background: "rgba(10,10,10,0.5)", border: "1px solid rgba(255,122,0,0.15)" }}
+                >
                   {selectedEventModal.primary_evidence}
                 </div>
               </div>
 
               {selectedEventModal.mitigation_text && selectedEventModal.mitigation_text !== "None recorded" && (
-                <div className="space-y-1">
-                  <span className="font-bold text-amber-400 uppercase text-[11px]">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[#FF7A00] text-[11px] uppercase font-[600] tracking-wider">
                     Recorded Mitigation:
                   </span>
-                  <div className="bg-amber-950/30 p-3 rounded-lg border border-amber-500/30 text-amber-200 font-sans text-xs">
+                  <div 
+                    className="p-3 rounded-lg text-[#F2F2F2] text-[12px]"
+                    style={{ background: "rgba(255,122,0,0.05)", border: "1px solid rgba(255,122,0,0.2)" }}
+                  >
                     {selectedEventModal.mitigation_text}
                   </div>
                 </div>
               )}
 
               {selectedEventModal.resolution_text && selectedEventModal.resolution_text !== "None recorded" && (
-                <div className="space-y-1">
-                  <span className="font-bold text-emerald-400 uppercase text-[11px]">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[#FF7A00] text-[11px] uppercase font-[600] tracking-wider">
                     Recorded Resolution:
                   </span>
-                  <div className="bg-emerald-950/30 p-3 rounded-lg border border-emerald-500/30 text-emerald-200 font-sans text-xs">
+                  <div 
+                    className="p-3 rounded-lg text-[#F2F2F2] text-[12px]"
+                    style={{ background: "rgba(255,122,0,0.05)", border: "1px solid rgba(255,122,0,0.2)" }}
+                  >
                     {selectedEventModal.resolution_text}
                   </div>
                 </div>
               )}
 
-              <div className="pt-3 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
-                <span>Dataset: Equinor Volve verified_event_episodes_v2.csv</span>
-                <span className="text-emerald-400 font-bold">100% Verified DDR Record</span>
+              <div className="pt-4 flex items-center justify-between text-[10px]" style={{ borderTop: "1px solid rgba(255,122,0,0.1)" }}>
+                <span className="text-[#737373]">Dataset: Equinor Volve verified_event_episodes_v2.csv</span>
+                <span className="text-[#FF7A00] font-[600]">100% Verified DDR Record</span>
               </div>
             </div>
           </div>

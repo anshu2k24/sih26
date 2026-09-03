@@ -1,4 +1,4 @@
-export type MLStatusType = "ML_READY" | "ML_NOT_READY" | "ML_UNAVAILABLE" | "NO_TELEMETRY";
+export type MLStatusType = "ML_READY" | "ML_NOT_READY" | "ML_UNAVAILABLE" | "NO_TELEMETRY" | "SUCCESS";
 
 export interface MLStatusState {
   status: MLStatusType;

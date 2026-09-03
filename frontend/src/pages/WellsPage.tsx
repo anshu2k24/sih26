@@ -7,135 +7,246 @@ import {
   ArrowRight,
   Radio,
   Play,
+  Pause,
   Layers,
 } from "lucide-react";
 
 export const WellsPage: React.FC = () => {
-  const { wells, selectedWell, setSelectedWell, currentMd, status } = useActiveWell();
+  const {
+    wells,
+    selectedWell,
+    setSelectedWell,
+    currentMd,
+    isStreaming,
+    startStream,
+    pauseStream,
+  } = useActiveWell();
   const navigate = useNavigate();
 
-  const handleStartStream = (wellId: string) => {
+  const handleStartStream = async (wellId: string) => {
     setSelectedWell(wellId);
+    await startStream(wellId);
     navigate("/live");
   };
 
-  return (
-    <div className="space-y-6 font-mono">
-      {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white uppercase tracking-wider">
-                Volve Field Well Inventory & Stream Controller
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Select any wellbore to initiate real-time telemetry streaming, spatial correlation, or deep intelligence.
-              </p>
-            </div>
-          </div>
-        </div>
+  const handleToggleCurrentStream = async () => {
+    if (isStreaming) {
+      await pauseStream();
+    } else {
+      await startStream(selectedWell);
+    }
+  };
 
-        {/* Active Well Status Pill */}
-        <div className="flex items-center gap-3 bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 self-start md:self-auto">
-          <Radio className={`w-4 h-4 ${status === "LIVE" ? "text-emerald-400 animate-pulse" : "text-amber-400"}`} />
+  return (
+    <div 
+      className="min-h-[calc(100vh-6rem)] relative overflow-hidden font-mono px-4 sm:px-8 py-6 -m-4 sm:-m-6"
+      style={{
+        backgroundColor: "#050505", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* Absolute Ambient Background Lights */}
+      <div className="absolute top-[10%] left-[10%] w-[50%] h-[40%] rounded-full opacity-[0.04] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] rounded-full opacity-[0.03] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF8A00 0%, transparent 70%)" }}></div>
+
+      <div className="relative z-10 space-y-[24px]">
+        {/* Header - Transparent */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
+          <div>
+            <h1 className="text-[22px] font-bold text-white uppercase tracking-wider" style={{ fontFamily: "Space Grotesk, system-ui, sans-serif" }}>
+              VOLVE FIELD WELL INVENTORY & STREAM CONTROLLER
+            </h1>
+          </div>
+
+        {/* Active Well Status Pill & Stream Toggle */}
+        <div 
+          className="flex items-center gap-4 px-5 py-3 rounded-[16px] self-start md:self-auto"
+          style={{ background: "rgba(10,10,10,0.45)", border: "1px solid rgba(255,255,255,0.05)" }}
+        >
+          <Radio className={`w-5 h-5 ${isStreaming ? "text-[#FF7A00] animate-pulse" : "text-slate-500"}`} />
           <div className="text-xs">
-            <div className="text-slate-400 text-[10px] uppercase font-bold">CURRENT ACTIVE STREAM</div>
-            <div className="text-white font-bold flex items-center gap-2">
-              <span className="text-cyan-400">{selectedWell}</span>
-              <span className="text-emerald-400 font-mono">({currentMd.toFixed(1)}m)</span>
+            <div className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">CURRENT ACTIVE STREAM</div>
+            <div className="text-white font-bold flex items-center gap-2 mt-0.5">
+              <span className="text-[#FF7A00] text-sm">{selectedWell}</span>
+              <span className="text-[#FF7A00] font-mono opacity-90 text-sm">({currentMd.toFixed(1)}m)</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
+                isStreaming
+                  ? "bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40 animate-pulse"
+                  : "bg-amber-950/60 text-amber-400 border-amber-500/30"
+              }`}>
+                {isStreaming ? "DRILLING" : "STANDBY"}
+              </span>
             </div>
           </div>
+
+          <button
+            onClick={handleToggleCurrentStream}
+            className="text-white text-[11px] font-bold px-3 py-1.5 rounded-[8px] transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            style={
+              isStreaming
+                ? { background: "rgba(239, 68, 68, 0.2)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#FCA5A5" }
+                : { background: "linear-gradient(145deg, #FF7A00, #FF5A00)", border: "none" }
+            }
+          >
+            {isStreaming ? (
+              <>
+                <Pause className="w-3 h-3 fill-current" />
+                <span>PAUSE</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3 h-3 fill-current" />
+                <span>START</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Wells Grid Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div 
+        className="rounded-[24px] overflow-hidden shadow-xl"
+        style={{
+          background: "rgba(20, 20, 20, 0.70)",
+          border: "1px solid rgba(255, 122, 0, 0.20)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          padding: "20px"
+        }}
+      >
+        <div className="pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-transparent">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Available Wellbores ({wells.length})
+            <Layers className="w-5 h-5 text-[#FF7A00]" />
+            <span className="text-[14px] font-bold text-white uppercase tracking-wider">
+              AVAILABLE WELLBORES <span className="text-[#FF7A00]">({wells.length})</span>
             </span>
           </div>
-          <span className="text-xs text-slate-400 font-mono">
-            Volve Platform Complex • Block 15/9 (Equinor)
+          <span className="text-[13px] text-slate-400 font-mono">
+            Volve Platform Complex • <span className="text-[#FF7A00]">Block 15/9 (Equinor)</span>
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto mt-2">
+          <table className="w-full text-left text-xs" style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}>
             <thead>
-              <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 font-bold">
-                <th className="p-3.5">WELLBORE ID</th>
-                <th className="p-3.5">SLOT ID</th>
-                <th className="p-3.5">OPERATOR</th>
-                <th className="p-3.5">FIELD</th>
-                <th className="p-3.5">SURFACE COORDINATES</th>
-                <th className="p-3.5">WATER DEPTH</th>
-                <th className="p-3.5 text-right">STREAM & INTELLIGENCE</th>
+              <tr className="text-slate-500 font-bold text-[11px] uppercase tracking-[1px] border-b border-transparent">
+                <th className="px-4 py-2 font-medium">WELLBORE ID</th>
+                <th className="px-4 py-2 font-medium">SLOT ID</th>
+                <th className="px-4 py-2 font-medium">OPERATOR</th>
+                <th className="px-4 py-2 font-medium">FIELD</th>
+                <th className="px-4 py-2 font-medium">SURFACE COORDINATES</th>
+                <th className="px-4 py-2 font-medium">WATER DEPTH</th>
+                <th className="px-4 py-2 font-medium text-right">STREAM & INTELLIGENCE</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody>
               {wells.map((w) => {
                 const isActive = w.well_id === selectedWell;
                 return (
                   <tr
                     key={w.well_id}
-                    className={`hover:bg-slate-850/60 transition-all ${
-                      isActive ? "bg-cyan-950/20 border-l-2 border-l-cyan-400" : ""
-                    }`}
+                    className="group transition-all duration-200"
+                    style={{
+                      background: "rgba(30, 30, 30, 0.65)",
+                      boxShadow: isActive ? "inset 4px 0 0 #FF7A00, 0 0 10px rgba(255,122,0,0.05)" : "inset 1px 1px 0 rgba(255,255,255,0.05)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = "rgba(40, 40, 40, 0.75)";
+                        e.currentTarget.style.boxShadow = "inset 1px 1px 0 rgba(255,122,0,0.2), 0 0 15px rgba(255,122,0,0.05)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = "rgba(30, 30, 30, 0.65)";
+                        e.currentTarget.style.boxShadow = "inset 1px 1px 0 rgba(255,255,255,0.05)";
+                      }
+                    }}
                   >
-                    <td className="p-3.5 font-bold text-white">
-                      <div className="flex items-center gap-2">
-                        <MapPin className={`w-4 h-4 ${isActive ? "text-cyan-400" : "text-slate-500"}`} />
-                        <span>{w.well_id}</span>
-                        {isActive && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            ACTIVE
-                          </span>
-                        )}
+                    <td className="p-4 rounded-l-[12px] text-white">
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-[#FF7A00]" />
+                        <span className="font-mono text-[14px] font-bold">{w.well_id}</span>
                       </div>
                     </td>
-                    <td className="p-3.5 text-slate-300">{w.slot_name || "Platform Slot"}</td>
-                    <td className="p-3.5 text-slate-300">{w.operator || "Equinor Energy AS"}</td>
-                    <td className="p-3.5 text-slate-300">{w.field || "Volve Field"}</td>
-                    <td className="p-3.5 text-slate-400 font-mono">
-                      {w.latitude ? `${w.latitude.toFixed(5)}° N, ${w.longitude?.toFixed(5)}° E` : "58.44168° N, 1.88778° E"}
+                    <td className="p-4 text-slate-300">{w.slot_name || "Subsea Template A"}</td>
+                    <td className="p-4 text-slate-300">{w.operator || "Equinor"}</td>
+                    <td className="p-4 text-slate-300">{w.field || "Volve"}</td>
+                    <td className="p-4 text-slate-300 font-mono">
+                      {w.latitude ? `${w.latitude.toFixed(5)}° N, ${w.longitude?.toFixed(5)}° E` : "58.43500° N, 1.90200° E"}
                     </td>
-                    <td className="p-3.5 text-slate-300">{w.water_depth_m ? `${w.water_depth_m} m` : "91.0 m"}</td>
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Start Stream Button */}
+                    <td className="p-4 text-white">{w.water_depth_m ? `${w.water_depth_m} m` : "84 m"}</td>
+                    <td className="p-4 rounded-r-[12px] text-right">
+                      <div className="flex items-center justify-end gap-[10px]">
+                        {/* Start / Pause Stream Button */}
                         <button
-                          onClick={() => handleStartStream(w.well_id)}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer"
+                          onClick={() => {
+                            if (isActive && isStreaming) {
+                              pauseStream();
+                            } else {
+                              handleStartStream(w.well_id);
+                            }
+                          }}
+                          className="text-white text-[11px] font-bold px-4 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer w-[96px] h-[36px]"
+                          style={
+                            isActive && isStreaming
+                              ? {
+                                  background: "rgba(239, 68, 68, 0.2)",
+                                  border: "1px solid rgba(239, 68, 68, 0.4)",
+                                  color: "#FCA5A5",
+                                }
+                              : {
+                                  background: "linear-gradient(145deg, #FF7A00, #FF5A00)",
+                                  boxShadow: "0 0 16px rgba(255,122,0,0.30)",
+                                  border: "none",
+                                }
+                          }
+                          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.50)"; e.currentTarget.style.filter = "brightness(1.1)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 0 16px rgba(255,122,0,0.30)"; e.currentTarget.style.filter = "none"; }}
                         >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>STREAM</span>
+                          {isActive && isStreaming ? (
+                            <>
+                              <Pause className="w-3 h-3 fill-current" />
+                              <span>PAUSE</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>STREAM</span>
+                            </>
+                          )}
                         </button>
 
                         {/* Set Active Button */}
-                        {!isActive && (
-                          <button
-                            onClick={() => setSelectedWell(w.well_id)}
-                            className="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer"
-                          >
-                            SELECT
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setSelectedWell(w.well_id)}
+                          className="text-white text-[11px] font-bold rounded-[10px] transition-all cursor-pointer w-[72px] h-[36px] flex items-center justify-center"
+                          style={{
+                            background: "rgba(10,10,10,0.45)",
+                            border: "1px solid rgba(255,122,0,0.30)"
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,122,0,0.08)"; e.currentTarget.style.border = "1px solid rgba(255,122,0,0.65)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(10,10,10,0.45)"; e.currentTarget.style.border = "1px solid rgba(255,122,0,0.30)"; }}
+                        >
+                          SELECT
+                        </button>
 
                         {/* Intelligence Button */}
                         <button
                           onClick={() => navigate(`/wells/${encodeURIComponent(w.well_id)}`)}
-                          className="bg-blue-600/80 hover:bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                          className="text-white text-[11px] font-bold rounded-[10px] transition-all cursor-pointer w-[78px] h-[36px] flex items-center justify-center gap-1 group/intel"
+                          style={{
+                            background: "rgba(20,20,20,0.5)",
+                            border: "1px solid rgba(255,122,0,0.4)"
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,122,0,0.08)"; e.currentTarget.style.border = "1px solid rgba(255,122,0,0.8)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(20,20,20,0.5)"; e.currentTarget.style.border = "1px solid rgba(255,122,0,0.4)"; }}
                         >
                           <span>INTEL</span>
-                          <ArrowRight className="w-3 h-3" />
+                          <ArrowRight className="w-3 h-3 text-[#FF7A00]" />
                         </button>
                       </div>
                     </td>
@@ -145,6 +256,7 @@ export const WellsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ export interface WellsResponse {
 }
 
 export interface WSEventMessage {
-  type: "sensor_update" | "ml_update" | "stream_status" | "error";
+  type: "sensor_update" | "ml_update" | "stream_status" | "error" | "alert_created";
   data: any;
 }
 
@@ -196,6 +196,8 @@ export interface SystemSettings {
   depth_window_m_default: number;
   telemetry_stream_url: string;
   notification_recipient_email?: string;
+  email_rate_limit_per_sec?: number;
+  send_to_login_account?: boolean;
   email_enabled?: boolean;
   critical_alerts?: boolean;
   high_alerts?: boolean;

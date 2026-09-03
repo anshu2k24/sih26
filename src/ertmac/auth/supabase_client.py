@@ -43,8 +43,9 @@ def get_supabase_admin():
         return None
 
     try:
-        from supabase import create_client, Client
-        _supabase_client = create_client(supabase_url, service_role_key)
+        from supabase import create_client, Client, ClientOptions
+        options = ClientOptions(postgrest_client_timeout=10, storage_client_timeout=10)
+        _supabase_client = create_client(supabase_url, service_role_key, options=options)
         logger.info("Supabase admin client initialized successfully.")
         return _supabase_client
     except ImportError:
@@ -76,8 +77,9 @@ def get_supabase_anon():
         return None
 
     try:
-        from supabase import create_client
-        _supabase_anon_client = create_client(supabase_url, anon_key)
+        from supabase import create_client, ClientOptions
+        options = ClientOptions(postgrest_client_timeout=10, storage_client_timeout=10)
+        _supabase_anon_client = create_client(supabase_url, anon_key, options=options)
         return _supabase_anon_client
     except Exception as e:
         logger.error(f"Failed to initialize Supabase anon client: {e}")

@@ -28,6 +28,8 @@ class SensorWebSocketServer:
         # Send initial status banner
         welcome_msg = {
             "status": "CONNECTED",
+            "stream_mode": "STREAMING" if not self.simulator.is_paused else "STANDBY",
+            "is_streaming": not self.simulator.is_paused,
             "data_source_label": SCIENTIFIC_LABEL,
             "message": "Connected to Volve USROP Historical Replay Stream"
         }
@@ -37,25 +39,61 @@ class SensorWebSocketServer:
         self.clients.discard(websocket)
         logger.info(f"Client disconnected: {websocket.remote_address}. Remaining clients: {len(self.clients)}")
 
+    async def broadcast_status(self, status_payload: dict) -> None:
+        """Broadcasts a status update event to all connected WebSocket clients."""
+        payload_str = json.dumps(status_payload)
+        for client in list(self.clients):
+            try:
+                await client.send(payload_str)
+            except Exception:
+                pass
+
     async def ws_handler(self, websocket: Any, path: str = "/") -> None:
         await self.register(websocket)
         try:
             async for message in websocket:
-                # Handle optional client control messages (e.g. ping/pong or state queries)
                 try:
                     data = json.loads(message)
-                    if data.get("action") == "get_state":
+                    action = data.get("action")
+                    if action == "start":
+                        well_id = data.get("well_id")
+                        speed = data.get("speed")
+                        self.simulator.start_streaming(well_id=well_id, speed=speed)
+                        await self.broadcast_status({
+                            "type": "STREAM_STATUS",
+                            "status": "STREAMING",
+                            "is_streaming": True,
+                            "well_id": well_id or self.simulator.active_well_id
+                        })
+                    elif action == "pause":
+                        self.simulator.pause_streaming()
+                        await self.broadcast_status({
+                            "type": "STREAM_STATUS",
+                            "status": "PAUSED",
+                            "is_streaming": False,
+                            "well_id": self.simulator.active_well_id
+                        })
+                    elif action == "resume":
+                        self.simulator.resume_streaming()
+                        await self.broadcast_status({
+                            "type": "STREAM_STATUS",
+                            "status": "STREAMING",
+                            "is_streaming": True,
+                            "well_id": self.simulator.active_well_id
+                        })
+                    elif action == "get_state":
                         state = self.simulator.state
                         resp = {
                             "well_id": state.well_id,
                             "current_md": state.current_md,
                             "last_timestamp": state.last_timestamp,
                             "emitted_count": state.emitted_count,
+                            "is_streaming": not self.simulator.is_paused,
                             "data_label": SCIENTIFIC_LABEL
                         }
                         await websocket.send(json.dumps(resp))
-                except Exception:
-                    pass
+                except Exception as ex:
+                    logger.error(f"Error handling WebSocket client action: {ex}")
         except websockets.exceptions.ConnectionClosed:
             pass
         finally:
@@ -90,6 +128,7 @@ class SensorWebSocketServer:
         """
         Runs async stream generator from simulator and broadcasts each record via WebSocket.
         """
+        self.simulator.start_streaming(well_id=well_id, speed=speed)
         async for record in self.simulator.stream_async(
             well_id=well_id, speed=speed, start_md=start_md, end_md=end_md
         ):

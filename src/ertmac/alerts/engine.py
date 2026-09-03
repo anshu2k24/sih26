@@ -54,6 +54,7 @@ class AlertItem:
         source_record: Optional[str] = None,
         disclaimer: str = "HISTORICAL OFFSET EVENT — NOT A PREDICTION",
         alert_id: Optional[str] = None,
+        organization_id: str = "00000000-0000-0000-0000-000000000001",
     ):
         self.alert_id = alert_id or f"ALT_{uuid.uuid4().hex[:8].upper()}"
         self.well_id = well_id
@@ -76,6 +77,7 @@ class AlertItem:
         self.resolved_by: Optional[str] = None
         self.resolved_at: Optional[str] = None
         self.resolution_notes: Optional[str] = None
+        self.organization_id = organization_id
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -100,6 +102,7 @@ class AlertItem:
             "resolved_by": self.resolved_by,
             "resolved_at": self.resolved_at,
             "resolution_notes": self.resolution_notes,
+            "organization_id": self.organization_id,
         }
 
     @classmethod
@@ -115,6 +118,7 @@ class AlertItem:
             source_record=d.get("source_record"),
             disclaimer=d.get("disclaimer", "HISTORICAL OFFSET EVENT — NOT A PREDICTION"),
             alert_id=str(d.get("id") or d.get("alert_id")),
+            organization_id=d.get("organization_id", "00000000-0000-0000-0000-000000000001"),
         )
         item.status = AlertStatus(d.get("status", "ACTIVE"))
         item.created_at = d.get("created_at") or item.created_at
@@ -145,6 +149,7 @@ class AlertEngine:
         source: AlertSource,
         current_md: float,
         evidence: str,
+        organization_id: str,
         source_record: Optional[str] = None,
         dedup_key: Optional[str] = None
     ) -> Optional[AlertItem]:
@@ -169,7 +174,8 @@ class AlertEngine:
             source=source,
             current_md=current_md,
             evidence=evidence,
-            source_record=source_record
+            source_record=source_record,
+            organization_id=organization_id
         )
 
         self._alerts[alert.alert_id] = alert
@@ -190,6 +196,7 @@ class AlertEngine:
             from ertmac.notifications.delivery import NotificationDeliveryEngine
             NotificationDeliveryEngine.create_in_app_notification(
                 user_id="00000000-0000-0000-0000-000000000001",
+                organization_id=organization_id,
                 title=f"[{alert.severity.value if isinstance(alert.severity, AlertSeverity) else alert.severity}] {alert.title}",
                 body=f"Well {well_id} @ {current_md:.1f}m: {evidence}",
                 alert_id=alert.alert_id if len(alert.alert_id) == 36 else None,
@@ -216,8 +223,8 @@ class AlertEngine:
 
 
 
-    def start_investigation(self, alert_id: str, user_id: str) -> Optional[AlertItem]:
-        alert = self._get_alert_item(alert_id)
+    def start_investigation(self, alert_id: str, user_id: str, organization_id: str) -> Optional[AlertItem]:
+        alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
         # Valid: ACTIVE or ACKNOWLEDGED → INVESTIGATING
@@ -230,11 +237,11 @@ class AlertEngine:
         alert.updated_at = alert.investigating_at
         self._alerts[alert.alert_id] = alert
 
-        AlertPersistence.update_alert_status(alert.alert_id, "INVESTIGATING", user_id)
+        AlertPersistence.update_alert_status(alert.alert_id, organization_id, "INVESTIGATING", user_id)
         return alert
 
-    def acknowledge_alert(self, alert_id: str, user_id: str) -> Optional[AlertItem]:
-        alert = self._get_alert_item(alert_id)
+    def acknowledge_alert(self, alert_id: str, user_id: str, organization_id: str) -> Optional[AlertItem]:
+        alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
         # Valid: ACTIVE → ACKNOWLEDGED
@@ -247,11 +254,11 @@ class AlertEngine:
         alert.updated_at = alert.acknowledged_at
         self._alerts[alert.alert_id] = alert
 
-        AlertPersistence.update_alert_status(alert.alert_id, "ACKNOWLEDGED", user_id)
+        AlertPersistence.update_alert_status(alert.alert_id, organization_id, "ACKNOWLEDGED", user_id)
         return alert
 
-    def resolve_alert(self, alert_id: str, user_id: str, notes: str) -> Optional[AlertItem]:
-        alert = self._get_alert_item(alert_id)
+    def resolve_alert(self, alert_id: str, user_id: str, notes: str, organization_id: str) -> Optional[AlertItem]:
+        alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
         # Block invalid transition RESOLVED -> ACTIVE or RESOLVED -> RESOLVED
@@ -265,32 +272,35 @@ class AlertEngine:
         alert.updated_at = alert.resolved_at
         self._alerts[alert.alert_id] = alert
 
-        AlertPersistence.update_alert_status(alert.alert_id, "RESOLVED", user_id, resolution_summary=notes)
+        AlertPersistence.update_alert_status(alert.alert_id, organization_id, "RESOLVED", user_id, resolution_summary=notes)
         return alert
 
-    def assign_alert(self, alert_id: str, assignee_id: str) -> Optional[AlertItem]:
-        alert = self._get_alert_item(alert_id)
+    def assign_alert(self, alert_id: str, assignee_id: str, organization_id: str) -> Optional[AlertItem]:
+        alert = self._get_alert_item(alert_id, organization_id)
         if not alert:
             return None
         alert.assigned_to = assignee_id
         alert.updated_at = datetime.now(timezone.utc).isoformat()
         self._alerts[alert.alert_id] = alert
 
-        AlertPersistence.assign_alert(alert.alert_id, assignee_id)
+        AlertPersistence.assign_alert(alert.alert_id, organization_id, assignee_id)
         return alert
 
     def add_note(self, alert_id: str, author_id: str, note_text: str) -> Optional[Dict[str, Any]]:
         return AlertPersistence.add_note(alert_id, author_id, note_text)
 
-    def get_notes(self, alert_id: str) -> List[Dict[str, Any]]:
-        return AlertPersistence.get_notes(alert_id)
+    def get_notes(self, alert_id: str, organization_id: str) -> List[Dict[str, Any]]:
+        return AlertPersistence.get_notes(alert_id, organization_id)
 
-    def _get_alert_item(self, alert_id: str) -> Optional[AlertItem]:
+    def _get_alert_item(self, alert_id: str, organization_id: str) -> Optional[AlertItem]:
         if alert_id in self._alerts:
-            return self._alerts[alert_id]
+            alt = self._alerts[alert_id]
+            if alt.organization_id == organization_id:
+                return alt
+            return None
         
         # Check DB
-        db_alerts = AlertPersistence.get_alerts(limit=500)
+        db_alerts = AlertPersistence.get_alerts(organization_id=organization_id, limit=500)
         if db_alerts:
             for row in db_alerts:
                 if str(row.get("id")) == alert_id or str(row.get("alert_id")) == alert_id:
@@ -299,9 +309,9 @@ class AlertEngine:
                     return item
         return None
 
-    def get_active_alerts(self, well_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_active_alerts(self, organization_id: str = "00000000-0000-0000-0000-000000000001", well_id: Optional[str] = None) -> List[Dict[str, Any]]:
         # Try DB first
-        db_alerts = AlertPersistence.get_alerts(well_id=well_id, limit=200)
+        db_alerts = AlertPersistence.get_alerts(organization_id=organization_id, well_id=well_id, limit=200)
         if db_alerts is not None:
             # Sync to in-memory cache
             res = []
@@ -314,6 +324,8 @@ class AlertEngine:
         # In-memory fallback
         res = []
         for alt in self._alerts.values():
+            if alt.organization_id != organization_id:
+                continue
             if well_id and alt.well_id != well_id:
                 continue
             res.append(alt.to_dict())

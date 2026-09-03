@@ -1,38 +1,61 @@
 import React from "react";
 import { useActiveWell } from "../context/ActiveWellContext";
 import { RiskCenter } from "../components/risk/RiskCenter";
-import { ShieldAlert, Cpu } from "lucide-react";
+import { Activity, Brain, Radio } from "lucide-react";
 
 export const RiskPage: React.FC = () => {
-  const { mlState } = useActiveWell();
+  const { mlState, selectedWell, latestSensor, currentMd } = useActiveWell();
+  const isActive = mlState.status === "SUCCESS" && !mlState.is_blocked;
+  const isAnomaly = isActive && mlState.risk_score === 1.0;
+
+  const orange = "#ff8a1f";
+  const orangeLight = "#ff9b4a";
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono">
-        <div>
-          <div className="flex items-center gap-3">
-            <Cpu className="w-5 h-5 text-amber-400" />
-            <h1 className="text-lg font-bold text-white uppercase tracking-wider">
-              MACHINE LEARNING RISK CENTER
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-500/30 font-bold">
-              READINESS GATE ENFORCED
-            </span>
+    <div 
+      className="min-h-screen relative pb-12"
+      style={{ 
+        backgroundColor: "#050505", 
+        backgroundImage: "radial-gradient(circle at center, rgba(5, 5, 5, 0.5) 0%, rgba(5, 5, 5, 0.95) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
+    >
+      <div className="relative z-10 p-6 space-y-6">
+        {/* ── Header banner ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
+          <div className="flex items-start gap-4">
+            <div>
+              {/* Header Title */}
+              <h1 className="text-white font-bold text-3xl tracking-tight leading-tight drop-shadow-sm">
+                ML Risk &amp; Prediction Center
+              </h1>
+
+            </div>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Evaluates predictive readiness gates. Inference is blocked when minimum causal window conditions are unfulfilled.
-          </p>
+
+          {/* Status pill */}
+          <div
+            style={{
+              background: isAnomaly ? "rgba(244,63,94,0.12)" : isActive ? "rgba(16,185,129,0.10)" : "rgba(255,138,31,0.10)",
+              border: `1px solid ${isAnomaly ? "rgba(244,63,94,0.35)" : isActive ? "rgba(16,185,129,0.3)" : "rgba(255,138,31,0.25)"}`,
+              color: isAnomaly ? "#f43f5e" : isActive ? "#10b981" : orangeLight,
+              backdropFilter: "blur(8px)"
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold font-mono whitespace-nowrap shadow-lg"
+          >
+            {isActive ? (
+              <><Radio className="w-3.5 h-3.5 animate-pulse" />{isAnomaly ? "⚠ ANOMALY ACTIVE" : "✓ MODEL LIVE"}</>
+            ) : (
+              <><Activity className="w-3.5 h-3.5 animate-pulse" />WARMING UP — {selectedWell}</>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs bg-slate-950 px-3.5 py-2 rounded-lg border border-slate-800 text-slate-400">
-          <ShieldAlert className="w-4 h-4 text-amber-400" />
-          <span>Scientific ML Readiness Rule Enforced</span>
-        </div>
+        {/* ── Risk Center ── */}
+        <RiskCenter mlState={mlState} latestSensor={latestSensor} currentMd={currentMd} />
       </div>
-
-      {/* Embedded RiskCenter Component */}
-      <RiskCenter mlState={mlState} />
     </div>
   );
 };

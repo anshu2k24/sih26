@@ -17,52 +17,52 @@ export const CurrentDrillingState: React.FC<CurrentDrillingStateProps> = ({
   samplesReceived,
 }) => {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-      <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+    <div className="bg-[rgba(2,5,10,0.3)] backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+      <h2 className="text-sm font-bold text-slate-200 uppercase tracking-widest mb-5 flex items-center gap-2">
         <Compass className="w-4 h-4 text-blue-400" />
         Current Drilling Position & Stream State
       </h2>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-slate-850/60 p-3.5 rounded-lg border border-slate-800">
-          <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-            <Layers className="w-3.5 h-3.5 text-blue-400" /> Active Well
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+        <div className="bg-[rgba(255,255,255,0.03)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:bg-[rgba(255,255,255,0.08)] hover:shadow-[0_0_20px_rgba(255,140,0,0.15)]">
+          <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-2">
+            <Layers className="w-4 h-4 text-blue-400" /> Active Well
           </div>
-          <div className="text-lg font-bold font-mono text-white">{wellId}</div>
+          <div className="text-xl font-bold font-mono text-white tracking-wider">{wellId}</div>
         </div>
 
-        <div className="bg-slate-850/60 p-3.5 rounded-lg border border-slate-800">
-          <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-            <Compass className="w-3.5 h-3.5 text-emerald-400" /> Measured Depth (MD)
+        <div className="bg-[rgba(255,255,255,0.03)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:bg-[rgba(255,255,255,0.08)] hover:shadow-[0_0_20px_rgba(255,140,0,0.15)]">
+          <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-2">
+            <Compass className="w-4 h-4 text-emerald-400" /> Measured Depth (MD)
           </div>
-          <div className="text-lg font-bold font-mono text-emerald-400">
+          <div className="text-xl font-bold font-mono text-emerald-400 tracking-wider">
             {currentMd > 0 ? `${currentMd.toFixed(2)} m` : "0.00 m"}
           </div>
         </div>
 
-        <div className="bg-slate-850/60 p-3.5 rounded-lg border border-slate-800">
-          <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-            <Compass className="w-3.5 h-3.5 text-cyan-400" /> True Vertical Depth (TVD)
+        <div className="bg-[rgba(255,255,255,0.03)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:bg-[rgba(255,255,255,0.08)] hover:shadow-[0_0_20px_rgba(255,140,0,0.15)]">
+          <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-2">
+            <Compass className="w-4 h-4 text-cyan-400" /> True Vertical Depth (TVD)
           </div>
-          <div className="text-lg font-bold font-mono text-cyan-400">
+          <div className="text-xl font-bold font-mono text-cyan-400 tracking-wider">
             {tvd !== null ? `${tvd.toFixed(2)} m` : "N/A"}
           </div>
         </div>
 
-        <div className="bg-slate-850/60 p-3.5 rounded-lg border border-slate-800">
-          <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-            <Clock className="w-3.5 h-3.5 text-amber-400" /> Historical Timestamp
+        <div className="bg-[rgba(255,255,255,0.03)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:bg-[rgba(255,255,255,0.08)] hover:shadow-[0_0_20px_rgba(255,140,0,0.15)]">
+          <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-2">
+            <Clock className="w-4 h-4 text-amber-400" /> Historical Timestamp
           </div>
-          <div className="text-xs font-mono font-semibold text-amber-300 truncate" title={lastTimestamp}>
+          <div className="text-sm font-mono font-bold text-amber-300 truncate" title={lastTimestamp}>
             {lastTimestamp !== "N/A" ? lastTimestamp : "N/A"}
           </div>
         </div>
 
-        <div className="bg-slate-850/60 p-3.5 rounded-lg border border-slate-800 col-span-2 md:col-span-1">
-          <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-            <Hash className="w-3.5 h-3.5 text-purple-400" /> Samples Received
+        <div className="bg-[rgba(255,255,255,0.03)] p-4 rounded-xl border border-[rgba(255,255,255,0.05)] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/40 hover:bg-[rgba(255,255,255,0.08)] hover:shadow-[0_0_20px_rgba(255,140,0,0.15)] col-span-2 md:col-span-1">
+          <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-2">
+            <Hash className="w-4 h-4 text-purple-400" /> Samples Received
           </div>
-          <div className="text-lg font-bold font-mono text-purple-300">
+          <div className="text-xl font-bold font-mono text-purple-300 tracking-wider">
             {samplesReceived.toLocaleString()}
           </div>
         </div>

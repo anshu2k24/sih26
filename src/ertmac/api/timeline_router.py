@@ -31,6 +31,7 @@ def get_well_operational_timeline(
 ):
     """Retrieves aggregated depth-correlated operational timeline events for a wellbore."""
     events = OperationalTimelineEngine.get_timeline(
+        organization_id=user.organization_id,
         well_id=well_id,
         category=category,
         min_md=min_md,

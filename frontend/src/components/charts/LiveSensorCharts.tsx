@@ -58,7 +58,16 @@ export const LiveSensorCharts: React.FC<LiveSensorChartsProps> = ({ history }) =
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+    <div 
+      className="rounded-3xl p-6 h-full flex flex-col justify-between"
+      style={{
+        background: "linear-gradient(145deg, rgba(20, 27, 42, 0.72), rgba(9, 14, 25, 0.60))",
+        border: "1px solid rgba(255, 255, 255, 0.12)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        boxShadow: "0 25px 70px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+      }}
+    >
       <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
         <LineChartIcon className="w-4 h-4 text-cyan-400" />
         Real-Time Sensor Telemetry Line Charts (Emitted Causal History)
@@ -71,7 +80,7 @@ export const LiveSensorCharts: React.FC<LiveSensorChartsProps> = ({ history }) =
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {configs.map((c, idx) => (
-            <div key={idx} className="bg-slate-850/60 p-3.5 rounded-lg border border-slate-800 flex flex-col">
+            <div key={idx} className="bg-[#0B101E]/40 p-3.5 rounded-xl border border-slate-800/30 flex flex-col">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-300 mb-2">
                 <span>{c.title}</span>
                 <span className="font-mono text-[11px]" style={{ color: c.color }}>

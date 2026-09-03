@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { SensorRecord, StreamConnectionStatus } from "../types/sensor";
 import type { MLStatusState } from "../types/ml";
 import type { WSEventMessage } from "../types/api";
-import { fetchWellState, fetchSensorHistory } from "../services/api";
+import { fetchWellState, fetchSensorHistory, startStreamApi, pauseStreamApi, fetchStreamStatusApi } from "../services/api";
 import { supabase } from "../lib/supabase";
 
 const WS_BASE_URL =
@@ -15,6 +15,7 @@ const MAX_HISTORY = 2000;
 
 export function useSensorStream(selectedWell: string) {
   const [status, setStatus] = useState<StreamConnectionStatus>("STREAM DISCONNECTED");
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [currentMd, setCurrentMd] = useState<number>(0);
   const [tvd, setTvd] = useState<number | null>(null);
   const [lastTimestamp, setLastTimestamp] = useState<string>("N/A");
@@ -44,6 +45,15 @@ export function useSensorStream(selectedWell: string) {
       if (initialState.ml) {
         setMlState(initialState.ml);
       }
+    }
+
+    try {
+      const streamInfo = await fetchStreamStatusApi();
+      if (streamInfo) {
+        setIsStreaming(Boolean(streamInfo.is_streaming));
+      }
+    } catch {
+      // Non-blocking
     }
 
     const initialHistory = await fetchSensorHistory(wellId);
@@ -127,6 +137,17 @@ export function useSensorStream(selectedWell: string) {
             });
           } else if (msg.type === "ml_update" && msg.data) {
             setMlState(msg.data);
+          } else if (msg.type === "alert_created" && msg.data) {
+            // Dispatch custom DOM event so AlertsPage prepends the card
+            window.dispatchEvent(new CustomEvent("ertmac:alert_created", { detail: msg.data }));
+            // Dispatch toast event for global notification
+            window.dispatchEvent(new CustomEvent("ertmac:toast", {
+              detail: {
+                severity: msg.data.severity,
+                title: msg.data.title,
+                description: `Well ${msg.data.well_id} @ MD ${msg.data.current_md?.toFixed(1)}m`,
+              }
+            }));
           } else if (msg.type === "stream_status" && msg.data) {
             if (msg.data.status === "LIVE") {
               setStatus("LIVE");
@@ -180,8 +201,28 @@ export function useSensorStream(selectedWell: string) {
     };
   }, [selectedWell, loadInitialState]);
 
+  const startStream = useCallback(async (wellId?: string, speed?: number) => {
+    const targetWell = wellId || selectedWell;
+    const ok = await startStreamApi(targetWell, speed);
+    if (ok) {
+      setIsStreaming(true);
+    }
+    return ok;
+  }, [selectedWell]);
+
+  const pauseStream = useCallback(async () => {
+    const ok = await pauseStreamApi();
+    if (ok) {
+      setIsStreaming(false);
+    }
+    return ok;
+  }, []);
+
   return {
     status,
+    isStreaming,
+    startStream,
+    pauseStream,
     currentMd,
     tvd,
     lastTimestamp,

@@ -17,14 +17,19 @@ class DepthCorrelationEngine:
         active_well_id: str,
         current_md: float,
         radius_km: float = 5.0,
-        depth_window_m: float = 50.0
+        depth_window_m: float = 50.0,
+        organization_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Deterministically correlates current active drilling position (current_md)
         with verified historical DDR events in nearby offset wells.
         """
         # Find nearby offset wells using Geospatial Engine
-        nearby_wells = self.geospatial.find_nearby_wells(active_well_id, radius_km=radius_km)
+        nearby_wells = self.geospatial.find_nearby_wells(
+            active_well_id,
+            organization_id=organization_id,
+            radius_km=radius_km
+        )
 
         matches = []
 

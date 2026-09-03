@@ -1,0 +1,269 @@
+﻿import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import "../styles/Login.css";
+import heroImage from "../assets/hero.png";
+
+type Mode = "LOGIN" | "SIGNUP" | "FORGOT";
+
+export const LoginPage: React.FC = () => {
+  const { login, signUp, resetPassword, status, error: authError } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [mode, setMode] = useState<Mode>("LOGIN");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("ADMIN");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const from = (location.state as any)?.from?.pathname || "/dashboard";
+
+  // If already authenticated, redirect
+  useEffect(() => {
+    if (status === "authenticated") {
+      navigate(from, { replace: true });
+    }
+  }, [status, navigate, from]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setSuccessMsg(null);
+
+    if (!email.trim()) {
+      setFormError("Email address is required.");
+      return;
+    }
+
+    if (mode !== "FORGOT" && !password) {
+      setFormError("Password is required.");
+      return;
+    }
+
+    setLoading(true);
+
+    if (mode === "LOGIN") {
+      const { error } = await login(email, password);
+      setLoading(false);
+      if (error) setFormError(error);
+    } else if (mode === "SIGNUP") {
+      const { error } = await signUp(email, password, fullName, role);
+      setLoading(false);
+      if (error) {
+        setFormError(error);
+      } else {
+        setSuccessMsg("Account created successfully in Supabase! Signing in...");
+        setTimeout(() => {
+          login(email, password);
+        }, 1200);
+      }
+    } else if (mode === "FORGOT") {
+      const { error } = await resetPassword(email);
+      setLoading(false);
+      if (error) {
+        setFormError(error);
+      } else {
+        setSuccessMsg(`Password reset instructions sent to ${email}. Check your inbox.`);
+      }
+    }
+  };
+
+  const displayError = formError || authError;
+
+  return (
+    <div className="login-page">
+      <div className="login-overlay"></div>
+
+      {/* Header */}
+      <header className="login-header">
+        <div className="brand">
+          <span className="brand-dot"></span>
+          eRTMAC-NWIS
+        </div>
+        <div className="secure-text">SECURE ACCESS</div>
+      </header>
+
+      {/* Main section */}
+      <main className="login-main">
+        {/* LEFT SIDE */}
+        <section className="login-intro">
+          <p className="eyebrow">NEARBY WELLS INTELLIGENCE SYSTEM</p>
+          <h1>
+            Smarter decisions.<br />
+            <span>Safer drilling.</span>
+          </h1>
+          <p className="intro-text">
+            Real-time monitoring, historical well intelligence
+            and AI-powered decision support for drilling operations.
+          </p>
+          <div className="orange-line"></div>
+        </section>
+
+        {/* RIGHT SIDE - LOGIN CARD */}
+        <section className="login-card">
+          <div className="card-heading">
+            <p>
+              {mode === "LOGIN"
+                ? "WELCOME BACK"
+                : mode === "SIGNUP"
+                ? "JOIN NWIS"
+                : "RECOVER ACCESS"}
+            </p>
+            <h2>
+              {mode === "LOGIN" && "Sign in to NWIS"}
+              {mode === "SIGNUP" && "Create an Account"}
+              {mode === "FORGOT" && "Reset Password"}
+            </h2>
+            <span>
+              {mode === "LOGIN" && "Access your drilling intelligence dashboard."}
+              {mode === "SIGNUP" && "Sign up to access operational data."}
+              {mode === "FORGOT" && "Enter your email to receive reset instructions."}
+            </span>
+          </div>
+
+          {/* Login / Signup tabs */}
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={mode === "LOGIN" ? "active-tab" : "inactive-tab"}
+              onClick={() => {
+                setMode("LOGIN");
+                setFormError(null);
+                setSuccessMsg(null);
+              }}
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              className={mode === "SIGNUP" ? "active-tab" : "inactive-tab"}
+              onClick={() => {
+                setMode("SIGNUP");
+                setFormError(null);
+                setSuccessMsg(null);
+              }}
+            >
+              Sign Up
+            </button>
+            <button
+              type="button"
+              className={mode === "FORGOT" ? "active-tab" : "inactive-tab"}
+              onClick={() => {
+                setMode("FORGOT");
+                setFormError(null);
+                setSuccessMsg(null);
+              }}
+            >
+              Forgot Password
+            </button>
+          </div>
+
+          {displayError && (
+            <div className="message">
+              <AlertCircle className="w-4 h-4 inline mr-1" />
+              {displayError}
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="message success">
+              <CheckCircle2 className="w-4 h-4 inline mr-1" />
+              {successMsg}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            {mode === "SIGNUP" && (
+              <div className="input-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  placeholder="Jayanth (Principal Admin)"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="input-group">
+              <label>Email</label>
+              <input
+                type="email"
+                placeholder="engineer@oilindia.in"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            {mode !== "FORGOT" && (
+              <div className="input-group">
+                <label>Password</label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            )}
+
+            {mode === "SIGNUP" && (
+              <div className="input-group">
+                <label>Privilege Role Assignment</label>
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
+                  <option value="ADMIN">ADMIN (Full High Privilege Access)</option>
+                  <option value="DRILLING_ENGINEER">DRILLING_ENGINEER</option>
+                  <option value="OPERATIONS_ENGINEER">OPERATIONS_ENGINEER</option>
+                  <option value="ANALYST">ANALYST</option>
+                  <option value="VIEWER">VIEWER</option>
+                </select>
+              </div>
+            )}
+
+            <div className="form-options">
+              {mode !== "FORGOT" && (
+                <label className="remember">
+                  <input
+                    type="checkbox"
+                    onChange={() => setShowPassword(!showPassword)}
+                    checked={showPassword}
+                  />
+                  Show Password
+                </label>
+              )}
+            </div>
+
+            <button type="submit" className="login-submit" disabled={loading}>
+              <span>
+                {loading
+                  ? "PROCESSING..."
+                  : mode === "LOGIN"
+                  ? "Sign In"
+                  : mode === "SIGNUP"
+                  ? "Create Account"
+                  : "Send Reset Link"}
+              </span>
+              <span>ΓåÆ</span>
+            </button>
+          </form>
+
+          <p className="demo-text">
+            Volve USROP Telemetry Replay ΓÇö Equinor Volve Field Dataset
+          </p>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="login-footer">
+        eRTMAC-NWIS ┬╖ Drilling Intelligence Platform
+      </footer>
+    </div>
+  );
+};

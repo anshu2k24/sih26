@@ -95,6 +95,7 @@ class GeospatialIntelligence:
                     "longitude": row.get("longitude"),
                     "water_depth_m": row.get("water_depth_m", 84.0),
                     "slot_name": row.get("slot_name"),
+                    "organization_id": row.get("organization_id", "00000000-0000-0000-0000-000000000001"),
                 }
 
             if self.coords:
@@ -106,7 +107,7 @@ class GeospatialIntelligence:
             logger.warning(f"Failed to load coordinates from Supabase (will use JSON fallback): {e}")
             return False
 
-    def find_nearby_wells(self, active_well_id: str, radius_km: float = 5.0) -> List[Dict[str, Any]]:
+    def find_nearby_wells(self, active_well_id: str, organization_id: Optional[str] = None, radius_km: float = 5.0) -> List[Dict[str, Any]]:
         if not self.coordinates_available or active_well_id not in self.coords:
             logger.warning(
                 f"Coordinates unavailable for active well '{active_well_id}'. "
@@ -129,6 +130,8 @@ class GeospatialIntelligence:
             lat = w_info.get("latitude")
             lon = w_info.get("longitude")
             if lat is None or lon is None:
+                continue
+            if organization_id and w_info.get("organization_id", "00000000-0000-0000-0000-000000000001") != organization_id:
                 continue
 
             dist_km = haversine_distance_km(active_lat, active_lon, lat, lon)

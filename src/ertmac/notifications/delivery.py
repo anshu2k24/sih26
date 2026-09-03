@@ -12,10 +12,48 @@ from datetime import datetime, timezone
 from ertmac.auth.supabase_client import get_supabase_admin
 from ertmac.notifications.preferences import get_user_preferences
 
+from collections import deque
+import threading
+import time
+
 logger = logging.getLogger("ertmac.notifications.delivery")
 
 _in_memory_deliveries: List[Dict[str, Any]] = []
 _in_memory_events: List[Dict[str, Any]] = []
+
+
+class EmailRateLimiter:
+    """Thread-safe sliding-window rate limiter ensuring at most max_per_sec emails are dispatched per second."""
+    def __init__(self, default_limit: int = 4):
+        self.default_limit = default_limit
+        self._timestamps: deque = deque()
+        self._lock = threading.Lock()
+
+    def check_and_record(self, max_per_sec: Optional[int] = None) -> tuple:
+        """
+        Returns (allowed: bool, count_in_window: int, retry_after: float)
+        """
+        limit = max_per_sec if (max_per_sec is not None and max_per_sec > 0) else self.default_limit
+        now = time.time()
+        with self._lock:
+            while self._timestamps and (now - self._timestamps[0]) >= 1.0:
+                self._timestamps.popleft()
+
+            if len(self._timestamps) < limit:
+                self._timestamps.append(now)
+                return True, len(self._timestamps), 0.0
+
+            oldest = self._timestamps[0]
+            retry_after = round(max(0.01, 1.0 - (now - oldest)), 2)
+            return False, len(self._timestamps), retry_after
+
+    def reset(self):
+        """Resets the sliding window (useful for testing)."""
+        with self._lock:
+            self._timestamps.clear()
+
+
+email_rate_limiter = EmailRateLimiter(default_limit=4)
 
 
 class NotificationDeliveryEngine:
@@ -30,6 +68,7 @@ class NotificationDeliveryEngine:
     ) -> Dict[str, Any]:
         """
         Dispatches an HTML alert email via Resend and records the delivery status.
+        Enforces a maximum rate limit (default: 4 emails/sec) configured in dynamic system settings.
         """
         resend_key = os.getenv("RESEND_API_KEY")
         from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
@@ -55,6 +94,21 @@ class NotificationDeliveryEngine:
             "error_message": None,
             "created_at": now,
         }
+
+        # Check rate limiter against dynamic system setting (default max 4 emails/sec)
+        from ertmac.config.settings import get_system_settings
+        sys_settings = get_system_settings()
+        limit = int(sys_settings.get("email_rate_limit_per_sec", 4))
+        allowed, count_in_window, retry_after = email_rate_limiter.check_and_record(max_per_sec=limit)
+
+        if not allowed:
+            logger.warning(
+                f"[Rate Limit] Alert email throttled: {count_in_window} emails dispatched in last 1.0s (limit={limit}/sec). Recipient: {recipient_email}."
+            )
+            delivery_record["status"] = "RATE_LIMITED"
+            delivery_record["error_message"] = f"Rate limit exceeded: max {limit} emails per second. Throttled for {retry_after}s."
+            NotificationDeliveryEngine._record_delivery(delivery_record)
+            return delivery_record
 
         if not resend_key:
             logger.info(f"[Resend Email Stub] Email dispatched to {recipient_email}: '{subject}'")

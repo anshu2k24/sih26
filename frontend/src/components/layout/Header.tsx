@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Bell,
   Database,
   ShieldCheck,
   Sliders,
-  LogOut
+  LogOut,
+  ChevronDown
 } from "lucide-react";
 import { useActiveWell } from "../../context/ActiveWellContext";
 import { useAuth } from "../../context/AuthContext";
@@ -14,6 +15,15 @@ export const Header: React.FC = () => {
   const { wells, selectedWell, setSelectedWell, status, currentMd } = useActiveWell();
   const { profile, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  useEffect(() => {
+    const handleToggle = (e: any) => {
+      setSidebarExpanded(e.detail);
+    };
+    window.addEventListener("sidebar:toggle", handleToggle);
+    return () => window.removeEventListener("sidebar:toggle", handleToggle);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -21,82 +31,131 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-3 sticky top-0 z-30 shadow-md">
-      <div className="flex items-center justify-between gap-4 font-mono text-xs">
-        {/* Left Side: Active Well Context Indicator */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
-            <Database className="w-4 h-4 text-cyan-400" />
-            <span className="text-slate-400 font-semibold">Active Well:</span>
-            <select
-              id="well-select"
-              value={selectedWell}
-              onChange={(e) => setSelectedWell(e.target.value)}
-              className="bg-slate-900 text-cyan-300 font-bold px-2.5 py-1 rounded-lg border border-slate-700 focus:outline-none focus:border-cyan-500 cursor-pointer"
-            >
-              {wells.map((w) => (
-                <option key={w.well_id} value={w.well_id}>
-                  {w.well_id}
-                </option>
-              ))}
-            </select>
-            <span className="text-emerald-400 font-bold border-l border-slate-800 pl-2.5">
-              MD: {currentMd > 0 ? `${currentMd.toFixed(1)}m` : "1509.1m"}
-            </span>
+    <header 
+      className="pr-4 py-3 sticky top-0 z-30 flex items-center justify-between transition-all duration-300 ease-in-out"
+      style={{
+        paddingLeft: "var(--sidebar-offset)",
+        background: "rgba(5, 6, 8, 0.82)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        borderBottom: "1px solid rgba(255, 122, 0, 0.14)",
+        minHeight: "70px",
+        fontFamily: "'Space Grotesk', 'Inter', sans-serif"
+      }}
+    >
+      {/* LEFT SIDE */}
+      <div className="flex items-center gap-6">
+        {/* Brand */}
+        {!sidebarExpanded && (
+          <div 
+            className="flex flex-col justify-center px-4 h-[44px] rounded-[14px] transition-all duration-300"
+            style={{
+              background: "rgba(20,20,20,0.55)",
+              border: "1px solid rgba(255,122,0,0.18)",
+              minWidth: "210px"
+            }}
+          >
+            <div className="font-[700] text-[20px] leading-tight flex">
+              <span className="text-[#F5F5F5]">eRTMAC</span>
+              <span className="text-[#FF7A00]">-NWIS</span>
+            </div>
+            <div className="text-[#9A9A9A] text-[10px] font-[400] leading-none lowercase mt-0.5">
+              Nearbywells intelligence system
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT SIDE */}
+      <div className="flex items-center gap-3">
+        {/* Active Well */}
+        <div 
+          className="relative flex items-center px-3 h-[44px] rounded-[14px] group transition-all duration-200"
+          style={{
+            background: "rgba(20,20,20,0.60)",
+            border: "1px solid rgba(255,122,0,0.22)",
+            boxShadow: "0 0 12px rgba(255,122,0,0.05)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.boxShadow = "0 0 18px rgba(255,122,0,0.16)";
+            e.currentTarget.style.border = "1px solid rgba(255,122,0,0.55)";
+            e.currentTarget.style.background = "rgba(25,25,25,0.70)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0px)";
+            e.currentTarget.style.boxShadow = "0 0 12px rgba(255,122,0,0.05)";
+            e.currentTarget.style.border = "1px solid rgba(255,122,0,0.22)";
+            e.currentTarget.style.background = "rgba(20,20,20,0.60)";
+          }}
+        >
+          <Database className="w-4 h-4 text-[#FF7A00] mr-2 group-hover:text-[#FF9A3D] transition-colors" />
+          <span className="text-[#686B7A] text-[13px] font-[500]">Active Well</span>
+          <span className="w-px h-4 bg-white/10 mx-2.5"></span>
+          <div className="flex items-center gap-1.5 mr-1">
+            <span className="text-[#F5F5F5] text-[14px] font-[600]">{selectedWell}</span>
+            <ChevronDown className="w-4 h-4 text-[#FF7A00]" />
           </div>
 
-          <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold tracking-wider ${
-              status === "LIVE"
-                ? "bg-emerald-950/50 text-emerald-400 border-emerald-500/30"
-                : "bg-rose-950/50 text-rose-400 border-rose-500/30"
-            }`}
+          {/* Invisible Select */}
+          <select
+            id="well-select"
+            value={selectedWell}
+            onChange={(e) => setSelectedWell(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                status === "LIVE" ? "bg-emerald-400 animate-pulse" : "bg-rose-500"
-              }`}
-            />
-            <span>{status === "LIVE" ? "LIVE STREAM" : "DISCONNECTED"}</span>
-          </div>
+            {wells.map((w) => (
+              <option key={w.well_id} value={w.well_id} className="bg-[#111111] text-white">
+                {w.well_id}
+              </option>
+            ))}
+          </select>
         </div>
+        
+        {/* Notifications */}
+        <Link
+          to="/notifications"
+          className="flex items-center justify-center w-[44px] h-[44px] rounded-[14px] transition-all duration-200 group"
+          style={{ background: "rgba(20,20,20,0.60)", border: "1px solid rgba(255,255,255,0.1)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.border = "1px solid rgba(255,122,0,0.55)";
+            e.currentTarget.style.background = "rgba(25,25,25,0.70)";
+            e.currentTarget.style.boxShadow = "0 0 18px rgba(255,122,0,0.16)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0px)";
+            e.currentTarget.style.border = "1px solid rgba(255,255,255,0.1)";
+            e.currentTarget.style.background = "rgba(20,20,20,0.60)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+          title="Notification Center"
+        >
+          <Bell className="w-4 h-4 text-[#F5F5F5] group-hover:text-[#FF7A00] transition-colors" />
+        </Link>
 
-        {/* Right Side: Quick Action Links & User Info */}
-        <div className="flex items-center gap-3">
-          <Link
-            to="/notifications"
-            className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-800 transition-all"
-            title="Notification Center"
-          >
-            <Bell className="w-4 h-4 text-amber-400" />
-            <span className="font-bold">Notifications</span>
-          </Link>
+        {/* Settings */}
+        <Link
+          to="/settings"
+          className="flex items-center justify-center w-[44px] h-[44px] rounded-[14px] transition-all duration-200 group"
+          style={{ background: "rgba(20,20,20,0.60)", border: "1px solid rgba(255,255,255,0.1)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.border = "1px solid rgba(255,122,0,0.55)";
+            e.currentTarget.style.background = "rgba(25,25,25,0.70)";
+            e.currentTarget.style.boxShadow = "0 0 18px rgba(255,122,0,0.16)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0px)";
+            e.currentTarget.style.border = "1px solid rgba(255,255,255,0.1)";
+            e.currentTarget.style.background = "rgba(20,20,20,0.60)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+          title="System Settings"
+        >
+          <Sliders className="w-4 h-4 text-[#F5F5F5] group-hover:text-[#FF7A00] transition-colors" />
+        </Link>
 
-          <Link
-            to="/settings"
-            className="p-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl border border-slate-800 transition-all"
-            title="System Settings"
-          >
-            <Sliders className="w-4 h-4" />
-          </Link>
-
-          <div className="flex items-center gap-2 bg-slate-950 px-3 py-1 rounded-xl border border-slate-800 text-slate-300">
-            <ShieldCheck className="w-4 h-4 text-cyan-400" />
-            <span className="font-semibold text-white">{profile?.full_name || profile?.email || "Operator"}</span>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-500/30 font-bold">
-              {profile?.role || "ADMIN"}
-            </span>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 px-3 py-1.5 rounded-xl border border-rose-800/40 hover:border-rose-600 transition-all font-bold cursor-pointer"
-            title="Sign out of Supabase session"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
-        </div>
       </div>
     </header>
   );
