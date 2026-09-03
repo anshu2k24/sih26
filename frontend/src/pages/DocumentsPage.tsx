@@ -834,169 +834,318 @@ export const DocumentsPage: React.FC = () => {
 
       {/* ── NEW DOCUMENT MODAL ── */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
-                  <UploadCloud className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white uppercase tracking-wider">
-                    Add New Document
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Select document category for ingestion</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300" style={{ background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)" }}>
+          {/* Modal Container */}
+          <div 
+            className="w-full max-w-[850px] rounded-3xl shadow-2xl flex flex-col relative overflow-hidden"
+            style={{
+              background: "rgba(10, 10, 10, 0.85)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(255, 122, 0, 0.25)",
+              boxShadow: "0 0 60px rgba(255, 122, 0, 0.08), inset 0 0 20px rgba(255, 122, 0, 0.02)",
+            }}
+          >
+            {/* Subtle ambient lighting behind modal content */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+              <div className="absolute top-0 left-1/4 w-[400px] h-[150px] bg-[#FF7A00] rounded-full mix-blend-screen blur-[100px] opacity-[0.06]" />
             </div>
 
-            {/* Modal Tab Selector */}
-            <div className="grid grid-cols-2 p-3 bg-slate-950/40 border-b border-slate-800 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setUploadTab("DIGITAL");
-                  setUploadMsg(null);
-                }}
-                className={`py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all ${
-                  uploadTab === "DIGITAL"
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 border border-blue-400/40"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                }`}
-              >
-                <FileCode className="w-4 h-4" />
-                <span>DIGITAL FILE (PDF / DOCX / TXT)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setUploadTab("OCR");
-                  setUploadMsg(null);
-                }}
-                className={`py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all ${
-                  uploadTab === "OCR"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 border border-indigo-400/40"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                }`}
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>HANDWRITTEN NOTE / OCR</span>
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4">
-              {uploadTab === "DIGITAL" ? (
-                /* Digital Document Upload Form */
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-400">
-                    Upload digital drilling daily reports, incident logs, or CSV data. Automated text parsing, event extraction, and automatic verification run immediately.
-                  </p>
-
-                  <div className="relative border-2 border-dashed border-slate-700 hover:border-blue-500/60 rounded-xl p-8 text-center transition bg-slate-950/40">
-                    <input
-                      type="file"
-                      onChange={handleDigitalFileUpload}
-                      accept=".pdf,.txt,.csv,.docx,.log"
-                      disabled={uploading}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
-                    />
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="p-3 bg-blue-950/60 rounded-full border border-blue-500/30 text-blue-400">
-                        <UploadCloud className={`w-8 h-8 ${uploading ? "animate-bounce" : ""}`} />
-                      </div>
-                      <p className="text-sm font-bold text-white">
-                        {uploading ? "Parsing & Verifying Document..." : "Click or Drag PDF/DOCX/TXT here"}
-                      </p>
-                      <span className="text-[11px] text-slate-500">Supports PDF, TXT, CSV, DOCX (Max 50MB) • Auto-Verified</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Handwritten Note OCR Form */
-                <form onSubmit={handleOcrSubmit} className="space-y-4">
-                  <p className="text-xs text-slate-400">
-                    Upload photos or scans of handwritten field notes, shift logs, or inspection checklists. Mistral Vision OCR will transcribe and place the document in the verification queue.
-                  </p>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1.5">Note Title (Optional)</label>
-                    <input
-                      type="text"
-                      value={ocrTitle}
-                      onChange={(e) => setOcrTitle(e.target.value)}
-                      placeholder="e.g. Shift B - Pump 2 Inspection Log"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1.5">OCR Model</label>
-                    <select
-                      value={ocrModel}
-                      onChange={(e) => setOcrModel(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-                    >
-                      <option value="mistral-ocr-latest">Mistral OCR Engine (mistral-ocr-latest)</option>
-                      <option value="pixtral-12b-2409">Pixtral Vision (pixtral-12b-2409)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1.5">Handwritten Image File</label>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={(e) => setOcrFile(e.target.files?.[0] || null)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={!ocrFile || uploading}
-                    className="w-full py-3 rounded-xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
+            <div className="relative z-10 flex flex-col w-full h-full p-8 md:p-10">
+              {/* HEADER */}
+              <div className="flex items-start justify-between w-full mb-8">
+                <div className="flex items-center gap-5">
+                  {/* Glowing Icon Container */}
+                  <div 
+                    className="flex items-center justify-center w-[54px] h-[54px] rounded-[16px] shrink-0"
+                    style={{
+                      background: "rgba(255, 122, 0, 0.05)",
+                      border: "1px solid rgba(255, 122, 0, 0.35)",
+                      boxShadow: "0 0 20px rgba(255, 122, 0, 0.15), inset 0 0 10px rgba(255, 122, 0, 0.1)",
+                    }}
                   >
-                    {uploading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Transcribing Handwritten Note...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Run OCR Transcription</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
-
-              {/* Status Message */}
-              {uploadMsg && (
-                <div
-                  className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
-                    uploadMsg.type === "success"
-                      ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/30"
-                      : uploadMsg.type === "duplicate"
-                      ? "bg-amber-950/60 text-amber-300 border-amber-500/30"
-                      : "bg-rose-950/60 text-rose-300 border-rose-500/30"
-                  }`}
-                >
-                  {uploadMsg.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                  {uploadMsg.type === "duplicate" && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
-                  {uploadMsg.type === "error" && <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-                  <span>{uploadMsg.text}</span>
+                    <UploadCloud className="w-7 h-7 text-[#FF7A00] drop-shadow-[0_0_8px_rgba(255,122,0,0.8)]" strokeWidth={2} />
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <h3 className="text-[22px] md:text-[24px] font-bold text-white uppercase tracking-wide leading-tight" style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}>
+                      ADD NEW DOCUMENT
+                    </h3>
+                    <p className="text-[13px] text-[#9AA0A6] mt-1 font-mono tracking-wide">
+                      Select document category for ingestion
+                    </p>
+                  </div>
                 </div>
-              )}
+
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 shrink-0"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255, 122, 0, 0.1)";
+                    e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.4)";
+                    e.currentTarget.style.boxShadow = "0 0 15px rgba(255, 122, 0, 0.2)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                    e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <X className="w-5 h-5 text-[#9AA0A6] group-hover:text-[#FF7A00] transition-colors" strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* HEADER SEPARATOR */}
+              <div className="w-full h-[1px] mb-8" style={{ background: "linear-gradient(90deg, rgba(255, 122, 0, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.02) 100%)" }} />
+
+              {/* TABS */}
+              <div className="flex flex-col sm:flex-row w-full gap-4 mb-10">
+                {/* Digital Tab */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadTab("DIGITAL");
+                    setUploadMsg(null);
+                  }}
+                  className="flex-1 py-4 px-6 rounded-[14px] flex items-center justify-center gap-3 transition-all duration-300"
+                  style={uploadTab === "DIGITAL" ? {
+                    background: "rgba(255, 122, 0, 0.08)",
+                    border: "1px solid rgba(255, 122, 0, 0.6)",
+                    boxShadow: "0 0 25px rgba(255, 122, 0, 0.15), inset 0 0 12px rgba(255, 122, 0, 0.08)",
+                  } : {
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (uploadTab !== "DIGITAL") {
+                      e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.3)";
+                      e.currentTarget.style.background = "rgba(255, 122, 0, 0.03)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (uploadTab !== "DIGITAL") {
+                      e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.06)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    }
+                  }}
+                >
+                  <FileCode className={`w-5 h-5 ${uploadTab === "DIGITAL" ? "text-[#FF7A00] drop-shadow-[0_0_5px_rgba(255,122,0,0.8)]" : "text-[#7A8086]"}`} strokeWidth={2} />
+                  <span className={`text-[13px] tracking-widest font-bold ${uploadTab === "DIGITAL" ? "text-[#FF7A00] drop-shadow-[0_0_8px_rgba(255,122,0,0.3)]" : "text-[#7A8086]"}`}>
+                    DIGITAL FILE (PDF / DOCX / TXT)
+                  </span>
+                </button>
+
+                {/* OCR Tab */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadTab("OCR");
+                    setUploadMsg(null);
+                  }}
+                  className="flex-1 py-4 px-6 rounded-[14px] flex items-center justify-center gap-3 transition-all duration-300"
+                  style={uploadTab === "OCR" ? {
+                    background: "rgba(255, 122, 0, 0.08)",
+                    border: "1px solid rgba(255, 122, 0, 0.6)",
+                    boxShadow: "0 0 25px rgba(255, 122, 0, 0.15), inset 0 0 12px rgba(255, 122, 0, 0.08)",
+                  } : {
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (uploadTab !== "OCR") {
+                      e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.3)";
+                      e.currentTarget.style.background = "rgba(255, 122, 0, 0.03)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (uploadTab !== "OCR") {
+                      e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.06)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    }
+                  }}
+                >
+                  <ImageIcon className={`w-5 h-5 ${uploadTab === "OCR" ? "text-[#FF7A00] drop-shadow-[0_0_5px_rgba(255,122,0,0.8)]" : "text-[#7A8086]"}`} strokeWidth={2} />
+                  <span className={`text-[13px] tracking-widest font-bold ${uploadTab === "OCR" ? "text-[#FF7A00] drop-shadow-[0_0_8px_rgba(255,122,0,0.3)]" : "text-[#7A8086]"}`}>
+                    HANDWRITTEN NOTE / OCR
+                  </span>
+                </button>
+              </div>
+
+              {/* DESCRIPTION & UPLOAD ZONE */}
+              <div className="flex-1 flex flex-col min-h-0 w-full px-2">
+                {uploadTab === "DIGITAL" ? (
+                  <>
+                    <div 
+                      className="relative w-full rounded-[24px] flex flex-col items-center justify-center p-12 transition-all duration-300 group"
+                      style={{
+                        background: "rgba(5, 5, 5, 0.4)",
+                        border: "1px dashed rgba(255, 122, 0, 0.3)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 122, 0, 0.03)";
+                        e.currentTarget.style.border = "1px dashed rgba(255, 122, 0, 0.7)";
+                        e.currentTarget.style.boxShadow = "inset 0 0 40px rgba(255, 122, 0, 0.05), 0 0 20px rgba(255, 122, 0, 0.05)";
+                        const iconContainer = e.currentTarget.querySelector('.upload-icon-container') as HTMLElement;
+                        if (iconContainer) {
+                          iconContainer.style.boxShadow = "0 0 30px rgba(255, 122, 0, 0.2), inset 0 0 15px rgba(255, 122, 0, 0.15)";
+                          iconContainer.style.transform = "scale(1.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(5, 5, 5, 0.4)";
+                        e.currentTarget.style.border = "1px dashed rgba(255, 122, 0, 0.3)";
+                        e.currentTarget.style.boxShadow = "none";
+                        const iconContainer = e.currentTarget.querySelector('.upload-icon-container') as HTMLElement;
+                        if (iconContainer) {
+                          iconContainer.style.boxShadow = "0 0 20px rgba(255, 122, 0, 0.08), inset 0 0 10px rgba(255, 122, 0, 0.05)";
+                          iconContainer.style.transform = "scale(1)";
+                        }
+                      }}
+                    >
+                      <input
+                        type="file"
+                        onChange={handleDigitalFileUpload}
+                        accept=".pdf,.txt,.csv,.docx,.log"
+                        disabled={uploading}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed z-20"
+                      />
+                      
+                      {/* Concentric Glow Rings */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] rounded-full border border-[rgba(255,122,0,0.05)] pointer-events-none" />
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] rounded-full border border-[rgba(255,122,0,0.1)] pointer-events-none" />
+                      
+                      {/* Center Icon Container */}
+                      <div 
+                        className="upload-icon-container relative z-10 flex items-center justify-center w-[80px] h-[80px] rounded-full mb-8 transition-all duration-300"
+                        style={{
+                          background: "rgba(10, 10, 10, 0.8)",
+                          border: "1px solid rgba(255, 122, 0, 0.2)",
+                          boxShadow: "0 0 20px rgba(255, 122, 0, 0.08), inset 0 0 10px rgba(255, 122, 0, 0.05)",
+                        }}
+                      >
+                        <UploadCloud className={`w-9 h-9 text-[#FF7A00] drop-shadow-[0_0_10px_rgba(255,122,0,0.6)] ${uploading ? 'animate-bounce' : ''}`} strokeWidth={2} />
+                      </div>
+
+                      <h4 className="relative z-10 text-[20px] font-bold text-white mb-3">
+                        {uploading ? (
+                          "Parsing & Verifying Document..."
+                        ) : (
+                          <>Click or Drag <span className="text-[#FF7A00]">PDF/DOCX/TXT</span> here</>
+                        )}
+                      </h4>
+                      
+                      <p className="relative z-10 text-[13px] text-[#7A8086] flex items-center gap-2 font-mono">
+                        Supports PDF, TXT, CSV, DOCX (Max 50MB) 
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00] drop-shadow-[0_0_4px_rgba(255,122,0,0.8)]"></span>
+                        Auto-Verified
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[14px] text-[#A1A1AA] leading-relaxed font-mono max-w-[700px] mb-8">
+                      Upload photos or scans of handwritten field notes, shift logs, or inspection checklists. Selected OCR Engine will transcribe and place the document in the verification queue.
+                    </p>
+
+                    <form onSubmit={handleOcrSubmit} className="space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <label className="text-[12px] font-bold text-[#A1A1AA] uppercase tracking-wider block font-mono">Note Title (Optional)</label>
+                          <input
+                            type="text"
+                            value={ocrTitle}
+                            onChange={(e) => setOcrTitle(e.target.value)}
+                            placeholder="e.g. Shift B - Pump 2 Inspection Log"
+                            className="w-full bg-[rgba(5,5,5,0.4)] border border-[rgba(255,255,255,0.08)] rounded-[12px] px-4 py-3 text-[13px] text-white placeholder-[#7A8086] focus:outline-none focus:border-[#FF7A00] focus:ring-1 focus:ring-[#FF7A00]/50 transition-all font-mono"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[12px] font-bold text-[#A1A1AA] uppercase tracking-wider block font-mono">OCR Engine</label>
+                          <select
+                            value={ocrModel}
+                            onChange={(e) => setOcrModel(e.target.value)}
+                            className="w-full bg-[rgba(5,5,5,0.4)] border border-[rgba(255,255,255,0.08)] rounded-[12px] px-4 py-3 text-[13px] text-white focus:outline-none focus:border-[#FF7A00] focus:ring-1 focus:ring-[#FF7A00]/50 transition-all font-mono"
+                          >
+                            <option value="mistral-ocr-latest">Mistral OCR Engine</option>
+                            <option value="pixtral-12b-2409">Pixtral Vision Engine</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[12px] font-bold text-[#A1A1AA] uppercase tracking-wider block font-mono">Handwritten Image File</label>
+                        <div 
+                          className="relative w-full rounded-[16px] flex items-center p-4 transition-all duration-300"
+                          style={{
+                            background: "rgba(5, 5, 5, 0.4)",
+                            border: "1px dashed rgba(255, 122, 0, 0.3)",
+                          }}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => setOcrFile(e.target.files?.[0] || null)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20"
+                          />
+                          <div className="flex items-center gap-4 relative z-10 w-full">
+                            <div className="p-3 bg-[rgba(255,122,0,0.05)] rounded-xl border border-[rgba(255,122,0,0.2)] text-[#FF7A00]">
+                              <ImageIcon className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[14px] font-bold text-white truncate">
+                                {ocrFile ? ocrFile.name : "Click or drag to select image..."}
+                              </p>
+                              {ocrFile && <p className="text-[11px] text-[#A1A1AA] font-mono mt-0.5">Ready for processing</p>}
+                            </div>
+                            {ocrFile && (
+                              <button 
+                                type="button"
+                                className="px-5 py-2.5 rounded-[10px] text-[12px] font-bold text-white transition-all z-30 flex items-center gap-2"
+                                style={{
+                                  background: "rgba(255, 122, 0, 0.15)",
+                                  border: "1px solid rgba(255, 122, 0, 0.5)",
+                                  boxShadow: "0 0 15px rgba(255, 122, 0, 0.15)",
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleOcrSubmit(e as any);
+                                }}
+                                disabled={uploading}
+                              >
+                                {uploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                RUN TRANSCRIBER
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  </>
+                )}
+
+                {/* Status Message Area */}
+                {uploadMsg && (
+                  <div
+                    className="mt-6 p-4 rounded-[12px] text-[13px] font-mono flex items-center gap-3 transition-all"
+                    style={
+                      uploadMsg.type === "success"
+                        ? { background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#34d399" }
+                        : uploadMsg.type === "duplicate"
+                        ? { background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", color: "#fbbf24" }
+                        : { background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#f87171" }
+                    }
+                  >
+                    {uploadMsg.type === "success" && <CheckCircle2 className="w-5 h-5 shrink-0" />}
+                    {uploadMsg.type === "duplicate" && <AlertTriangle className="w-5 h-5 shrink-0" />}
+                    {uploadMsg.type === "error" && <XCircle className="w-5 h-5 shrink-0" />}
+                    <span>{uploadMsg.text}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
