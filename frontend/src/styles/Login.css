@@ -3,7 +3,7 @@
   min-height: 100vh;
   width: 100%;
   position: relative;
-  background-image: url("../assets/hero.png");
+  background-image: url("/hero.png");
   background-size: cover;
   background-position: center 65%;
   background-repeat: no-repeat;

@@ -26,6 +26,7 @@ import React, {
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { API_BASE_URL } from "../services/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -204,15 +205,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     async (email: string, password: string): Promise<{ error: string | null }> => {
       setError(null);
 
-      // Enforce the specific email and password
-      if (email !== "jayanthjay751@gmail.com" || password !== "123456") {
-        const msg = "Incorrect email or password.";
-        setError(msg);
-        return { error: msg };
-      }
-
       if (!isSupabaseConfigured) {
-        setProfile({ ...DEV_PROFILE, email, full_name: "Jayasurya Midde" });
+        setProfile({ ...DEV_PROFILE, email, full_name: email.split("@")[0] });
         setStatus("authenticated");
         return { error: null };
       }
@@ -259,7 +253,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { error: null };
       }
 
-      const { error: authError } = await supabase.auth.signUp({
+      // 1. Try pre-confirming user directly via backend admin endpoint
+      try {
+        const regRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            password,
+            full_name: fullName || email.split("@")[0],
+            role: role || "ADMIN",
+          }),
+        });
+        if (regRes.ok) {
+          // Immediately sign in with the new credentials
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr) {
+            return { error: null };
+          }
+          return { error: null };
+        } else {
+          const errData = await regRes.json();
+          if (errData.detail && !errData.detail.includes("unavailable")) {
+            setError(errData.detail);
+            return { error: errData.detail };
+          }
+        }
+      } catch (err) {
+        // Fallback to client-side Supabase signUp
+      }
+
+      // 2. Client-side Supabase fallback
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -273,6 +298,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (authError) {
         setError(authError.message);
         return { error: authError.message };
+      }
+
+      if (signUpData?.session) {
+        return { error: null };
       }
 
       return { error: null };

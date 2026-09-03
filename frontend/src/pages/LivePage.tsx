@@ -40,7 +40,7 @@ export const LivePage: React.FC = () => {
       <div
         className="absolute inset-0 z-0 bg-cover bg-no-repeat"
         style={{ 
-          backgroundImage: 'url("/src/assets/hero.png")',
+          backgroundImage: 'url("/hero.png")',
           backgroundPosition: 'center 65%',
           filter: 'brightness(1.15) contrast(1.1)'
         }}

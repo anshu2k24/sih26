@@ -36,7 +36,7 @@ export const DashboardPage: React.FC = () => {
     <div 
       className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 bg-cover bg-no-repeat bg-fixed"
       style={{ 
-        backgroundImage: 'url("/src/assets/hero_sunset.png")',
+        backgroundImage: 'url("/hero_sunset.png")',
         backgroundPosition: 'center bottom'
       }}
     >

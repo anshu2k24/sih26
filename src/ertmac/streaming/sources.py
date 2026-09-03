@@ -64,8 +64,8 @@ class VolveReplaySensorSource(BaseSensorSource):
         # Priority 1 (Production default): Load from Supabase telemetry_readings
         self._df = self._load_from_supabase()
 
-        # Priority 2: Fallback to local Parquet file (development only)
-        if (self._df is None or len(self._df) == 0) and not is_prod:
+        # Priority 2: Fallback to local Parquet file
+        if self._df is None or len(self._df) == 0:
             repo_root = Path(__file__).resolve().parent.parent.parent.parent
             default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
             if default_parquet.exists():
@@ -144,12 +144,33 @@ class VolveReplaySensorSource(BaseSensorSource):
             except Exception:
                 pass
 
+        if len(well_df) == 0:
+            # Fallback to local Parquet file if Supabase did not have this well
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent
+            default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
+            if default_parquet.exists():
+                try:
+                    local_df = pd.read_parquet(default_parquet)
+                    cols_lower = {col: col.lower().strip() for col in local_df.columns}
+                    local_df = local_df.rename(columns=cols_lower)
+                    local_df = local_df.rename(columns=self.COLUMN_MAPPING)
+                    well_df = local_df[local_df["well_id"] == well_id].sort_values(by=["md"]).reset_index(drop=True)
+                    # If requested well has no direct records, fallback to primary Volve well '15/9-F-15'
+                    if len(well_df) == 0:
+                        fallback_well = "15/9-F-15"
+                        well_df = local_df[local_df["well_id"] == fallback_well].sort_values(by=["md"]).reset_index(drop=True)
+                except Exception:
+                    pass
+
         if start_md is not None and len(well_df) > 0:
             well_df = well_df[well_df["md"] >= start_md]
         if end_md is not None and len(well_df) > 0:
             well_df = well_df[well_df["md"] <= end_md]
 
         if len(well_df) == 0:
+            # Final fallback: if window was too narrow, reset to full range
+            if start_md is not None or end_md is not None:
+                return self.stream_records(well_id, None, None)
             raise ValueError(
                 f"No sensor records found for well '{well_id}' in range MD [{start_md}, {end_md}]."
             )

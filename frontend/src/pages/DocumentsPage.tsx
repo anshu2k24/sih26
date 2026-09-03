@@ -1384,8 +1384,8 @@ export const DocumentsPage: React.FC = () => {
                         <ChevronRight className="w-5 h-5 text-[#FF7A00] group-open:rotate-90 transition-transform" />
                       </summary>
                       <div className="p-4 mt-3 space-y-3 border border-[#FF7A00]/20 rounded-xl bg-[#080808]/80">
-                        {digitalDocDetails.extracted_events?.length > 0 ? digitalDocDetails.extracted_events.map((ev: any) => (
-                          <div key={ev.id} className="p-3 border border-[#FF7A00]/10 rounded-lg space-y-1.5" style={{ background: "rgba(15,15,15,0.8)" }}>
+                        {digitalDocDetails.extracted_events?.length > 0 ? digitalDocDetails.extracted_events.map((ev: any, evIdx: number) => (
+                          <div key={`${ev.id || 'ev'}-${evIdx}`} className="p-3 border border-[#FF7A00]/10 rounded-lg space-y-1.5" style={{ background: "rgba(15,15,15,0.8)" }}>
                             <div className="flex items-center justify-between text-xs font-mono">
                               <span className="font-bold text-[#FF8A00]">{ev.event_type || "Drilling Event"}</span>
                               <span className="text-[#8A8A8A]">MD: {ev.onset_md ? `${ev.onset_md}m` : "N/A"}</span>

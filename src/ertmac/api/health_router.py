@@ -21,6 +21,12 @@ VOLVE_DATASET_PATH = REPO_ROOT / "data" / "volve"
 NPD_COORDINATES_PATH = REPO_ROOT / "data" / "npd"
 
 
+@router.get("/health", summary="Service health probe")
+def get_health_status() -> Dict[str, str]:
+    """Lightweight health check endpoint for Render/hosting health monitors."""
+    return {"status": "ok", "service": "ertmac-nwis-api"}
+
+
 @router.get("/health/detailed")
 def get_detailed_system_health() -> Dict[str, Any]:
     """Returns detailed health status of all sub-systems."""
