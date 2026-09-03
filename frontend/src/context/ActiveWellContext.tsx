@@ -10,6 +10,9 @@ interface ActiveWellContextType {
   selectedWell: string;
   setSelectedWell: (wellId: string) => void;
   status: StreamConnectionStatus;
+  isStreaming: boolean;
+  startStream: (wellId?: string, speed?: number) => Promise<boolean>;
+  pauseStream: () => Promise<boolean>;
   currentMd: number;
   tvd: number | null;
   lastTimestamp: string;

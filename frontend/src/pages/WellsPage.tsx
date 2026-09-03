@@ -7,16 +7,34 @@ import {
   ArrowRight,
   Radio,
   Play,
+  Pause,
   Layers,
 } from "lucide-react";
 
 export const WellsPage: React.FC = () => {
-  const { wells, selectedWell, setSelectedWell, currentMd, status } = useActiveWell();
+  const {
+    wells,
+    selectedWell,
+    setSelectedWell,
+    currentMd,
+    isStreaming,
+    startStream,
+    pauseStream,
+  } = useActiveWell();
   const navigate = useNavigate();
 
-  const handleStartStream = (wellId: string) => {
+  const handleStartStream = async (wellId: string) => {
     setSelectedWell(wellId);
+    await startStream(wellId);
     navigate("/live");
+  };
+
+  const handleToggleCurrentStream = async () => {
+    if (isStreaming) {
+      await pauseStream();
+    } else {
+      await startStream(selectedWell);
+    }
   };
 
   return (
@@ -43,19 +61,48 @@ export const WellsPage: React.FC = () => {
             </h1>
           </div>
 
-        {/* Active Well Status Pill */}
+        {/* Active Well Status Pill & Stream Toggle */}
         <div 
           className="flex items-center gap-4 px-5 py-3 rounded-[16px] self-start md:self-auto"
           style={{ background: "rgba(10,10,10,0.45)", border: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <Radio className={`w-5 h-5 ${status === "LIVE" ? "text-[#FF7A00] animate-pulse" : "text-slate-500"}`} />
+          <Radio className={`w-5 h-5 ${isStreaming ? "text-[#FF7A00] animate-pulse" : "text-slate-500"}`} />
           <div className="text-xs">
             <div className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">CURRENT ACTIVE STREAM</div>
             <div className="text-white font-bold flex items-center gap-2 mt-0.5">
               <span className="text-[#FF7A00] text-sm">{selectedWell}</span>
               <span className="text-[#FF7A00] font-mono opacity-90 text-sm">({currentMd.toFixed(1)}m)</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
+                isStreaming
+                  ? "bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40 animate-pulse"
+                  : "bg-amber-950/60 text-amber-400 border-amber-500/30"
+              }`}>
+                {isStreaming ? "DRILLING" : "STANDBY"}
+              </span>
             </div>
           </div>
+
+          <button
+            onClick={handleToggleCurrentStream}
+            className="text-white text-[11px] font-bold px-3 py-1.5 rounded-[8px] transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+            style={
+              isStreaming
+                ? { background: "rgba(239, 68, 68, 0.2)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#FCA5A5" }
+                : { background: "linear-gradient(145deg, #FF7A00, #FF5A00)", border: "none" }
+            }
+          >
+            {isStreaming ? (
+              <>
+                <Pause className="w-3 h-3 fill-current" />
+                <span>PAUSE</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3 h-3 fill-current" />
+                <span>START</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -134,20 +181,43 @@ export const WellsPage: React.FC = () => {
                     <td className="p-4 text-white">{w.water_depth_m ? `${w.water_depth_m} m` : "84 m"}</td>
                     <td className="p-4 rounded-r-[12px] text-right">
                       <div className="flex items-center justify-end gap-[10px]">
-                        {/* Start Stream Button */}
+                        {/* Start / Pause Stream Button */}
                         <button
-                          onClick={() => handleStartStream(w.well_id)}
-                          className="text-white text-[11px] font-bold px-4 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer w-[96px] h-[36px]"
-                          style={{
-                            background: "linear-gradient(145deg, #FF7A00, #FF5A00)",
-                            boxShadow: "0 0 16px rgba(255,122,0,0.30)",
-                            border: "none"
+                          onClick={() => {
+                            if (isActive && isStreaming) {
+                              pauseStream();
+                            } else {
+                              handleStartStream(w.well_id);
+                            }
                           }}
+                          className="text-white text-[11px] font-bold px-4 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer w-[96px] h-[36px]"
+                          style={
+                            isActive && isStreaming
+                              ? {
+                                  background: "rgba(239, 68, 68, 0.2)",
+                                  border: "1px solid rgba(239, 68, 68, 0.4)",
+                                  color: "#FCA5A5",
+                                }
+                              : {
+                                  background: "linear-gradient(145deg, #FF7A00, #FF5A00)",
+                                  boxShadow: "0 0 16px rgba(255,122,0,0.30)",
+                                  border: "none",
+                                }
+                          }
                           onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.50)"; e.currentTarget.style.filter = "brightness(1.1)"; }}
                           onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 0 16px rgba(255,122,0,0.30)"; e.currentTarget.style.filter = "none"; }}
                         >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>STREAM</span>
+                          {isActive && isStreaming ? (
+                            <>
+                              <Pause className="w-3 h-3 fill-current" />
+                              <span>PAUSE</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>STREAM</span>
+                            </>
+                          )}
                         </button>
 
                         {/* Set Active Button */}

@@ -31,6 +31,7 @@ def main():
     parser = argparse.ArgumentParser(description=f"SIH 2026 PS121 Application Stack Launcher — {SCIENTIFIC_LABEL}")
     parser.add_argument("--well", type=str, default="15/9-F-15", help="Well ID to stream (default: 15/9-F-15)")
     parser.add_argument("--speed", type=float, default=50.0, help="Replay speed multiplier (default: 50.0x)")
+    parser.add_argument("--autostart", action="store_true", default=False, help="Start drilling immediately on boot (default: False, wait for START button)")
     parser.add_argument("--backend-only", action="store_true", help="Launch FastAPI backend only")
     parser.add_argument("--stream-only", action="store_true", help="Launch sensor stream simulator only")
     parser.add_argument("--frontend-only", action="store_true", help="Launch React frontend only")
@@ -42,10 +43,13 @@ def main():
     print(f"=== SIH 2026 PS121 — eRTMAC-NWIS Application Stack ===")
     print(f"Scientific Label: {SCIENTIFIC_LABEL}")
 
+    cmd_stream = [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)]
+    if args.autostart:
+        cmd_stream.append("--autostart")
+
     if args.stream_only:
-        print(f"Starting Sensor Stream Simulator for well '{args.well}' at {args.speed}x speed...")
-        cmd = [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)]
-        subprocess.run(cmd, cwd=REPO_ROOT, env=env)
+        print(f"Starting Sensor Stream Simulator for well '{args.well}' (autostart={args.autostart})...")
+        subprocess.run(cmd_stream, cwd=REPO_ROOT, env=env)
         return
 
     if args.backend_only:
@@ -61,9 +65,9 @@ def main():
         subprocess.run(cmd, cwd=FRONTEND_DIR)
         return
 
-    print("\n[1/3] Starting Sensor Stream Simulator on ws://localhost:8765 ...")
+    print(f"\n[1/3] Starting Sensor Stream Simulator on ws://localhost:8765 (Standby mode, wait for user START)...")
     p_stream = subprocess.Popen(
-        [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)],
+        cmd_stream,
         cwd=REPO_ROOT,
         env=env
     )
@@ -119,7 +123,7 @@ def main():
             if p_stream.poll() is not None:
                 print("\n[Supervisor] Stream simulator exited. Auto-restarting stream...")
                 p_stream = subprocess.Popen(
-                    [python_bin, "scripts/run_sensor_stream.py", "--well", args.well, "--speed", str(args.speed)],
+                    cmd_stream,
                     cwd=REPO_ROOT,
                     env=env
                 )

@@ -28,6 +28,7 @@ class SensorStreamClient:
         self.max_history = max_history
 
         self.status = "STREAM DISCONNECTED"
+        self.is_streaming = False
         self.well_id = "N/A"
         self.current_md = 0.0
         self.tvd: Optional[float] = None
@@ -110,6 +111,8 @@ class SensorStreamClient:
                     async with websockets.connect(self.uri, ping_interval=20.0, ping_timeout=20.0) as ws:
                         with self._lock:
                             self.status = "LIVE"
+                            self._ws_conn = ws
+                            self._loop = asyncio.get_running_loop()
                         logger.info("Connected to sensor stream WebSocket.")
 
                         async for message in ws:
@@ -122,6 +125,7 @@ class SensorStreamClient:
                 finally:
                     with self._lock:
                         self.status = "STREAM DISCONNECTED"
+                        self._ws_conn = None
                         self.ml_result = {
                             "status": "ML_NOT_READY",
                             "is_blocked": True,
@@ -139,14 +143,14 @@ class SensorStreamClient:
                     with self._lock:
                         self.status = "LIVE"
 
-                    for record in source.stream_records(active_well):
+                    for rec in source.stream_records(active_well):
                         if not self._running:
                             break
-                        self._process_message(json.dumps(record.to_dict()))
-                        await asyncio.sleep(0.08)
+                        self._process_message(json.dumps(rec.to_dict()))
+                        time.sleep(0.01)
 
                 except Exception as e:
-                    logger.debug(f"In-process stream loop ended or errored: {e}")
+                    logger.error(f"In-process stream error: {e}")
 
             if self._running:
                 await asyncio.sleep(2.0)
@@ -154,7 +158,14 @@ class SensorStreamClient:
     def _process_message(self, message_str: str) -> None:
         try:
             data = json.loads(message_str)
-            if data.get("status") == "CONNECTED":
+            if data.get("type") == "STREAM_STATUS" or "is_streaming" in data:
+                with self._lock:
+                    self.is_streaming = bool(data.get("is_streaming", False))
+                return
+
+            if data.get("status") in ("CONNECTED", "STANDBY"):
+                with self._lock:
+                    self.is_streaming = bool(data.get("is_streaming", False))
                 return
 
             rec = SensorRecord.from_dict(data)
@@ -168,6 +179,7 @@ class SensorStreamClient:
                 self.tvd = rec.tvd
                 self.last_timestamp = rec.timestamp
                 self.samples_received += 1
+                self.is_streaming = True
                 self.current_record = rec.to_dict()
                 self.history.append(rec.to_dict())
 
@@ -179,10 +191,29 @@ class SensorStreamClient:
         except Exception as e:
             logger.error(f"Error processing stream message: {e}")
 
+    def send_command(self, action: str, **kwargs) -> Dict[str, Any]:
+        """Dispatches an interactive stream control command (start, pause, resume) to the simulator."""
+        msg = json.dumps({"action": action, **kwargs})
+        with self._lock:
+            if action in ("start", "resume"):
+                self.is_streaming = True
+            elif action == "pause":
+                self.is_streaming = False
+
+        if hasattr(self, "_ws_conn") and self._ws_conn and hasattr(self, "_loop") and self._loop and self._loop.is_running():
+            try:
+                asyncio.run_coroutine_threadsafe(self._ws_conn.send(msg), self._loop)
+                return {"success": True, "action": action, "dispatched": True}
+            except Exception as e:
+                logger.warning(f"Failed to dispatch command to stream server: {e}")
+                return {"success": True, "action": action, "dispatched": False, "error": str(e)}
+        return {"success": True, "action": action, "dispatched": False, "note": "Local state updated"}
+
     def get_state(self) -> Dict[str, Any]:
         with self._lock:
             return {
                 "status": self.status,
+                "is_streaming": self.is_streaming,
                 "data_source_label": SCIENTIFIC_LABEL,
                 "well_id": self.well_id,
                 "current_md": self.current_md,

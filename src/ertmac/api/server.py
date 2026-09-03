@@ -283,6 +283,47 @@ def get_sensor_history(
     return state_mgr.get_sensor_history(well_id, cutoff_md=cutoff_md)
 
 
+# ============================================================
+# STREAM INTERACTIVE CONTROLS
+# ============================================================
+
+@app.post("/api/stream/start", tags=["Stream Control"])
+def start_stream_endpoint(
+    well_id: Optional[str] = Query(None, description="Well ID to start"),
+    speed: Optional[float] = Query(None, description="Replay speed multiplier"),
+    state_mgr: ApplicationStateManager = Depends(get_app_state),
+):
+    """Starts or unpauses real-time sensor stream simulation."""
+    res = state_mgr.send_stream_command("start", well_id=well_id, speed=speed)
+    return {"success": True, "message": "Stream started", **res}
+
+
+@app.post("/api/stream/pause", tags=["Stream Control"])
+def pause_stream_endpoint(
+    state_mgr: ApplicationStateManager = Depends(get_app_state),
+):
+    """Pauses real-time sensor stream simulation without resetting position."""
+    res = state_mgr.send_stream_command("pause")
+    return {"success": True, "message": "Stream paused", **res}
+
+
+@app.post("/api/stream/resume", tags=["Stream Control"])
+def resume_stream_endpoint(
+    state_mgr: ApplicationStateManager = Depends(get_app_state),
+):
+    """Resumes real-time sensor stream simulation."""
+    res = state_mgr.send_stream_command("resume")
+    return {"success": True, "message": "Stream resumed", **res}
+
+
+@app.get("/api/stream/status", tags=["Stream Control"])
+def get_stream_status_endpoint(
+    state_mgr: ApplicationStateManager = Depends(get_app_state),
+):
+    """Returns current stream simulation status."""
+    return state_mgr.get_stream_status()
+
+
 @app.get("/api/wells/{well_id:path}/events", response_model=EventsResponse, tags=["NWIS Intelligence"])
 def get_offset_events(
     well_id: str = Depends(validate_well_id),
@@ -656,6 +697,8 @@ class SystemSettingsUpdateRequest(BaseModel):
     search_radius_km_default: Optional[float] = None
     depth_window_m_default: Optional[float] = None
     notification_recipient_email: Optional[str] = None
+    email_rate_limit_per_sec: Optional[int] = 4
+    send_to_login_account: Optional[bool] = None
     email_enabled: Optional[bool] = None
     critical_alerts: Optional[bool] = None
     high_alerts: Optional[bool] = None
@@ -669,6 +712,8 @@ def get_system_settings(user: UserSession = Depends(get_current_user)):
     """Returns custom Supabase settings for the individual authenticated user."""
     user_prefs = get_user_preferences(user.user_id, default_email=user.email)
     sys_env = fetch_sys_settings()
+    if not user_prefs.get("notification_recipient_email") and user.email:
+        user_prefs["notification_recipient_email"] = user.email
     return {
         **sys_env,
         **user_prefs,
@@ -686,6 +731,8 @@ def update_system_settings_endpoint(
 ):
     """Creates or updates individual user configuration in Supabase and syncs runtime settings."""
     updates = {k: v for k, v in request.model_dump(exclude_unset=True).items() if v is not None}
+    if updates.get("send_to_login_account") is True and user.email and "notification_recipient_email" not in updates:
+        updates["notification_recipient_email"] = user.email
     updated = update_user_preferences(user.user_id, updates, default_email=user.email)
     sys_env = save_sys_settings(updates)
     

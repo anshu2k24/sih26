@@ -12,6 +12,8 @@ _SYSTEM_SETTINGS: Dict[str, Any] = {
     "depth_window_m_default": 50.0,
     "telemetry_stream_url": "ws://localhost:8765",
     "notification_recipient_email": os.getenv("ALERT_NOTIFICATION_EMAIL", "operator@company.com"),
+    "email_rate_limit_per_sec": int(os.getenv("EMAIL_RATE_LIMIT_PER_SEC", "4")),
+    "send_to_login_account": True,
     "resend_notifications_enabled": bool(os.getenv("RESEND_API_KEY")),
     "supabase_persistence_enabled": bool(os.getenv("SUPABASE_URL")),
     "ml_readiness_gate_enforced": True,
@@ -35,7 +37,9 @@ def update_system_settings(updates: Dict[str, Any]) -> Dict[str, Any]:
     return get_system_settings()
 
 
-def get_notification_recipient_email() -> str:
-    """Returns the configured notification recipient email address."""
+def get_notification_recipient_email(user_email: str = None) -> str:
+    """Returns the configured notification recipient email address, routing to login user if enabled."""
+    if _SYSTEM_SETTINGS.get("send_to_login_account", True) and user_email:
+        return user_email
     return _SYSTEM_SETTINGS.get("notification_recipient_email", os.getenv("ALERT_NOTIFICATION_EMAIL", "operator@company.com"))
 

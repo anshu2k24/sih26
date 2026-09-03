@@ -134,6 +134,21 @@ class ApplicationStateManager:
             "features_constructed": len(ml_res.get("features", {}))
         }
 
+    def send_stream_command(self, action: str, **kwargs) -> Dict[str, Any]:
+        """Dispatches an interactive stream control command (start, pause, resume) to the sensor stream."""
+        return self.stream_client.send_command(action, **kwargs)
+
+    def get_stream_status(self) -> Dict[str, Any]:
+        """Returns the current sensor stream run status and drilling parameters."""
+        st = self.stream_client.get_state()
+        return {
+            "is_streaming": st.get("is_streaming", False),
+            "status": st.get("status", "STREAM DISCONNECTED"),
+            "well_id": st.get("well_id", "15/9-F-15"),
+            "current_md": st.get("current_md", 0.0),
+            "samples_received": st.get("samples_received", 0),
+        }
+
 
 # Global Singleton Application State
 _app_state_instance: Optional[ApplicationStateManager] = None

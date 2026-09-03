@@ -79,6 +79,12 @@ def parse_args():
         help="Invoke StreamInferenceAdapter on each stream step to connect buffer to existing ML architecture"
     )
     parser.add_argument(
+        "--autostart",
+        action="store_true",
+        default=False,
+        help="Start stream digging immediately (default: False, wait for START button)"
+    )
+    parser.add_argument(
         "--list-wells",
         action="store_true",
         help="List all available wells in the source dataset and exit"
@@ -87,11 +93,11 @@ def parse_args():
 
 
 async def run_async_server(args, source, adapter=None):
-    simulator = SensorStreamSimulator(source=source)
+    simulator = SensorStreamSimulator(source=source, autostart=args.autostart)
     server = SensorWebSocketServer(simulator=simulator, host=args.host, port=args.port)
 
     await server.start()
-    logger.info(f"[{SCIENTIFIC_LABEL}] Replaying well '{args.well}' at {args.speed}x speed...")
+    logger.info(f"[{SCIENTIFIC_LABEL}] Sensor stream initialized for well '{args.well}' (autostart={args.autostart})")
     logger.info(f"WebSocket endpoint: ws://{args.host}:{args.port}")
 
     try:

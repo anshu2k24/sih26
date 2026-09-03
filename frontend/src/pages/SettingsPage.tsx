@@ -18,7 +18,10 @@ import {
   Activity,
   Gauge,
   MapPin,
-  FileText
+  FileText,
+  Clock,
+  Zap,
+  ShieldCheck,
 } from "lucide-react";
 
 export const SettingsPage: React.FC = () => {
@@ -27,6 +30,8 @@ export const SettingsPage: React.FC = () => {
 
   // Form State
   const [emailInput, setEmailInput] = useState<string>("");
+  const [emailRateLimit, setEmailRateLimit] = useState<number>(4);
+  const [sendToLoginAccount, setSendToLoginAccount] = useState<boolean>(true);
   const [radiusInput, setRadiusInput] = useState<number>(5.0);
   const [depthInput, setDepthInput] = useState<number>(50.0);
 
@@ -52,7 +57,16 @@ export const SettingsPage: React.FC = () => {
       const res = await fetchSystemSettings();
       if (res) {
         setSettings(res);
-        setEmailInput(res.notification_recipient_email || profile?.email || "");
+        setEmailRateLimit(res.email_rate_limit_per_sec ?? 4);
+        const shouldRouteLogin = res.send_to_login_account ?? true;
+        setSendToLoginAccount(shouldRouteLogin);
+
+        if (shouldRouteLogin && profile?.email) {
+          setEmailInput(profile.email);
+        } else {
+          setEmailInput(res.notification_recipient_email || profile?.email || "");
+        }
+
         setRadiusInput(res.search_radius_km_default ?? 5.0);
         setDepthInput(res.depth_window_m_default ?? 50.0);
 
@@ -81,14 +95,18 @@ export const SettingsPage: React.FC = () => {
     setSaveSuccess(null);
     setSaveError(null);
 
-    if (!emailInput.trim()) {
+    const targetEmail = sendToLoginAccount && profile?.email ? profile.email : emailInput.trim();
+
+    if (!targetEmail) {
       setSaveError("Notification recipient email is required.");
       return;
     }
 
     setSaving(true);
     const updated = await updateSystemSettingsApi({
-      notification_recipient_email: emailInput.trim(),
+      notification_recipient_email: targetEmail,
+      email_rate_limit_per_sec: Number(emailRateLimit),
+      send_to_login_account: sendToLoginAccount,
       search_radius_km_default: Number(radiusInput),
       depth_window_m_default: Number(depthInput),
       email_enabled: emailEnabled,
@@ -104,7 +122,7 @@ export const SettingsPage: React.FC = () => {
     if (updated) {
       setSettings(updated);
       setSaveSuccess(
-        `Your personal settings have been successfully saved in Supabase for ${profile?.email || emailInput}!`
+        `Settings saved! Email notifications set to max ${emailRateLimit}/sec for account ${targetEmail}.`
       );
     } else {
       setSaveError("Failed to save settings to Supabase. Please check your network connection.");
@@ -126,6 +144,8 @@ export const SettingsPage: React.FC = () => {
 
     if (res) {
       setSettings(res);
+      setEmailRateLimit(4);
+      setSendToLoginAccount(true);
       setEmailInput(profile?.email || "");
       setRadiusInput(5.0);
       setDepthInput(50.0);
@@ -136,7 +156,7 @@ export const SettingsPage: React.FC = () => {
       setHistoricalAlerts(false);
       setSystemNotifications(true);
       setReportNotifications(false);
-      setSaveSuccess("Your configuration has been reset to default values in Supabase.");
+      setSaveSuccess("Your configuration has been reset to default values (4 emails/sec rate limit for login account).");
     } else {
       setSaveError("Failed to reset settings in Supabase.");
     }
@@ -230,48 +250,160 @@ export const SettingsPage: React.FC = () => {
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-[28px]">
-              {/* Section 1: Email Target */}
-              <div 
-                className="p-[24px] rounded-[16px] flex flex-col md:flex-row md:items-center justify-between gap-[24px]"
-                style={{
-                  background: "rgba(24, 20, 15, 0.60)",
-                  border: "1px solid rgba(255,138,0,0.15)",
-                }}
-              >
-                <div className="flex items-start gap-[16px] max-w-xl">
-                  <div className="w-[44px] h-[44px] shrink-0 rounded-[12px] bg-[rgba(255,138,0,0.1)] border border-[rgba(255,138,0,0.3)] flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-[#FF9D1A]" />
+              {/* Section 1: Email Target & Rate Limiting Governance */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
+                {/* 1A: Recipient Account */}
+                <div 
+                  className="p-[24px] rounded-[16px] space-y-[16px] flex flex-col justify-between"
+                  style={{
+                    background: "rgba(24, 20, 15, 0.60)",
+                    border: "1px solid rgba(255,138,0,0.15)",
+                  }}
+                >
+                  <div className="flex items-start gap-[16px]">
+                    <div className="w-[44px] h-[44px] shrink-0 rounded-[12px] bg-[rgba(255,138,0,0.1)] border border-[rgba(255,138,0,0.3)] flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-[#FF9D1A]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-[4px]">
+                        <label className="text-[13px] text-white font-[700] uppercase tracking-wider block">
+                          ALERT DISPATCH EMAIL
+                        </label>
+                        {sendToLoginAccount && (
+                          <span className="text-[10px] font-mono text-[#00D084] bg-[rgba(0,208,132,0.1)] border border-[rgba(0,208,132,0.3)] px-2 py-0.5 rounded-full font-[700]">
+                            ● LOGIN ACCOUNT
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#9AA0A6] font-sans leading-relaxed">
+                        Drilling alerts, offset hazards, and rig reports will be dispatched to this address.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[13px] text-white font-[700] uppercase tracking-wider block mb-[8px]">
-                      PERSONAL ALERT DISPATCH EMAIL
+
+                  {/* Login Account Binding Toggle */}
+                  <div className="pt-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none mb-3">
+                      <input
+                        type="checkbox"
+                        checked={sendToLoginAccount}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSendToLoginAccount(checked);
+                          if (checked && profile?.email) {
+                            setEmailInput(profile.email);
+                          }
+                        }}
+                        className="w-[16px] h-[16px] rounded border-[#FF8A00] text-[#FF8A00] focus:ring-[#FF8A00] bg-transparent cursor-pointer"
+                        style={{ accentColor: "#FF8A00" }}
+                      />
+                      <span className="text-[12px] text-white font-medium">
+                        Send to Login Account ({profile?.email || "Authenticated Operator"})
+                      </span>
                     </label>
-                    <p className="text-[12px] text-[#9AA0A6] font-sans leading-relaxed">
-                      All drilling alerts, real-time offset events, and shift handovers destined for your account will be dispatched to this email address.
-                    </p>
+
+                    <div className="relative">
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => {
+                          setEmailInput(e.target.value);
+                          if (sendToLoginAccount && e.target.value !== profile?.email) {
+                            setSendToLoginAccount(false);
+                          }
+                        }}
+                        placeholder="operator@company.com"
+                        className="w-full rounded-[12px] px-[16px] py-[13px] text-[13px] font-mono text-[#FF9D1A] transition-all focus:outline-none placeholder:text-[#6B7280]"
+                        style={{
+                          background: "rgba(0,0,0,0.6)",
+                          border: "1px solid rgba(255,138,0,0.3)",
+                          boxShadow: "inset 0 0 15px rgba(0,0,0,0.5)"
+                        }}
+                      />
+                      {profile?.email && emailInput !== profile.email && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEmailInput(profile.email || "");
+                            setSendToLoginAccount(true);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-[700] text-[#00D084] hover:text-white px-2 py-1 bg-[rgba(0,208,132,0.15)] border border-[rgba(0,208,132,0.3)] rounded-[6px] transition-all"
+                        >
+                          Use Login Email
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="w-full md:w-[350px] shrink-0">
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="your.email@company.com"
-                    className="w-full rounded-[12px] px-[20px] py-[16px] text-[13px] font-mono text-[#FF9D1A] transition-all focus:outline-none placeholder:text-[#6B7280]"
-                    style={{
-                      background: "rgba(0,0,0,0.6)",
-                      border: "1px solid rgba(255,138,0,0.3)",
-                      boxShadow: "inset 0 0 15px rgba(0,0,0,0.5)"
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.6)";
-                      e.currentTarget.style.boxShadow = "0 0 20px rgba(255,138,0,0.15), inset 0 0 15px rgba(0,0,0,0.5)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(255,138,0,0.3)";
-                      e.currentTarget.style.boxShadow = "inset 0 0 15px rgba(0,0,0,0.5)";
-                    }}
-                  />
+
+                {/* 1B: Email Rate Limiter (Max 4 Mails per Sec) */}
+                <div 
+                  className="p-[24px] rounded-[16px] space-y-[16px] flex flex-col justify-between"
+                  style={{
+                    background: "rgba(24, 20, 15, 0.60)",
+                    border: "1px solid rgba(255,138,0,0.15)",
+                  }}
+                >
+                  <div className="flex items-start gap-[16px]">
+                    <div className="w-[44px] h-[44px] shrink-0 rounded-[12px] bg-[rgba(255,138,0,0.1)] border border-[rgba(255,138,0,0.3)] flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-[#FF9D1A]" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2 mb-[4px]">
+                        <label className="text-[13px] text-white font-[700] uppercase tracking-wider block">
+                          EMAIL RATE LIMIT (PER SECOND)
+                        </label>
+                        <span 
+                          className="text-[11px] font-mono font-[700] px-2.5 py-0.5 rounded-full border shadow-sm"
+                          style={{
+                            background: emailRateLimit <= 4 ? "rgba(0,208,132,0.1)" : "rgba(255,138,0,0.1)",
+                            borderColor: emailRateLimit <= 4 ? "rgba(0,208,132,0.3)" : "rgba(255,138,0,0.3)",
+                            color: emailRateLimit <= 4 ? "#00D084" : "#FF9D1A",
+                          }}
+                        >
+                          {emailRateLimit} MAILS / SEC
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#9AA0A6] font-sans leading-relaxed">
+                        Sliding-window dispatch throttler. Guarantees maximum of {emailRateLimit} emails/sec to prevent alert storms.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 space-y-3">
+                    {/* Slider */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] font-mono text-[#71717A]">1/s</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={emailRateLimit}
+                        onChange={(e) => setEmailRateLimit(parseInt(e.target.value, 10))}
+                        className="w-full h-2 rounded-lg bg-black/60 appearance-none cursor-pointer accent-[#FF8A00]"
+                      />
+                      <span className="text-[11px] font-mono text-[#71717A]">10/s</span>
+                    </div>
+
+                    {/* Presets */}
+                    <div className="flex items-center justify-between gap-2">
+                      {[1, 2, 4, 8].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setEmailRateLimit(val)}
+                          className={`flex-1 py-1.5 px-2 rounded-[8px] text-[11px] font-mono font-[700] transition-all border ${
+                            emailRateLimit === val
+                              ? "bg-[#FF8A00]/20 border-[#FF8A00] text-white shadow-[0_0_10px_rgba(255,138,0,0.2)]"
+                              : "bg-black/40 border-white/10 text-[#A1A1AA] hover:border-white/20 hover:text-white"
+                          }`}
+                        >
+                          {val}/s {val === 4 ? "(Def)" : ""}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -697,7 +829,7 @@ export const SettingsPage: React.FC = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-[16px]">
               {/* Supabase Postgres */}
               <div 
                 className="p-[20px] rounded-[16px] transition-all duration-300 group"
@@ -747,6 +879,33 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <strong className="text-[#38BDF8] text-[13px] font-[700] font-mono tracking-wide block truncate drop-shadow-[0_0_5px_rgba(56,189,248,0.3)]" title={profile?.email}>
                   {profile?.email || "Per-User"}
+                </strong>
+              </div>
+
+              {/* Email Rate Limit */}
+              <div 
+                className="p-[20px] rounded-[16px] transition-all duration-300 group"
+                style={{
+                  background: "rgba(24, 20, 15, 0.60)",
+                  border: "1px solid rgba(255,138,0,0.2)"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,138,0,0.5)";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(255,138,0,0.15)";
+                  e.currentTarget.style.background = "rgba(255,138,0,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,138,0,0.2)";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "rgba(24, 20, 15, 0.60)";
+                }}
+              >
+                <div className="flex items-center gap-[12px] mb-[12px]">
+                  <Clock className="w-4 h-4 text-[#FF9D1A] opacity-[0.6] group-hover:opacity-[1] group-hover:drop-shadow-[0_0_5px_#FF9D1A] transition-all" />
+                  <span className="text-[#9AA0A6] text-[10px] font-[700] font-mono tracking-widest uppercase">EMAIL RATE LIMIT</span>
+                </div>
+                <strong className="text-[#FF9D1A] text-[13px] font-[700] tracking-wide block drop-shadow-[0_0_5px_rgba(255,157,26,0.3)]">
+                  {settings.email_rate_limit_per_sec ?? 4} / SEC (LOGIN USER)
                 </strong>
               </div>
 

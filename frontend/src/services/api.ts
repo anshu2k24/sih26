@@ -110,6 +110,61 @@ export async function fetchRiskStatus(wellId: string): Promise<MLStatusState | n
   }
 }
 
+export async function startStreamApi(wellId?: string, speed?: number): Promise<boolean> {
+  try {
+    const params = new URLSearchParams();
+    if (wellId) params.append("well_id", wellId);
+    if (speed) params.append("speed", String(speed));
+    const res = await authFetch(`${API_BASE_URL}/api/stream/start?${params.toString()}`, {
+      method: "POST",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("startStreamApi error:", err);
+    return false;
+  }
+}
+
+export async function pauseStreamApi(): Promise<boolean> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/stream/pause`, {
+      method: "POST",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("pauseStreamApi error:", err);
+    return false;
+  }
+}
+
+export async function resumeStreamApi(): Promise<boolean> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/stream/resume`, {
+      method: "POST",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("resumeStreamApi error:", err);
+    return false;
+  }
+}
+
+export async function fetchStreamStatusApi(): Promise<{
+  is_streaming: boolean;
+  status: string;
+  well_id: string;
+  current_md: number;
+} | null> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/stream/status`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("fetchStreamStatusApi error:", err);
+    return null;
+  }
+}
+
 export async function fetchNearbyWells(
   wellId: string,
   radiusKm: number = 5.0

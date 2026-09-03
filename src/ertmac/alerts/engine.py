@@ -309,7 +309,7 @@ class AlertEngine:
                     return item
         return None
 
-    def get_active_alerts(self, organization_id: str, well_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_active_alerts(self, organization_id: str = "00000000-0000-0000-0000-000000000001", well_id: Optional[str] = None) -> List[Dict[str, Any]]:
         # Try DB first
         db_alerts = AlertPersistence.get_alerts(organization_id=organization_id, well_id=well_id, limit=200)
         if db_alerts is not None:

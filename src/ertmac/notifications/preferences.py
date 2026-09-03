@@ -14,6 +14,8 @@ logger = logging.getLogger("ertmac.notifications.preferences")
 
 DEFAULT_PREFERENCES: Dict[str, Any] = {
     "notification_recipient_email": "",
+    "email_rate_limit_per_sec": 4,
+    "send_to_login_account": True,
     "search_radius_km_default": 5.0,
     "depth_window_m_default": 50.0,
     "email_enabled": True,
@@ -46,6 +48,8 @@ def get_user_preferences(user_id: str, default_email: str = "") -> Dict[str, Any
             if res.data:
                 return {
                     "notification_recipient_email": res.data.get("notification_recipient_email") or default_email,
+                    "email_rate_limit_per_sec": int(res.data.get("email_rate_limit_per_sec", 4) or 4),
+                    "send_to_login_account": bool(res.data.get("send_to_login_account", True)),
                     "search_radius_km_default": float(res.data.get("search_radius_km_default", 5.0) or 5.0),
                     "depth_window_m_default": float(res.data.get("depth_window_m_default", 50.0) or 50.0),
                     "email_enabled": res.data.get("email_enabled", True),
