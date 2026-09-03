@@ -67,23 +67,15 @@ export const Sidebar: React.FC = () => {
     >
       {/* Top Toggle / Brand Area */}
       <div className={`flex items-center mb-6 w-full ${expanded ? "justify-between px-2" : "justify-center"}`}>
-        {expanded && (
-          <div 
-            className="flex flex-col justify-center px-3 h-[44px] rounded-[14px]"
-            style={{
-              background: "rgba(20,20,20,0.55)",
-              border: "1px solid rgba(255,122,0,0.18)",
-            }}
-          >
-            <div className="font-[700] text-[16px] leading-tight flex">
-              <span className="text-[#F5F5F5]">eRTMAC</span>
-              <span className="text-[#FF7A00]">-NWIS</span>
-            </div>
-            <div className="text-[#9A9A9A] text-[9px] font-[400] leading-none lowercase mt-0.5">
-              Nearbywells intelligence system
-            </div>
+        <div className={`flex flex-col justify-center overflow-hidden whitespace-nowrap transition-all duration-300 ${expanded ? 'w-[180px] opacity-100 px-2' : 'w-0 opacity-0'}`}>
+          <div className="font-[700] text-[16px] leading-tight flex">
+            <span className="text-[#F5F5F5]">eRTMAC</span>
+            <span className="text-[#FF7A00]">-NWIS</span>
           </div>
-        )}
+          <div className="text-[#9A9A9A] text-[9px] font-[400] leading-none lowercase mt-0.5">
+            Nearbywells intelligence system
+          </div>
+        </div>
         <button
           onClick={() => {
             const newVal = !expanded;

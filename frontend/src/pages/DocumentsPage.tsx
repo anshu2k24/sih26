@@ -4,6 +4,8 @@ import {
   uploadDocumentApi,
   fetchDocumentsApi,
   fetchDocumentDetailsApi,
+  fetchDocumentContentBlobApi,
+  fetchNoteImageBlobApi,
   verifyExtractedEventApi,
   rejectExtractedEventApi,
   API_BASE_URL,
@@ -44,6 +46,13 @@ import {
   Image as ImageIcon,
   Check,
   Edit3,
+  ScanText,
+  Minus,
+  Maximize,
+  RotateCcw,
+  MoreVertical,
+  Info,
+  ChevronRight,
 } from "lucide-react";
 
 // Unified item type representing either a Standard Digital Document or a Handwritten OCR Note
@@ -288,26 +297,48 @@ export const DocumentsPage: React.FC = () => {
   };
 
   // Open item inspection & review
+  const [docContentBlobUrl, setDocContentBlobUrl] = useState<string | null>(null);
+  const [noteImageBlobUrl, setNoteImageBlobUrl] = useState<string | null>(null);
+
   const openItemDetails = async (item: UnifiedDocumentItem) => {
     setActiveItem(item);
     setItemDetailLoading(true);
     setDigitalDocDetails(null);
     setNoteDetails(null);
+    setDocContentBlobUrl(null);
+    setNoteImageBlobUrl(null);
 
     try {
       if (item.sourceType === "DIGITAL_DOC") {
-        const data = await fetchDocumentDetailsApi(item.id);
+        const [data, blobUrl] = await Promise.all([
+          fetchDocumentDetailsApi(item.id),
+          fetchDocumentContentBlobApi(item.id),
+        ]);
         if (data) {
           setDigitalDocDetails(data);
         }
+        if (blobUrl) {
+          setDocContentBlobUrl(blobUrl);
+        }
       } else {
         const data = await fetchNoteDetailApi(item.id);
-        if (data && data.note) {
-          setNoteDetails(data.note);
-          setEditableVerifiedText(data.note.verified_text || data.note.raw_ocr_text || "");
-        } else if (item.rawNote) {
-          setNoteDetails(item.rawNote);
-          setEditableVerifiedText(item.rawNote.verified_text || item.rawNote.raw_ocr_text || "");
+        const resolvedNote = data?.note || item.rawNote;
+        if (resolvedNote) {
+          setNoteDetails(resolvedNote);
+          setEditableVerifiedText(resolvedNote.verified_text || resolvedNote.raw_ocr_text || "");
+
+          const filenameToFetch =
+            (resolvedNote.metadata?.storage as any)?.stored_filename ||
+            resolvedNote.storage_path?.split("/").pop() ||
+            resolvedNote.public_url?.split("/").pop() ||
+            (resolvedNote.metadata?.storage as any)?.filename ||
+            item.filename ||
+            resolvedNote.id;
+
+          const imgBlob = await fetchNoteImageBlobApi(filenameToFetch);
+          if (imgBlob) {
+            setNoteImageBlobUrl(imgBlob);
+          }
         }
       }
     } catch (err) {
@@ -834,7 +865,7 @@ export const DocumentsPage: React.FC = () => {
 
       {/* ── NEW DOCUMENT MODAL ── */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300" style={{ background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)" }}>
+        <div className="fixed top-[70px] bottom-0 right-0 z-50 flex items-center justify-center p-4 transition-all duration-300" style={{ left: "var(--sidebar-offset)", background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)" }}>
           {/* Modal Container */}
           <div 
             className="w-full max-w-[850px] rounded-3xl shadow-2xl flex flex-col relative overflow-hidden"
@@ -1077,51 +1108,87 @@ export const DocumentsPage: React.FC = () => {
 
                       <div className="space-y-2">
                         <label className="text-[12px] font-bold text-[#A1A1AA] uppercase tracking-wider block font-mono">Handwritten Image File</label>
-                        <div 
-                          className="relative w-full rounded-[16px] flex items-center p-4 transition-all duration-300"
-                          style={{
-                            background: "rgba(5, 5, 5, 0.4)",
-                            border: "1px dashed rgba(255, 122, 0, 0.3)",
-                          }}
-                        >
-                          <input
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={(e) => setOcrFile(e.target.files?.[0] || null)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20"
-                          />
-                          <div className="flex items-center gap-4 relative z-10 w-full">
-                            <div className="p-3 bg-[rgba(255,122,0,0.05)] rounded-xl border border-[rgba(255,122,0,0.2)] text-[#FF7A00]">
-                              <ImageIcon className="w-5 h-5" />
+                        {!ocrFile ? (
+                          <div 
+                            className="relative w-full rounded-[16px] flex items-center p-6 transition-all duration-300 hover:border-[#FF7A00]/60 cursor-pointer"
+                            style={{
+                              background: "rgba(5, 5, 5, 0.4)",
+                              border: "1px dashed rgba(255, 122, 0, 0.3)",
+                            }}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) setOcrFile(f);
+                              }}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            />
+                            <div className="flex items-center gap-4 w-full pointer-events-none">
+                              <div className="p-3 bg-[rgba(255,122,0,0.05)] rounded-xl border border-[rgba(255,122,0,0.2)] text-[#FF7A00]">
+                                <ImageIcon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[14px] font-bold text-white truncate">
+                                  Click or drag to select handwritten image / PDF...
+                                </p>
+                                <p className="text-[11px] text-[#A1A1AA] font-mono mt-0.5">Supports JPG, PNG, WEBP, PDF</p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[14px] font-bold text-white truncate">
-                                {ocrFile ? ocrFile.name : "Click or drag to select image..."}
-                              </p>
-                              {ocrFile && <p className="text-[11px] text-[#A1A1AA] font-mono mt-0.5">Ready for processing</p>}
+                          </div>
+                        ) : (
+                          <div 
+                            className="w-full rounded-[16px] flex items-center justify-between p-4 transition-all duration-300"
+                            style={{
+                              background: "rgba(10, 10, 10, 0.6)",
+                              border: "1px solid rgba(255, 122, 0, 0.4)",
+                            }}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="p-2.5 bg-[rgba(255,122,0,0.1)] rounded-xl border border-[rgba(255,122,0,0.3)] text-[#FF7A00] shrink-0">
+                                <ImageIcon className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[13px] font-bold text-white truncate font-mono">
+                                  {ocrFile.name}
+                                </p>
+                                <p className="text-[11px] text-emerald-400 font-mono mt-0.5">
+                                  {(ocrFile.size / 1024).toFixed(1)} KB • Ready for OCR processing
+                                </p>
+                              </div>
                             </div>
-                            {ocrFile && (
+
+                            <div className="flex items-center gap-2 shrink-0 ml-3">
+                              <label className="cursor-pointer px-3 py-2 rounded-[10px] text-[11px] font-mono text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                                Change
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) setOcrFile(f);
+                                  }}
+                                />
+                              </label>
+
                               <button 
-                                type="button"
-                                className="px-5 py-2.5 rounded-[10px] text-[12px] font-bold text-white transition-all z-30 flex items-center gap-2"
+                                type="submit"
+                                className="px-5 py-2.5 rounded-[10px] text-[12px] font-bold text-white transition-all flex items-center gap-2 cursor-pointer shadow-lg"
                                 style={{
-                                  background: "rgba(255, 122, 0, 0.15)",
-                                  border: "1px solid rgba(255, 122, 0, 0.5)",
-                                  boxShadow: "0 0 15px rgba(255, 122, 0, 0.15)",
-                                }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleOcrSubmit(e as any);
+                                  background: "linear-gradient(135deg, #FF7A00, #FF5500)",
+                                  border: "1px solid rgba(255, 122, 0, 0.8)",
+                                  boxShadow: "0 0 15px rgba(255, 122, 0, 0.3)",
                                 }}
                                 disabled={uploading}
                               >
                                 {uploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                RUN TRANSCRIBER
+                                <span>{uploading ? "TRANSCRIBING..." : "RUN TRANSCRIBER"}</span>
                               </button>
-                            )}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </form>
                   </>
@@ -1153,179 +1220,228 @@ export const DocumentsPage: React.FC = () => {
 
       {/* ── DOCUMENT & NOTE DETAIL / VERIFICATION MODAL ── */}
       {activeItem && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-start justify-center pt-[70px] pb-6 px-4">
+        <div className="fixed top-[70px] bottom-0 right-0 z-[100] flex items-center justify-center p-4 sm:p-6 transition-all duration-300" style={{ left: "var(--sidebar-offset)", background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}>
           <div 
-            className="bg-slate-900 border border-slate-700 rounded-2xl w-full shadow-2xl flex flex-col overflow-hidden relative"
+            className="flex flex-col overflow-hidden relative"
             style={{ 
-              maxWidth: "1100px", 
-              width: "90vw", 
-              height: "80vh", 
-              maxHeight: "calc(100vh - 100px)" 
+              maxWidth: "1400px", 
+              width: "92vw", 
+              height: "90vh", 
+              background: "rgba(8, 8, 8, 0.88)", 
+              backdropFilter: "blur(18px)", 
+              border: "1px solid rgba(255, 122, 0, 0.45)", 
+              boxShadow: "0 0 35px rgba(255, 122, 0, 0.10)", 
+              borderRadius: "20px" 
             }}
           >
             {/* Modal Header - Fixed at top */}
-            <div className="shrink-0 sticky top-0 z-20 p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950 shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-950 border border-blue-500/40 rounded-xl text-blue-400 shadow-sm">
-                  {activeItem.sourceType === "DIGITAL_DOC" ? <FileCode className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+            <div className="shrink-0 sticky top-0 z-20 px-8 py-5 flex items-center justify-between border-b" style={{ background: "rgba(10, 10, 10, 0.6)", borderColor: "rgba(255, 122, 0, 0.2)" }}>
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl flex items-center justify-center transition-all" style={{ border: "1px solid rgba(255, 122, 0, 0.4)", background: "rgba(255, 122, 0, 0.05)", boxShadow: "0 0 15px rgba(255,122,0,0.15)" }}>
+                  {activeItem.sourceType === "DIGITAL_DOC" ? <FileCode className="w-6 h-6 text-[#FF7A00]" /> : <ImageIcon className="w-6 h-6 text-[#FF7A00]" />}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-[#F5F5F5] font-mono flex items-center gap-3">
                     {activeItem.title}
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                      {activeItem.sourceType === "DIGITAL_DOC" ? `DIGITAL ${activeItem.fileType}` : "HANDWRITTEN OCR"}
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold transition-all uppercase tracking-wider" style={{ background: "rgba(255, 122, 0, 0.1)", border: "1px solid rgba(255, 122, 0, 0.5)", color: "#FF7A00", boxShadow: "0 0 10px rgba(255, 122, 0, 0.2)" }}>
+                      {activeItem.sourceType === "DIGITAL_DOC" ? `DIGITAL ${activeItem.fileType || "PDF"}` : "HANDWRITTEN OCR"}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {activeItem.id}</p>
+                  <p className="text-xs text-[#8A8A8A] font-mono mt-1 tracking-wide">ID: {activeItem.id}</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveItem(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+                className="p-2 rounded-full transition-all duration-200 group flex items-center justify-center cursor-pointer"
+                style={{ border: "1px solid rgba(255, 122, 0, 0.3)", background: "transparent" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(255,122,0,0.4)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 122, 0, 0.8)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.borderColor = 'rgba(255, 122, 0, 0.3)';
+                }}
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 text-[#F5F5F5] group-hover:text-[#FF7A00] transition-colors" />
               </button>
             </div>
 
             {/* Modal Body - Grid with independently scrolling columns */}
-            <div className="flex-1 min-h-0 p-6 flex flex-col">
+            <div className="flex-1 min-h-0 p-8 flex flex-col">
               {itemDetailLoading ? (
-                <div className="py-20 flex-1 flex flex-col items-center justify-center text-center text-slate-400 space-y-3">
-                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-400" />
+                <div className="py-20 flex-1 flex flex-col items-center justify-center text-center text-[#8A8A8A] space-y-3 font-mono">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#FF7A00]" />
                   <p className="text-sm">Loading document details & verified evidence...</p>
                 </div>
               ) : activeItem.sourceType === "DIGITAL_DOC" && digitalDocDetails ? (
                 /* Digital Document Content */
-                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-[26px] h-full">
                   {/* Left Column: PDF Preview */}
-                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col h-full min-h-0">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase mb-3 shrink-0">Document Preview</h4>
-                    <div className="flex-1 min-h-0 overflow-hidden rounded bg-black/40">
-                      {activeItem.filename?.toLowerCase().match(/\.(png|jpe?g|gif|webp)$/i) || ["PNG", "JPEG", "JPG", "GIF"].includes((digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "").toUpperCase()) ? (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <img 
-                            src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content`}
-                            alt="Document Preview"
-                            className="max-w-full max-h-full object-contain"
+                  <div className="flex flex-col h-full min-h-0 overflow-hidden" style={{ background: "rgba(12,12,12,0.7)", border: "1px solid rgba(255,122,0,0.25)", borderRadius: "16px", boxShadow: "inset 0 0 25px rgba(255,122,0,0.03)" }}>
+                    <div className="px-5 py-3 border-b flex items-center gap-3 shrink-0" style={{ borderColor: "rgba(255,122,0,0.15)" }}>
+                      <ScanText className="w-5 h-5 text-[#FF7A00]" />
+                      <h4 className="text-[13px] font-bold text-[#F5F5F5] uppercase tracking-wider font-mono">DOCUMENT PREVIEW</h4>
+                    </div>
+                    
+                    <div className="flex-1 min-h-0 relative p-4 flex flex-col">
+                      <div className="flex-1 min-h-0 bg-[#0A0A0A] rounded-xl overflow-hidden border" style={{ borderColor: "rgba(255,122,0,0.15)" }}>
+                        {activeItem.filename?.toLowerCase().match(/\.(png|jpe?g|gif|webp)$/i) || ["PNG", "JPEG", "JPG", "GIF"].includes((digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "").toUpperCase()) ? (
+                          <div className="w-full h-full flex items-center justify-center p-2">
+                            <img 
+                              src={docContentBlobUrl || `${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content`}
+                              alt="Document Preview"
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <iframe
+                            src={docContentBlobUrl ? `${docContentBlobUrl}#view=Fit` : `${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
+                            className="w-full h-full bg-white border-0"
+                            title="Document Preview"
                           />
-                        </div>
-                      ) : (
-                        <iframe
-                          src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
-                          className="w-full h-full bg-white"
-                          title="Document Preview"
-                        />
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Right Column: Details & Events */}
-                  <div className="flex flex-col space-y-5 overflow-y-auto min-h-0 h-full pr-2 custom-scrollbar">
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase">Document Information</h4>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div><span className="text-slate-500 block text-[10px]">ID:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.id}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">TYPE:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">STATUS:</span><span className="text-emerald-400 font-bold">VERIFIED</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">EVENTS COUNT:</span><span className="text-cyan-400">{digitalDocDetails.extracted_events?.length || 0}</span></div>
+                  <div className="flex flex-col space-y-[22px] overflow-y-auto min-h-0 h-full pr-2 custom-scrollbar">
+                    
+                    <div className="p-5 shrink-0 transition-all hover:border-[#FF7A00]/40" style={{ background: "rgba(15,15,15,0.65)", border: "1px solid rgba(255,122,0,0.2)", borderRadius: "16px", backdropFilter: "blur(16px)" }}>
+                      <h4 className="text-[13px] font-bold text-[#FF7A00] flex items-center gap-2 uppercase tracking-wider mb-4 font-mono">
+                        <Info className="w-4 h-4" /> Document Information
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-xs font-mono">
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">ID:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.id}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">TYPE:</span>
+                          <span className="text-[#F5F5F5] uppercase break-words">{digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "PDF"}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">STATUS:</span>
+                          <span className="text-[#10B981] font-bold flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_5px_#10B981]"></div> VERIFIED</span>
+                        </div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">EVENTS COUNT:</span>
+                          <span className="text-[#FF7A00] font-bold">{digitalDocDetails.extracted_events?.length || 0}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Document Metadata Details */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.filename}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">WELL ID:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.source_metadata?.well_id || activeItem.wellId || "N/A"}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">DEPTH:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.source_metadata?.depth || "N/A"}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">WATER DEPTH:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.source_metadata?.water_depth || "N/A"}</span></div>
-                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">REPORT PERIOD:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.source_metadata?.report_period || "N/A"}</span></div>
-                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">ABNORMAL REMARKS:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.source_metadata?.abnormal_remarks || "None"}</span></div>
+                    <div className="p-5 shrink-0 transition-all hover:border-[#FF7A00]/40" style={{ background: "rgba(15,15,15,0.65)", border: "1px solid rgba(255,122,0,0.2)", borderRadius: "16px", backdropFilter: "blur(16px)" }}>
+                      <h4 className="text-[13px] font-bold text-[#FF7A00] flex items-center gap-2 uppercase tracking-wider mb-4 font-mono">
+                        <FileText className="w-4 h-4" /> Imported Details
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-xs font-mono">
+                        <div className="col-span-2">
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">FILE NAME:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.filename}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">WELL ID:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.source_metadata?.well_id || activeItem.wellId || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">DEPTH:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.source_metadata?.depth || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">WATER DEPTH:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.source_metadata?.water_depth || "N/A"}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">REPORT PERIOD:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.source_metadata?.report_period || "N/A"}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">ABNORMAL REMARKS:</span>
+                          <span className="text-[#F5F5F5] break-words">{digitalDocDetails.document.source_metadata?.abnormal_remarks || "Stable"}</span>
+                        </div>
                       </div>
                     </div>
-                    
-                    {/* Summary & Tags Section (Like OCR Notes) */}
-                    {(digitalDocDetails.document.source_metadata?.summary || digitalDocDetails.document.source_metadata?.tags) && (
-                      <div className="bg-cyan-950/20 border border-cyan-900/30 rounded-xl p-4 space-y-3 shrink-0">
-                        {digitalDocDetails.document.source_metadata?.summary && (
-                          <div>
-                            <h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 mb-1.5">
-                              <Bot className="w-3.5 h-3.5" /> AI Summary
-                            </h4>
-                            <p className="text-xs text-slate-300 leading-relaxed break-words">
-                              {digitalDocDetails.document.source_metadata.summary}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {digitalDocDetails.document.source_metadata?.tags?.length > 0 && (
-                          <div>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Semantic Tags</h4>
-                            <div className="flex flex-wrap gap-1.5">
-                              {digitalDocDetails.document.source_metadata.tags.map((tag: string, i: number) => (
-                                <span key={i} className="px-2 py-0.5 rounded-full text-[10px] bg-cyan-950/60 text-cyan-300 border border-cyan-700/40">
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     {/* Extracted Events Section */}
-                    <div className="space-y-3 shrink-0 pb-4">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase">
-                        Extracted Events & Operational Episodes ({digitalDocDetails.extracted_events?.length || 0})
-                      </h4>
-                      <div className="space-y-2">
-                        {digitalDocDetails.extracted_events?.map((ev: any) => (
-                          <div key={ev.id} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-bold text-cyan-400">{ev.event_type || "Drilling Event"}</span>
-                              <span className="text-[10px] font-mono text-slate-500">MD: {ev.onset_md ? `${ev.onset_md}m` : "N/A"}</span>
+                    <details className="w-full shrink-0 group [&_summary::-webkit-details-marker]:hidden mb-4">
+                      <summary className="w-full flex items-center justify-between p-4 cursor-pointer transition-all duration-200 list-none" style={{ background: "rgba(20,20,20,0.65)", border: "1px solid rgba(255,122,0,0.3)", borderRadius: "12px" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(255,122,0,0.8)';
+                          e.currentTarget.style.backgroundColor = 'rgba(255,122,0,0.05)';
+                          e.currentTarget.style.boxShadow = '0 0 18px rgba(255,122,0,0.25)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(255,122,0,0.3)';
+                          e.currentTarget.style.backgroundColor = 'rgba(20,20,20,0.65)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                      >
+                        <span className="text-[13px] font-bold text-[#FF7A00] font-mono tracking-wider">EXTRACTED EVENTS & OPERATIONAL EPISODES ({digitalDocDetails.extracted_events?.length || 0})</span>
+                        <ChevronRight className="w-5 h-5 text-[#FF7A00] group-open:rotate-90 transition-transform" />
+                      </summary>
+                      <div className="p-4 mt-3 space-y-3 border border-[#FF7A00]/20 rounded-xl bg-[#080808]/80">
+                        {digitalDocDetails.extracted_events?.length > 0 ? digitalDocDetails.extracted_events.map((ev: any, evIdx: number) => (
+                          <div key={`${ev.id || 'ev'}-${evIdx}`} className="p-3 border border-[#FF7A00]/10 rounded-lg space-y-1.5" style={{ background: "rgba(15,15,15,0.8)" }}>
+                            <div className="flex items-center justify-between text-xs font-mono">
+                              <span className="font-bold text-[#FF8A00]">{ev.event_type || "Drilling Event"}</span>
+                              <span className="text-[#8A8A8A]">MD: {ev.onset_md ? `${ev.onset_md}m` : "N/A"}</span>
                             </div>
-                            <p className="text-xs text-slate-300">{ev.summary || ev.raw_text}</p>
+                            <p className="text-xs text-[#F5F5F5] font-mono leading-relaxed">{ev.summary || ev.raw_text}</p>
                           </div>
-                        ))}
+                        )) : (
+                          <p className="text-xs text-[#8A8A8A] font-mono">No events extracted.</p>
+                        )}
                       </div>
-                    </div>
+                    </details>
+                    
                   </div>
                 </div>
               ) : noteDetails ? (
                 /* Handwritten OCR Note Review & Edit */
-                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-[26px] h-full">
                   {/* Left Column: Image Preview and Transcription */}
-                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col h-full min-h-0 gap-4">
-                    <div className="flex-1 min-h-0 flex flex-col">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase mb-3 shrink-0">Scanned Note Image</h4>
-                      <div className="w-full flex-1 min-h-0 bg-black/40 rounded flex items-center justify-center overflow-hidden">
-                        <img
-                          src={`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
-                            (noteDetails.metadata?.storage as any)?.stored_filename ||
-                            noteDetails.storage_path?.split('/').pop() ||
-                            noteDetails.public_url?.split('/').pop() ||
-                            (noteDetails.metadata?.storage as any)?.filename ||
-                            activeItem.filename ||
-                            noteDetails.id
-                          )}`}
-                          alt="Scanned Handwritten Note"
-                          className="max-w-full max-h-full object-contain"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            if (!target.src.includes("fallback")) {
-                              target.src = `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(noteDetails.id)}?fallback=1`;
-                            }
-                          }}
-                        />
+                  <div className="flex flex-col h-full min-h-0 overflow-hidden gap-5">
+                    <div className="flex-1 min-h-0 flex flex-col" style={{ background: "rgba(12,12,12,0.7)", border: "1px solid rgba(255,122,0,0.25)", borderRadius: "16px", boxShadow: "inset 0 0 25px rgba(255,122,0,0.03)" }}>
+                      <div className="px-5 py-3 border-b flex items-center gap-3 shrink-0" style={{ borderColor: "rgba(255,122,0,0.15)" }}>
+                        <ScanText className="w-5 h-5 text-[#FF7A00]" />
+                        <h4 className="text-[13px] font-bold text-[#F5F5F5] uppercase tracking-wider font-mono">SCANNED NOTE IMAGE</h4>
+                      </div>
+                      <div className="flex-1 min-h-0 relative p-4 flex flex-col">
+                        <div className="w-full flex-1 min-h-0 rounded-xl flex items-center justify-center overflow-hidden border bg-[#0A0A0A]" style={{ borderColor: "rgba(255,122,0,0.1)" }}>
+                          <img
+                            src={noteImageBlobUrl || `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
+                              (noteDetails.metadata?.storage as any)?.stored_filename ||
+                              noteDetails.storage_path?.split('/').pop() ||
+                              noteDetails.public_url?.split('/').pop() ||
+                              (noteDetails.metadata?.storage as any)?.filename ||
+                              activeItem.filename ||
+                              noteDetails.id
+                            )}`}
+                            alt="Scanned Handwritten Note"
+                            className="max-w-full max-h-full object-contain p-2"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.src.includes("fallback")) {
+                                target.src = `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(noteDetails.id)}?fallback=1`;
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                     
                     {/* Transcribed Text */}
-                    <div className="h-1/3 min-h-[150px] flex flex-col shrink-0">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase mb-2 shrink-0">Transcribed Text</h4>
-                      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-                        <p className="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">
+                    <div className="h-1/3 min-h-[150px] flex flex-col shrink-0" style={{ background: "rgba(12,12,12,0.7)", border: "1px solid rgba(255,122,0,0.25)", borderRadius: "16px", boxShadow: "inset 0 0 25px rgba(255,122,0,0.03)" }}>
+                      <div className="px-5 py-3 border-b flex items-center gap-3 shrink-0" style={{ borderColor: "rgba(255,122,0,0.15)" }}>
+                        <FileText className="w-5 h-5 text-[#FF7A00]" />
+                        <h4 className="text-[13px] font-bold text-[#F5F5F5] uppercase tracking-wider font-mono">TRANSCRIBED TEXT</h4>
+                      </div>
+                      <div className="p-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                        <p className="text-xs text-[#F5F5F5] whitespace-pre-wrap font-mono leading-relaxed bg-[#0A0A0A] p-3 rounded border border-[#FF7A00]/10">
                           {noteDetails.verified_text || noteDetails.raw_ocr_text || "No transcription available."}
                         </p>
                       </div>
@@ -1333,120 +1449,75 @@ export const DocumentsPage: React.FC = () => {
                   </div>
 
                   {/* Right Column: Details */}
-                  <div className="flex flex-col space-y-5 overflow-y-auto min-h-0 h-full pr-2 custom-scrollbar">
+                  <div className="flex flex-col space-y-[22px] overflow-y-auto min-h-0 h-full pr-2 custom-scrollbar">
                     {/* Note Information */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase">Note Information</h4>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div><span className="text-slate-500 block text-[10px]">ID:</span><span className="text-slate-200 break-words">{noteDetails.id}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">SOURCE:</span><span className="text-slate-200 break-words">HANDWRITTEN OCR</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">STATUS:</span>
-                          <span className={noteDetails.verification_status === "VERIFIED" ? "text-emerald-400 font-bold" : noteDetails.verification_status === "REJECTED" ? "text-rose-400 font-bold" : "text-amber-400 font-bold"}>
+                    <div className="p-5 shrink-0 transition-all hover:border-[#FF7A00]/40" style={{ background: "rgba(15,15,15,0.65)", border: "1px solid rgba(255,122,0,0.2)", borderRadius: "16px", backdropFilter: "blur(16px)" }}>
+                      <h4 className="text-[13px] font-bold text-[#FF7A00] flex items-center gap-2 uppercase tracking-wider mb-4 font-mono">
+                        <Info className="w-4 h-4" /> Note Information
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-xs font-mono">
+                        <div><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">ID:</span><span className="text-[#F5F5F5] break-words">{noteDetails.id}</span></div>
+                        <div><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">SOURCE:</span><span className="text-[#F5F5F5] uppercase break-words">HANDWRITTEN OCR</span></div>
+                        <div>
+                          <span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">STATUS:</span>
+                          <span className={noteDetails.verification_status === "VERIFIED" ? "text-[#10B981] font-bold flex items-center gap-1.5" : noteDetails.verification_status === "REJECTED" ? "text-[#EF4444] font-bold" : "text-[#F59E0B] font-bold"}>
+                            {noteDetails.verification_status === "VERIFIED" && <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_5px_#10B981]"></div>}
                             {noteDetails.verification_status === "VERIFIED" ? "VERIFIED" : noteDetails.verification_status === "REJECTED" ? "REJECTED" : "YET TO BE VERIFIED"}
                           </span>
                         </div>
-                        <div><span className="text-slate-500 block text-[10px]">CONFIDENCE:</span><span className="text-slate-200">{noteDetails.confidence ? `${(noteDetails.confidence * 100).toFixed(1)}%` : "HIGH"}</span></div>
+                        <div><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">CONFIDENCE:</span><span className="text-[#F5F5F5]">{noteDetails.confidence ? `${(noteDetails.confidence * 100).toFixed(1)}%` : "HIGH"}</span></div>
                       </div>
                     </div>
 
                     {/* Imported Note Details */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200 break-words">{noteDetails.title || noteDetails.metadata?.storage?.filename || activeItem.filename}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">WELL ID:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.well_id || noteDetails.well_id || "N/A"}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.depth || "N/A"}</span></div>
-                        <div><span className="text-slate-500 block text-[10px]">WATER DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.water_depth || "N/A"}</span></div>
-                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">REPORT PERIOD:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.report_period || "N/A"}</span></div>
-                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">ABNORMAL REMARKS:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.abnormal_remarks || "None"}</span></div>
+                    <div className="p-5 shrink-0 transition-all hover:border-[#FF7A00]/40" style={{ background: "rgba(15,15,15,0.65)", border: "1px solid rgba(255,122,0,0.2)", borderRadius: "16px", backdropFilter: "blur(16px)" }}>
+                      <h4 className="text-[13px] font-bold text-[#FF7A00] flex items-center gap-2 uppercase tracking-wider mb-4 font-mono">
+                        <FileText className="w-4 h-4" /> Imported Details
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-xs font-mono">
+                        <div className="col-span-2"><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">FILE NAME:</span><span className="text-[#F5F5F5] break-words">{noteDetails.title || noteDetails.metadata?.storage?.filename || activeItem.filename}</span></div>
+                        <div><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">WELL ID:</span><span className="text-[#F5F5F5] break-words">{noteDetails.structured_data?.well_id || noteDetails.well_id || "N/A"}</span></div>
+                        <div><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">DEPTH:</span><span className="text-[#F5F5F5] break-words">{noteDetails.structured_data?.depth || "N/A"}</span></div>
+                        <div><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">WATER DEPTH:</span><span className="text-[#F5F5F5] break-words">{noteDetails.structured_data?.water_depth || "N/A"}</span></div>
+                        <div className="col-span-2"><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">REPORT PERIOD:</span><span className="text-[#F5F5F5] break-words">{noteDetails.structured_data?.report_period || "N/A"}</span></div>
+                        <div className="col-span-2"><span className="text-[#8A8A8A] block text-[10px] uppercase tracking-wider mb-1">ABNORMAL REMARKS:</span><span className="text-[#F5F5F5] break-words">{noteDetails.structured_data?.abnormal_remarks || "Stable"}</span></div>
                       </div>
-                    </div>
-
-                    {/* OCR Structured Entities & Measurements */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-4 shrink-0">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase">Structured Extraction (Mistral OCR)</h4>
-                      
-                      {/* Summary & Tags */}
-                      {noteDetails.structured_data?.summary && (
-                        <div className="space-y-1">
-                          <span className="text-slate-500 text-[10px] uppercase font-bold">Summary</span>
-                          <p className="text-xs text-slate-300 leading-relaxed">{noteDetails.structured_data.summary}</p>
-                        </div>
-                      )}
-                      {noteDetails.structured_data?.tags && noteDetails.structured_data.tags.length > 0 && (
-                        <div className="space-y-1">
-                          <span className="text-slate-500 text-[10px] uppercase font-bold">Tags</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {noteDetails.structured_data.tags.map((t, idx) => (
-                              <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
-                                #{t}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Measurements List */}
-                      {noteDetails.structured_data?.measurements && noteDetails.structured_data.measurements.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Measurements ({noteDetails.structured_data.measurements.length})</span>
-                          <div className="grid grid-cols-2 gap-2">
-                            {noteDetails.structured_data.measurements.map((m, idx) => (
-                              <div key={idx} className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs">
-                                <span className="text-slate-400 block text-[10px]">{m.parameter}</span>
-                                <span className="font-bold text-cyan-400">{m.value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Identified Entities */}
-                      {noteDetails.structured_data?.entities && noteDetails.structured_data.entities.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Entities ({noteDetails.structured_data.entities.length})</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {noteDetails.structured_data.entities.map((ent, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300">
-                                <strong className="text-cyan-400">{ent.type}:</strong> {ent.value}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Human Verification & Editing Action */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3 shrink-0 pb-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase">Human Verification & Text Edit</h4>
-                        <span className="text-[10px] text-slate-500">Edit and confirm to promote to RAG Ground Truth</span>
+                    <div className="p-5 shrink-0" style={{ background: "rgba(15,15,15,0.65)", border: "1px solid rgba(255,122,0,0.2)", borderRadius: "16px" }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-[13px] font-bold text-[#FF7A00] uppercase tracking-wider font-mono">Human Verification & Edit</h4>
+                        <span className="text-[10px] text-[#8A8A8A] font-mono">Edit to promote to Ground Truth</span>
                       </div>
                       <textarea
-                        rows={6}
+                        rows={4}
                         value={editableVerifiedText}
                         onChange={(e) => setEditableVerifiedText(e.target.value)}
-                        placeholder="Edit or correct OCR transcribed text before human verification..."
-                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition"
+                        placeholder="Edit or correct OCR transcribed text..."
+                        className="w-full bg-[#0A0A0A] border rounded-xl p-3 text-xs text-[#F5F5F5] font-mono focus:outline-none focus:border-[#FF7A00] transition-colors resize-none"
+                        style={{ borderColor: "rgba(255,122,0,0.2)" }}
                       />
-                      <div className="flex items-center justify-end gap-2 pt-2">
+                      <div className="flex items-center justify-end gap-3 pt-3">
                         {noteDetails.verification_status !== "REJECTED" && (
                           <button
                             onClick={handleRejectNote}
                             disabled={verifyingAction}
-                            className="px-4 py-2 text-xs font-bold bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50 rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
+                            className="px-4 py-2 text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+                            style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
                           >
-                            <X className="w-3.5 h-3.5" />
-                            <span>REJECT OCR</span>
+                            <X className="w-4 h-4" /> REJECT OCR
                           </button>
                         )}
                         <button
                           onClick={handleVerifyNote}
                           disabled={verifyingAction}
-                          className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition flex items-center gap-1.5 disabled:opacity-50 shadow-md shadow-emerald-600/20"
+                          className="px-4 py-2 text-xs font-bold font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+                          style={{ background: "rgba(255, 122, 0, 0.15)", border: "1px solid rgba(255, 122, 0, 0.6)", color: "#FF7A00", boxShadow: "0 0 15px rgba(255,122,0,0.15)" }}
+                          onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 20px rgba(255,122,0,0.3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 0 15px rgba(255,122,0,0.15)'}
                         >
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>VERIFY OCR AS GROUND TRUTH</span>
+                          <ShieldCheck className="w-4 h-4" /> VERIFY AS TRUTH
                         </button>
                       </div>
                     </div>

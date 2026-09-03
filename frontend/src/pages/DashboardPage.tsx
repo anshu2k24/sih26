@@ -6,7 +6,7 @@ import { HistoricalProximityPanel } from "../components/events/HistoricalProximi
 import { NearbyWellsMap } from "../components/map/NearbyWellsMap";
 import { TelemetryCards } from "../components/telemetry/TelemetryCards";
 import { SystemStatus } from "../components/system/SystemStatus";
-import { Map, ArrowRight, X, Sparkles } from "lucide-react";
+import { Map, ArrowRight, X, Sparkles, AlertTriangle, Shield } from "lucide-react";
 import type { HistoricalEventEpisode } from "../types/api";
 
 export const DashboardPage: React.FC = () => {
@@ -36,7 +36,7 @@ export const DashboardPage: React.FC = () => {
     <div 
       className="relative min-h-[calc(100vh-6rem)] -m-4 sm:-m-6 bg-cover bg-no-repeat bg-fixed"
       style={{ 
-        backgroundImage: 'url("/src/assets/hero_sunset.png")',
+        backgroundImage: 'url("/hero_sunset.png")',
         backgroundPosition: 'center bottom'
       }}
     >
@@ -89,45 +89,9 @@ export const DashboardPage: React.FC = () => {
           />
         </div>
 
-        {/* 4. Map & Drilling Parameters */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Map Preview (1/3) */}
-          <div 
-            className="rounded-2xl p-5 shadow-2xl space-y-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)]"
-            style={{
-              background: "rgba(7, 15, 29, 0.70)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
-              border: "1px solid rgba(100, 150, 220, 0.18)"
-            }}
-          >
-            <div className="flex items-center justify-between border-b border-[rgba(100,150,220,0.18)] pb-3 font-mono">
-              <div className="flex items-center gap-2">
-                <Map className="w-4 h-4 text-emerald-400" />
-                <span className="font-bold text-white text-xs uppercase tracking-wider">Field Map Preview</span>
-              </div>
-              <Link
-                to="/map"
-                className="text-xs text-blue-400 hover:text-orange-400 font-bold flex items-center gap-1 hover:underline transition-colors"
-              >
-                FULL MAP <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="h-[280px] rounded-xl overflow-hidden border border-slate-800/50 shadow-inner">
-              <NearbyWellsMap
-                wells={wells}
-                selectedWell={selectedWell}
-                onSelectWell={(wId) => setSelectedWell(wId)}
-                onOpenIntelligence={(wId) => navigate(`/wells/${encodeURIComponent(wId)}`)}
-              />
-            </div>
-          </div>
-
-          {/* Real-time Telemetry Grid (2/3) */}
-          <div className="lg:col-span-2 self-start transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
-            <TelemetryCards latestSensor={latestSensor} />
-          </div>
+        {/* 4. Real-time Telemetry Grid */}
+        <div className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,140,0,0.12)] rounded-2xl">
+          <TelemetryCards latestSensor={latestSensor} />
         </div>
 
         {/* 5. System Status */}
@@ -139,71 +103,237 @@ export const DashboardPage: React.FC = () => {
 
       {/* Event Detail Modal */}
       {selectedEventModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative">
-            <button
-              onClick={() => setSelectedEventModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800 hover:bg-slate-700"
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          style={{
+            background: 'rgba(0,0,0,0.70)',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <div 
+            className="relative w-full flex flex-col font-mono"
+            style={{
+              width: '90vw',
+              maxWidth: '1250px',
+              maxHeight: '90vh',
+              background: 'rgba(10,10,10,0.88)',
+              backdropFilter: 'blur(18px)',
+              border: '1px solid rgba(255,122,0,0.45)',
+              borderRadius: '20px',
+              boxShadow: '0 0 40px rgba(255,122,0,0.12)',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Header */}
+            <header 
+              className="sticky top-0 z-10 flex items-center justify-between px-6 py-5 shrink-0"
+              style={{
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(10,10,10,0.95)',
+                backdropFilter: 'blur(10px)',
+              }}
             >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <span className={`text-xs px-2.5 py-1 rounded font-mono font-bold border ${getEventBadgeStyle(selectedEventModal.event_type)}`}>
-                {selectedEventModal.event_type}
-              </span>
-              <span className="text-xs font-mono text-slate-400">Well: {selectedEventModal.well_id}</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono">
-              <div>
-                <span className="text-slate-400 block text-[10px]">Onset MD</span>
-                <span className="text-white font-bold">{selectedEventModal.onset_md} m</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">TVD</span>
-                <span className="text-white font-bold">{selectedEventModal.onset_tvd ? `${selectedEventModal.onset_tvd} m` : "N/A"}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">Timestamp</span>
-                <span className="text-white font-bold">{selectedEventModal.onset_timestamp || "N/A"}</span>
-              </div>
-            </div>
-
-            <div className="space-y-3 font-mono text-xs">
-              <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 space-y-1">
-                <span className="text-emerald-400 font-bold block">Observed Evidence:</span>
-                <p className="text-slate-300 font-sans text-xs">{selectedEventModal.primary_evidence}</p>
-              </div>
-
-              {selectedEventModal.mitigation_text && (
-                <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 space-y-1">
-                  <span className="text-blue-400 font-bold block">Mitigation Response:</span>
-                  <p className="text-slate-300 font-sans text-xs">{selectedEventModal.mitigation_text}</p>
+              <div className="flex items-center gap-4">
+                <div 
+                  className="flex items-center justify-center w-10 h-10 shrink-0"
+                  style={{
+                    background: 'rgba(255,122,0,0.1)',
+                    border: '1px solid rgba(255,122,0,0.3)',
+                    borderRadius: '10px'
+                  }}
+                >
+                  <AlertTriangle className="w-5 h-5" style={{ color: '#FF7A00' }} />
                 </div>
-              )}
+                <span 
+                  className="px-3 py-1 text-sm font-bold tracking-wider uppercase rounded"
+                  style={{
+                    color: '#FF7A00',
+                    border: '1px solid rgba(255,122,0,0.4)',
+                    background: 'rgba(255,122,0,0.05)'
+                  }}
+                >
+                  {selectedEventModal.event_type}
+                </span>
+                <span className="text-sm tracking-wide" style={{ color: '#8A8A8A' }}>
+                  Well: {selectedEventModal.well_id}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedEventModal(null)}
+                className="flex items-center justify-center transition-all duration-200 group w-10 h-10 shrink-0"
+                style={{
+                  background: 'rgba(20,20,20,0.8)',
+                  border: '1px solid rgba(255,122,0,0.4)',
+                  borderRadius: '50%'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#FF8A00';
+                  e.currentTarget.style.boxShadow = '0 0 18px rgba(255,122,0,0.35)';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255,122,0,0.4)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <X className="w-5 h-5" style={{ color: '#FF7A00' }} />
+              </button>
+            </header>
 
-              {selectedEventModal.resolution_text && (
-                <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 space-y-1">
-                  <span className="text-amber-400 font-bold block">Resolution Outcome:</span>
-                  <p className="text-slate-300 font-sans text-xs">{selectedEventModal.resolution_text}</p>
+            {/* Scrollable Content */}
+            <div 
+              className="flex-1 overflow-y-auto px-6 py-6"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255,122,0,0.40) #080808'
+              }}
+            >
+              <style>{`
+                ::-webkit-scrollbar { width: 6px; }
+                ::-webkit-scrollbar-track { background: #080808; }
+                ::-webkit-scrollbar-thumb { background: rgba(255,122,0,0.40); border-radius: 3px; }
+                ::-webkit-scrollbar-thumb:hover { background: rgba(255,122,0,0.70); }
+              `}</style>
+              
+              {/* Summary Information Panel */}
+              <div 
+                className="grid grid-cols-3 gap-6"
+                style={{
+                  background: 'rgba(5,5,5,0.65)',
+                  border: '1px solid rgba(255,122,0,0.30)',
+                  borderRadius: '14px',
+                  padding: '22px',
+                  marginBottom: '18px'
+                }}
+              >
+                <div>
+                  <span className="block text-xs uppercase mb-1.5" style={{ color: '#8A8A8A' }}>Onset MD</span>
+                  <span className="text-base font-bold" style={{ color: '#FF7A00' }}>{selectedEventModal.onset_md} m</span>
                 </div>
-              )}
+                <div>
+                  <span className="block text-xs uppercase mb-1.5" style={{ color: '#8A8A8A' }}>TVD</span>
+                  <span className="text-base font-bold" style={{ color: '#FF7A00' }}>{selectedEventModal.onset_tvd ? `${selectedEventModal.onset_tvd} m` : "N/A"}</span>
+                </div>
+                <div>
+                  <span className="block text-xs uppercase mb-1.5" style={{ color: '#8A8A8A' }}>Timestamp</span>
+                  <span className="text-base font-bold" style={{ color: '#FF7A00' }}>{selectedEventModal.onset_timestamp || "N/A"}</span>
+                </div>
+              </div>
+
+              {/* Observed Evidence */}
+              <div 
+                style={{
+                  background: 'rgba(8,8,8,0.70)',
+                  border: '1px solid rgba(0,208,132,0.20)',
+                  borderRadius: '14px',
+                  padding: '22px',
+                  marginBottom: '16px'
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1 rounded bg-[#00D084]/10">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00D084" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                  </div>
+                  <span className="text-sm font-bold uppercase tracking-wide" style={{ color: '#00D084' }}>Observed Evidence:</span>
+                </div>
+                <p className="text-[14px] leading-relaxed font-sans" style={{ color: '#F2F2F2' }}>
+                  {selectedEventModal.primary_evidence || "None recorded"}
+                </p>
+              </div>
+
+              {/* Mitigation Response */}
+              <div 
+                style={{
+                  background: 'rgba(8,8,8,0.70)',
+                  border: '1px solid rgba(59,130,246,0.20)',
+                  borderRadius: '14px',
+                  padding: '22px',
+                  marginBottom: '16px'
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1 rounded bg-blue-500/10">
+                    <Shield className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <span className="text-sm font-bold uppercase tracking-wide text-blue-400">Mitigation Response:</span>
+                </div>
+                <p className="text-[14px] leading-relaxed font-sans" style={{ color: '#F2F2F2' }}>
+                  {selectedEventModal.mitigation_text || "None recorded"}
+                </p>
+              </div>
+
+              {/* Resolution Outcome */}
+              <div 
+                style={{
+                  background: 'rgba(8,8,8,0.70)',
+                  border: '1px solid rgba(255,170,0,0.20)',
+                  borderRadius: '14px',
+                  padding: '22px',
+                  marginBottom: '22px'
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1 rounded bg-amber-500/10">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFAA00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  </div>
+                  <span className="text-sm font-bold uppercase tracking-wide" style={{ color: '#FFAA00' }}>Resolution Outcome:</span>
+                </div>
+                <p className="text-[14px] leading-relaxed font-sans" style={{ color: '#F2F2F2' }}>
+                  {selectedEventModal.resolution_text || "None recorded"}
+                </p>
+              </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono">
-              <span className="text-slate-400">Source: Equinor Volve DDR ({selectedEventModal.primary_source_record})</span>
+            {/* Footer */}
+            <footer 
+              className="shrink-0 px-6 py-5 flex items-center justify-between"
+              style={{
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(10,10,10,0.95)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <div className="text-sm">
+                <span style={{ color: '#FF7A00' }}>Source: </span>
+                <span style={{ color: '#F2F2F2' }}>
+                  {selectedEventModal.source_label || `Equinor Volve DDR (${selectedEventModal.primary_source_record || 'Unknown'})`}
+                </span>
+              </div>
               <button
                 onClick={() => {
                   const evId = selectedEventModal.event_episode_id;
                   setSelectedEventModal(null);
                   navigate(`/events/${encodeURIComponent(evId)}`);
                 }}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold transition-all"
+                className="flex items-center gap-2 text-sm font-bold transition-all duration-200"
+                style={{
+                  background: 'rgba(255,122,0,0.12)',
+                  border: '1px solid #FF7A00',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '12px 20px',
+                  boxShadow: '0 0 10px rgba(255,122,0,0.1)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,122,0,0.25)';
+                  e.currentTarget.style.border = '1px solid #FF8A00';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255,122,0,0.35)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,122,0,0.12)';
+                  e.currentTarget.style.border = '1px solid #FF7A00';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(255,122,0,0.1)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
               >
                 OPEN FULL EVIDENCE PAGE ➔
               </button>
-            </div>
+            </footer>
           </div>
         </div>
       )}

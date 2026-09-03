@@ -43,6 +43,10 @@ def get_embedding_provider(force_provider: Optional[str] = None) -> EmbeddingPro
         from ertmac.rag.embeddings.sentence_transformer_provider import SentenceTransformerProvider
         instance = SentenceTransformerProvider(model_name=model_name)
 
+    elif provider_name in ("huggingface", "hf"):
+        from ertmac.rag.embeddings.huggingface_provider import HuggingFaceEmbeddingProvider
+        instance = HuggingFaceEmbeddingProvider(model_name=model_name)
+
     elif provider_name == "mistral":
         from ertmac.rag.embeddings.mistral_provider import MistralEmbeddingProvider
         instance = MistralEmbeddingProvider(model_name=model_name)

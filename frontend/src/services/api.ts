@@ -31,8 +31,8 @@ import type { MLStatusState } from "../types/ml";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== "undefined" && window.location.protocol === "https:"
-    ? `https://${window.location.host}`
+  (typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
     : "http://localhost:8000");
 
 
@@ -507,6 +507,30 @@ export async function fetchDocumentDetailsApi(docId: string) {
     return await res.json();
   } catch (err) {
     console.error("fetchDocumentDetailsApi error:", err);
+    return null;
+  }
+}
+
+export async function fetchDocumentContentBlobApi(docId: string): Promise<string | null> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(docId)}/content`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error("fetchDocumentContentBlobApi error:", err);
+    return null;
+  }
+}
+
+export async function fetchNoteImageBlobApi(filename: string): Promise<string | null> {
+  try {
+    const res = await authFetch(`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(filename)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error("fetchNoteImageBlobApi error:", err);
     return null;
   }
 }

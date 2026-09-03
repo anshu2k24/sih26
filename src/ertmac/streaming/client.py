@@ -138,16 +138,20 @@ class SensorStreamClient:
                 try:
                     from ertmac.streaming.sources import VolveReplaySensorSource
                     source = VolveReplaySensorSource()
-                    wells = source.get_available_wells()
-                    active_well = wells[0] if wells else "15/9-F-15"
+                    active_well = self.well_id or "15/9-F-15"
                     with self._lock:
+                        self.well_id = active_well
                         self.status = "LIVE"
 
+                    logger.info(f"In-process stream replay active for well '{active_well}'")
                     for rec in source.stream_records(active_well):
                         if not self._running:
                             break
+                        # If user paused, wait until unpaused
+                        while not self.is_streaming and self._running:
+                            time.sleep(0.5)
                         self._process_message(json.dumps(rec.to_dict()))
-                        time.sleep(0.01)
+                        time.sleep(0.1)
 
                 except Exception as e:
                     logger.error(f"In-process stream error: {e}")

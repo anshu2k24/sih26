@@ -45,9 +45,65 @@ class UserProfileResponse(BaseModel):
     permissions: List[str]
 
 
+class RegisterUserRequest(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+    role: Optional[str] = "ADMIN"
+
+
 # ============================================================
 # ENDPOINTS
 # ============================================================
+
+@router.post("/auth/register", summary="Register user with instant pre-confirmed credentials")
+def register_user(payload: RegisterUserRequest):
+    """
+    Registers a new user in Supabase with email_confirm=True so they can sign in immediately.
+    """
+    if not is_supabase_configured():
+        return {
+            "success": True,
+            "message": "User registered in development mode",
+            "email": payload.email,
+        }
+
+    admin = get_supabase_admin()
+    if not admin:
+        raise HTTPException(status_code=500, detail="Supabase admin service unavailable")
+
+    try:
+        res = admin.auth.admin.create_user({
+            "email": payload.email,
+            "password": payload.password,
+            "email_confirm": True,
+            "user_metadata": {
+                "full_name": payload.full_name or payload.email.split("@")[0],
+                "role": payload.role or "ADMIN",
+            }
+        })
+        user_id = getattr(res.user, "id", None) if hasattr(res, "user") else None
+        
+        # Ensure profile record exists
+        try:
+            admin.table("profiles").upsert({
+                "id": user_id,
+                "email": payload.email,
+                "full_name": payload.full_name or payload.email.split("@")[0],
+                "role": payload.role or "ADMIN",
+                "organization_id": "00000000-0000-0000-0000-000000000001",
+                "is_active": True,
+            }).execute()
+        except Exception:
+            pass
+
+        return {"success": True, "user_id": user_id, "email": payload.email}
+    except Exception as e:
+        err_msg = str(e)
+        logger.warning(f"Registration error via admin client: {err_msg}")
+        if "already registered" in err_msg.lower() or "unique constraint" in err_msg.lower():
+            raise HTTPException(status_code=400, detail="User already registered. Please sign in.")
+        raise HTTPException(status_code=400, detail=err_msg)
 
 @router.get("/users/me", response_model=UserProfileResponse)
 def get_current_user_profile(user: UserSession = Depends(get_current_user)):

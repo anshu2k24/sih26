@@ -24,6 +24,7 @@ data/reports/
 # Artifacts and Outputs
 /reports/
 /artifacts/
+scratch/
 
 # Secrets — NEVER commit real credentials
 .env

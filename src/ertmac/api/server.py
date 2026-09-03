@@ -3,7 +3,7 @@ import json
 import asyncio
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 # Load .env file before any env reads
 from dotenv import load_dotenv
@@ -46,16 +46,39 @@ if is_production:
     if not auth_required:
         raise RuntimeError("FATAL CONFIGURATION ERROR: AUTH_REQUIRED must be set to 'true' in production.")
     cors_origins_env = os.getenv("CORS_ORIGINS", "")
-    if not cors_origins_env or cors_origins_env == "*":
-        raise RuntimeError("FATAL CONFIGURATION ERROR: Wildcard '*' in CORS_ORIGINS is strictly forbidden in production. Set explicit frontend origins (e.g. https://app.vercel.app).")
-    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    frontend_url = os.getenv("FRONTEND_URL", "").strip()
+    combined_origins = []
+    if cors_origins_env:
+        combined_origins.extend([o.strip() for o in cors_origins_env.split(",") if o.strip()])
+    if frontend_url and frontend_url not in combined_origins:
+        combined_origins.append(frontend_url)
+    
+    # Filter out wildcards from literal origin list to comply with credentialed CORS
+    allowed_origins = [o for o in combined_origins if "*" not in o]
+    if not allowed_origins:
+        allowed_origins = ["http://localhost:5173", "http://localhost:3000"]
 else:
-    cors_origins_env = os.getenv("CORS_ORIGINS", "*")
-    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()] if cors_origins_env != "*" else ["*"]
+    cors_origins_env = os.getenv("CORS_ORIGINS", "")
+    frontend_url = os.getenv("FRONTEND_URL", "").strip()
+    dev_default_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+    combined_origins = list(dev_default_origins)
+    if cors_origins_env and cors_origins_env != "*":
+        combined_origins.extend([o.strip() for o in cors_origins_env.split(",") if o.strip()])
+    if frontend_url and frontend_url not in combined_origins:
+        combined_origins.append(frontend_url)
+    allowed_origins = list(dict.fromkeys([o for o in combined_origins if "*" not in o]))
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$|^https://([a-zA-Z0-9_\-]+\.)*vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

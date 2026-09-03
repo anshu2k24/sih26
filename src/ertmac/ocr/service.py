@@ -36,7 +36,13 @@ class OCRService:
         timeout_ms = int(os.getenv("OCR_TIMEOUT_MS") or "35000")
         timeout_sec = max(5, timeout_ms // 1000)
 
-        if provider_name == "mistral":
+        if provider_name in ("huggingface", "hf"):
+            from ertmac.ocr.providers.huggingface import HuggingFaceOCRProvider
+            return HuggingFaceOCRProvider(
+                default_model=default_model or "microsoft/trocr-base-handwritten",
+                timeout_seconds=timeout_sec,
+            )
+        elif provider_name == "mistral":
             api_key = os.getenv("MISTRAL_API_KEY") or os.getenv("OCR_API_KEY")
             if not api_key:
                 logger.warning(

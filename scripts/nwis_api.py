@@ -1,8 +1,24 @@
+import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import logging
 
+try:
+    from dotenv import load_dotenv
+    repo_root = Path(__file__).resolve().parent.parent
+    load_dotenv(repo_root / ".env")
+except ImportError:
+    pass
+
 logger = logging.getLogger("nwis_historical_api")
+
+EVENT_COLUMNS = [
+    'event_episode_id', 'well_id', 'wellbore_id', 'organization_id',
+    'event_type', 'event_domain', 'onset_timestamp', 'onset_md',
+    'onset_tvd', 'primary_evidence', 'mitigation_text', 'resolution_text',
+    'primary_source_record', 'is_verified'
+]
 
 
 class NWISHistoricalAPI:
@@ -11,7 +27,6 @@ class NWISHistoricalAPI:
         Loads verified historical DDR events.
         Priority: Supabase historical_ddr_events table → CSV file fallback (development only).
         """
-        import os
         is_prod = os.getenv("ENVIRONMENT", "").lower() == "production"
 
         self.df_events = self._load_from_supabase()
@@ -19,20 +34,24 @@ class NWISHistoricalAPI:
         # In production, NEVER fall back to local files
         if (self.df_events is None or len(self.df_events) == 0) and not is_prod:
             if verified_events_path:
-                from pathlib import Path
                 csv_path = Path(verified_events_path)
                 if csv_path.exists():
                     logger.info(f"Loading events from CSV fallback (development only): {csv_path}")
                     self.df_events = pd.read_csv(verified_events_path)
                 else:
-                    self.df_events = pd.DataFrame()
+                    self.df_events = pd.DataFrame(columns=EVENT_COLUMNS)
             else:
-                self.df_events = pd.DataFrame()
+                self.df_events = pd.DataFrame(columns=EVENT_COLUMNS)
         elif self.df_events is None:
-            self.df_events = pd.DataFrame()
+            self.df_events = pd.DataFrame(columns=EVENT_COLUMNS)
+
+        # Ensure all standard columns exist
+        for col in EVENT_COLUMNS:
+            if col not in self.df_events.columns:
+                self.df_events[col] = None
 
         # Drop episodes missing onset_md
-        if len(self.df_events) > 0:
+        if len(self.df_events) > 0 and 'onset_md' in self.df_events.columns:
             self.df_events = self.df_events[self.df_events['onset_md'].notnull()].copy()
 
     @staticmethod
@@ -275,6 +294,7 @@ class NWISHistoricalAPI:
             
             def row_matches(row):
                 fields = [
+                    str(row.get('event_episode_id', '')),
                     str(row.get('event_type', '')),
                     str(row.get('well_id', '')),
                     str(row.get('wellbore_id', '')),

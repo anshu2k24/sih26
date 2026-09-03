@@ -72,7 +72,7 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
 
   return (
     <div 
-      className="rounded-3xl p-6 font-mono space-y-5 h-full transition-all duration-500"
+      className="rounded-3xl p-6 font-mono h-full transition-all duration-500 flex flex-col gap-5"
       style={{
         background: "linear-gradient(145deg, rgba(255, 155, 47, 0.12) 0%, rgba(20, 27, 42, 0.8) 30%, rgba(9, 14, 25, 0.95) 100%)",
         border: "1px solid rgba(255, 155, 47, 0.2)",
@@ -82,7 +82,7 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
       }}
     >
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4 shrink-0">
         <div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-cyan-400" />
@@ -102,7 +102,7 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
 
       {/* Add Shift Note Box */}
       <div 
-        className="p-4 rounded-xl space-y-2 transition-all"
+        className="p-4 rounded-xl space-y-2 transition-all shrink-0"
         style={{
           background: "rgba(255, 255, 255, 0.055)",
           border: "1px solid rgba(255, 255, 255, 0.12)",
@@ -144,7 +144,7 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
       </div>
 
       {/* Category Tabs */}
-      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold shrink-0">
         {(["ALL", "NOTE", "ALERT", "AUDIT", "DOCUMENT"] as const).map((cat) => (
           <button
             key={cat}
@@ -160,24 +160,24 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
         ))}
       </div>
 
-      {/* Vertical Timeline Feed */}
-      <div className="space-y-4">
+      {/* Vertical Timeline Feed (Scrollable) */}
+      <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
         {events.length === 0 && !loading && (
           <div className="text-xs text-slate-500 italic py-6">
             No operational timeline events recorded for category [{activeCategory}].
           </div>
         )}
 
-        {events.slice(0, showAll ? events.length : 4).map((evt) => (
-          <div key={evt.timeline_id} className="flex items-start gap-3 border-b border-slate-800/50 pb-3 last:border-0">
+        {events.map((evt) => (
+          <div key={evt.timeline_id} className="flex items-start gap-2.5 border-b border-slate-800/50 pb-2.5 last:border-0">
             <div className="flex-shrink-0 mt-0.5">
               {getCategoryIcon(evt.event_category)}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1">
-                  <span className={`text-[10px] font-bold uppercase ${
+                <div className="space-y-0.5">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
                     evt.event_category === 'ALERT' ? 'text-rose-400' :
                     evt.event_category === 'NOTE' ? 'text-amber-400' :
                     evt.event_category === 'AUDIT' ? 'text-emerald-400' :
@@ -185,11 +185,11 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
                   }`}>
                     {evt.event_category}
                   </span>
-                  <p className="text-xs text-white font-semibold leading-tight">{evt.title}</p>
-                  <p className="text-[11px] text-slate-400 font-sans break-words whitespace-pre-wrap">{evt.description}</p>
+                  <p className="text-[11px] text-white font-bold leading-tight">{evt.title}</p>
+                  <p className="text-[10.5px] text-slate-400 font-sans break-words whitespace-pre-wrap leading-snug">{evt.description}</p>
                 </div>
                 
-                <div className="flex flex-col items-end text-[10px] text-slate-500 flex-shrink-0 whitespace-nowrap">
+                <div className="flex flex-col items-end text-[9px] text-slate-500 flex-shrink-0 whitespace-nowrap gap-0.5">
                   {evt.md_depth > 0 && (
                     <span className="font-mono text-slate-300">
                       MD: {evt.md_depth.toFixed(1)} m
@@ -202,20 +202,6 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
           </div>
         ))}
       </div>
-      
-      {/* Footer Button */}
-      {events.length > 4 && (
-        <button 
-          onClick={() => setShowAll(!showAll)}
-          className="w-full py-3 mt-4 text-[10px] font-bold text-white rounded-lg transition-all uppercase tracking-widest hover:-translate-y-0.5"
-          style={{
-            background: "linear-gradient(135deg, #ff9b2f, #ff7a18)",
-            boxShadow: "0 10px 25px rgba(255, 122, 24, 0.25)"
-          }}
-        >
-          {showAll ? "Show Less" : `Show More (${events.length - 4} remaining)`}
-        </button>
-      )}
     </div>
   );
 };

@@ -80,6 +80,18 @@ class DepthCorrelationEngine:
         # Sort matches strictly by smallest delta_md (closest depth difference first)
         matches.sort(key=lambda x: (x["delta_md"], x["offset_well_distance_km"]))
 
+        # Deduplicate matches by event_episode_id (keep the closest match if an episode is matched via multiple well aliases)
+        unique_matches = []
+        seen_episodes = set()
+        for m in matches:
+            ep_id = m.get("event_episode_id")
+            if ep_id:
+                if ep_id in seen_episodes:
+                    continue
+                seen_episodes.add(ep_id)
+            unique_matches.append(m)
+        matches = unique_matches
+
         return {
             "active_well_id": active_well_id,
             "current_md": round(current_md, 1),

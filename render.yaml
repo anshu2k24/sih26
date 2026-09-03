@@ -6,6 +6,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn ertmac.api.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: PYTHONPATH
         value: src
@@ -16,7 +17,9 @@ services:
       - key: STREAM_IN_PROCESS
         value: "true"
       - key: CORS_ORIGINS
-        value: "https://ertmac-nwis.vercel.app,https://*.vercel.app"
+        value: "https://ertmac-nwis.vercel.app,https://sih26.vercel.app"
+      - key: FRONTEND_URL
+        value: "https://ertmac-nwis.vercel.app"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -27,6 +30,12 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: HF_TOKEN
+        sync: false
+      - key: HF_SPACE_URL
+        sync: false
+      - key: RAG_EMBEDDING_PROVIDER
+        value: "sentence_transformers"
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM_EMAIL
