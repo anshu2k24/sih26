@@ -140,29 +140,48 @@ def upload_document(
     return doc_record, False
 
 
-def get_documents(organization_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+def _is_valid_uuid(val: Optional[str]) -> bool:
+    if not val:
+        return False
+    try:
+        import uuid
+        uuid.UUID(str(val))
+        return True
+    except Exception:
+        return False
+
+
+def get_documents(organization_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
     """Returns list of uploaded documents."""
     db = get_supabase_admin()
     if db:
         try:
-            res = db.table("documents").select("*").eq("organization_id", organization_id).order("created_at", desc=True).limit(limit).execute()
+            query = db.table("documents").select("*")
+            if organization_id and _is_valid_uuid(organization_id) and organization_id != "00000000-0000-0000-0000-000000000001":
+                query = query.or_(f"organization_id.eq.{organization_id},organization_id.eq.00000000-0000-0000-0000-000000000001,organization_id.is.null")
+            res = query.order("created_at", desc=True).limit(limit).execute()
             if res.data is not None:
                 return res.data
         except Exception as e:
             logger.warning(f"Failed to fetch documents from DB: {e}")
 
-    return [d for d in reversed(list(_in_memory_docs.values())) if d.get("organization_id") == organization_id][:limit]
+    return [d for d in reversed(list(_in_memory_docs.values())) if not organization_id or d.get("organization_id") == organization_id or d.get("organization_id") == "00000000-0000-0000-0000-000000000001"][:limit]
 
 
-def get_document_by_id(doc_id: str, organization_id: str) -> Optional[Dict[str, Any]]:
+def get_document_by_id(doc_id: str, organization_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Fetches single document by ID."""
-    if doc_id in _in_memory_docs and _in_memory_docs[doc_id].get("organization_id") == organization_id:
-        return _in_memory_docs[doc_id]
+    if doc_id in _in_memory_docs:
+        doc = _in_memory_docs[doc_id]
+        if not organization_id or doc.get("organization_id") == organization_id or doc.get("organization_id") == "00000000-0000-0000-0000-000000000001":
+            return doc
 
     db = get_supabase_admin()
     if db:
         try:
-            res = db.table("documents").select("*").eq("id", doc_id).eq("organization_id", organization_id).single().execute()
+            query = db.table("documents").select("*").eq("id", doc_id)
+            if organization_id and _is_valid_uuid(organization_id) and organization_id != "00000000-0000-0000-0000-000000000001":
+                query = query.or_(f"organization_id.eq.{organization_id},organization_id.eq.00000000-0000-0000-0000-000000000001,organization_id.is.null")
+            res = query.single().execute()
             if res.data:
                 return res.data
         except Exception as e:

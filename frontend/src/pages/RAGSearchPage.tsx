@@ -498,7 +498,7 @@ export const RAGSearchPage: React.FC = () => {
                         : "text-slate-500 border-slate-700/50 hover:border-[#FF9D1A]/50 hover:text-[#FF9D1A] hover:shadow-[0_0_10px_rgba(255,140,0,0.15)] bg-[rgba(10,10,10,0.4)]"
                     }`}
                   >
-                    {React.cloneElement(b.icon as React.ReactElement, { className: `w-3.5 h-3.5 ${searchState.mode === b.id ? "text-[#FF9D1A]" : ""}` })}
+                    {React.cloneElement(b.icon as React.ReactElement<any>, { className: `w-3.5 h-3.5 ${searchState.mode === b.id ? "text-[#FF9D1A]" : ""}` })}
                     {b.label}
                   </button>
                 ))}

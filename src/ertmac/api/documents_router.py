@@ -86,8 +86,14 @@ async def upload_and_process_document(
     # 2.5 Extract important metadata details
     if text_content:
         meta = doc_record["source_metadata"]
-        meta["well_id"] = well_id
         
+        # 1. Deterministic baseline extraction (fast & guaranteed)
+        deterministic_meta = extract_document_metadata(text_content, default_well_id=well_id)
+        for k, v in deterministic_meta.items():
+            if v and str(v).strip().lower() not in ("none", "n/a", "null", ""):
+                meta[k] = str(v).strip()
+
+        # 2. Semantic enhancement via LLM
         try:
             from ertmac.rag.llm.gemini_llm import GeminiLLMProvider
             import json
@@ -120,19 +126,14 @@ async def upload_and_process_document(
                 
             extracted_meta = json.loads(cleaned_json.strip())
             
-            # Update meta with extracted values (ignoring None if well_id was already set differently)
+            # Update meta with extracted values
             for k, v in extracted_meta.items():
                 if v is not None and str(v).strip().lower() not in ("none", "n/a", "null", ""):
                     meta[k] = str(v).strip()
                     
         except Exception as e:
-            logger.error(f"LLM metadata extraction failed: {e}")
-            # Fallback to simple regex if LLM fails
-            import re
-            depth_match = re.search(r'(?i)(?:depth|measured depth|md)\s*[:=]?\s*(\d+(?:\.\d+)?\s*(?:m|ft|meters|feet))', text_content)
-            if depth_match: meta["depth"] = depth_match.group(1)
-            op_match = re.search(r'(?i)(?:current operation|operation|ops)\s*[:=]?\s*([^\n\r]{1,100})', text_content)
-            if op_match: meta["current_operation"] = op_match.group(1).strip()
+            logger.debug(f"LLM metadata extraction skipped / fallback used: {e}")
+
         try:
             from ertmac.auth.supabase_client import get_supabase_admin
             db = get_supabase_admin()
@@ -264,7 +265,7 @@ def get_document_content(
     user: UserSession = Depends(require_permission(Permission.VIEW_HISTORICAL_DATA)),
 ):
     """Streams the document file content for preview."""
-    doc = get_document_by_id(doc_id)
+    doc = get_document_by_id(doc_id, organization_id=user.organization_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
