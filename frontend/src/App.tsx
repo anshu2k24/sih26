@@ -6,7 +6,7 @@ import { Header } from "./components/layout/Header";
 import { Sidebar } from "./components/layout/Sidebar";
 import { ToastContainer } from "./components/ToastContainer";
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 
 // Public pages
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -39,13 +39,31 @@ const RAGSearchPage = lazy(() => import('./pages/RAGSearchPage').then(m => ({ de
 
 // Protected app shell (sidebar + header + content via Outlet)
 function AppShell() {
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  useEffect(() => {
+    const handleToggle = (e: any) => setSidebarExpanded(e.detail);
+    window.addEventListener("sidebar:toggle", handleToggle);
+    return () => window.removeEventListener("sidebar:toggle", handleToggle);
+  }, []);
+
+  // 16px (left) + 72px (sidebar) + 16px (gap) = 104px
+  // 16px (left) + 280px (sidebar) + 16px (gap) = 312px
+  const sidebarOffset = sidebarExpanded ? "312px" : "104px";
+
   return (
     <ActiveWellProvider>
-      <div className="min-h-screen bg-[#050608] text-[#E8EEF7] font-sans flex">
+      <div 
+        className="min-h-screen bg-[#050608] text-[#E8EEF7] font-sans flex"
+        style={{ "--sidebar-offset": sidebarOffset } as React.CSSProperties}
+      >
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <Header />
-          <main className="flex-1 w-full p-4 sm:p-6 overflow-y-auto">
+          <main 
+            className="flex-1 w-full p-4 sm:p-6 overflow-y-auto transition-all duration-300 ease-in-out"
+            style={{ paddingLeft: "var(--sidebar-offset)" }}
+          >
             <Outlet />
           </main>
         </div>

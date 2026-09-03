@@ -32,12 +32,6 @@ export const MapPage: React.FC = () => {
               <h1 className="text-[20px] sm:text-[24px] font-[700] text-white uppercase tracking-wider drop-shadow-sm">
                 GEOSPATIAL INTELLIGENCE MAP
               </h1>
-              <span 
-                className="text-[10px] px-[10px] py-[4px] rounded-[6px] font-[700] uppercase tracking-wider whitespace-nowrap"
-                style={{ background: "rgba(18, 16, 14, 0.8)", color: "#FF8A00", border: "1px solid rgba(255, 138, 0, 0.4)", boxShadow: "0 0 10px rgba(255, 138, 0, 0.15)" }}
-              >
-                AUTOFOCUSED VOLVE CLUSTER
-              </span>
             </div>
           </div>
 

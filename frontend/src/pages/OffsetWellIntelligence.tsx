@@ -3,6 +3,8 @@ import type { WellIntelligenceResponse, HistoricalEventEpisode } from "../types/
 import { fetchWellFullIntelligence } from "../services/api";
 import {
   ArrowLeft,
+  ArrowRight,
+  ChevronRight,
   Database,
   FileText,
   Filter,
@@ -110,172 +112,125 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
 
   // Premium Glass Styles
   const glassPanelStyle = {
-    background: "rgba(15, 15, 15, 0.35)",
-    backdropFilter: "blur(24px)",
-    WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(255, 122, 0, 0.25)",
-    borderRadius: "16px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 0 32px rgba(255,122,0,0.03)",
+    background: "rgba(15, 10, 5, 0.70)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    border: "1px solid rgba(255, 122, 0, 0.3)",
+    borderRadius: "22px",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,122,0,0.05), 0 0 15px rgba(255,122,0,0.1)",
   };
 
   const glassCardStyle = {
-    background: "rgba(20, 20, 20, 0.25)",
+    background: "rgba(20, 15, 10, 0.4)",
     backdropFilter: "blur(16px)",
     WebkitBackdropFilter: "blur(16px)",
-    border: "1px solid rgba(255, 122, 0, 0.3)",
+    border: "1px solid rgba(255, 122, 0, 0.2)",
     borderRadius: "12px",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
   };
 
   const hoverEffectProps = {
     onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
-      e.currentTarget.style.transform = "translateY(-1px)";
-      e.currentTarget.style.border = "1px solid rgba(255,122,0,0.45)";
-      e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.06)";
-      e.currentTarget.style.background = "rgba(25,25,25,0.75)";
+      e.currentTarget.style.transform = "translateY(-2px) scale(1.01)";
+      e.currentTarget.style.border = "1px solid rgba(255,122,0,0.5)";
+      e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.15)";
+      e.currentTarget.style.background = "rgba(30,20,10,0.7)";
     },
     onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
-      e.currentTarget.style.transform = "translateY(0px)";
-      e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.25)";
+      e.currentTarget.style.transform = "translateY(0px) scale(1)";
+      e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.2)";
       e.currentTarget.style.boxShadow = "none";
-      e.currentTarget.style.background = "rgba(20, 20, 20, 0.55)";
+      e.currentTarget.style.background = "rgba(20, 15, 10, 0.4)";
     }
   };
 
   const inputStyle = {
-    background: "rgba(10, 10, 10, 0.6)",
-    border: "1px solid rgba(255, 122, 0, 0.25)",
+    background: "rgba(10, 5, 0, 0.6)",
+    border: "1px solid rgba(255, 122, 0, 0.3)",
     borderRadius: "8px",
-    color: "#F2F2F2",
+    color: "#F5F5F5",
     outline: "none",
-    transition: "all 0.2s ease",
+    transition: "all 0.25s ease",
   };
 
   return (
     <div 
-      className="min-h-screen text-[#F2F2F2] pb-16 selection:bg-[#FF7A00] selection:text-white relative overflow-hidden"
-      style={{ backgroundColor: "#050607", fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+      className="min-h-screen text-[#F5F5F5] pb-16 selection:bg-[#FF7A00] selection:text-white relative overflow-hidden"
+      style={{ 
+        backgroundColor: "#030303",
+        backgroundImage: "radial-gradient(circle at center, rgba(3, 3, 3, 0.85) 0%, rgba(3, 3, 3, 0.98) 100%), url('/bg-map.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        fontFamily: "'Space Grotesk', 'Inter', sans-serif" 
+      }}
     >
       {/* Ambient Background Glows to enhance glass transparency */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.15] blur-[120px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF7A00 0%, transparent 70%)" }}></div>
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-[0.12] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FFA000 0%, transparent 70%)" }}></div>
-      <div className="absolute top-[30%] right-[10%] w-[30%] h-[30%] rounded-full opacity-[0.08] blur-[100px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF5000 0%, transparent 70%)" }}></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-[0.10] blur-[150px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF7A00 0%, transparent 70%)" }}></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-[0.08] blur-[180px] pointer-events-none" style={{ background: "radial-gradient(circle, #FFB000 0%, transparent 70%)" }}></div>
+      <div className="absolute top-[30%] right-[10%] w-[30%] h-[30%] rounded-full opacity-[0.05] blur-[120px] pointer-events-none" style={{ background: "radial-gradient(circle, #FF5000 0%, transparent 70%)" }}></div>
+
 
       <div className="relative z-10">
-        {/* 4. TOP BREADCRUMB BAR */}
-        <header 
-          className="px-6 py-4 sticky top-0 z-50 flex items-center justify-between"
-          style={{
-            background: "rgba(5, 6, 7, 0.45)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            borderBottom: "1px solid rgba(255, 122, 0, 0.15)",
-            height: "60px"
-          }}
-        >
-          <div className="flex items-center text-[13px] text-[#A1A1A1] font-[500]">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            <span>Dashboard &nbsp;/&nbsp; Offset Wells &nbsp;/&nbsp; </span>
-            <span className="text-[#F2F2F2] font-[700] ml-1 tracking-wider">{offsetWellId}</span>
-          </div>
-          <div className="flex items-center gap-2 text-[12px] text-[#A1A1A1]">
-            <Shield className="w-4 h-4 text-[#FF7A00]" />
-            <span>Equinor Volve Verified DDR Profile</span>
-          </div>
-        </header>
-
-      <main className="max-w-[1400px] mx-auto px-[24px] pt-[20px] space-y-[20px]">
+      <main className="max-w-[1400px] mx-auto px-6 pt-4 space-y-8">
         
-        {/* 5. MAIN HEADER / INTELLIGENCE HEADER */}
-        <div 
-          className="flex flex-col xl:flex-row items-center gap-6 p-[20px]"
-          style={{ ...glassPanelStyle, minHeight: "100px" }}
-        >
-          {/* 6. BACK BUTTON */}
-          <button
-            onClick={onBackToMap}
-            className="flex items-center justify-center gap-3 shrink-0 cursor-pointer"
-            style={{
-              width: "260px",
-              height: "60px",
-              background: "rgba(20,20,20,0.55)",
-              border: "1px solid rgba(255, 122, 0, 0.25)",
-              borderRadius: "14px",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.border = "1px solid rgba(255,122,0,0.45)";
-              e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.06)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0px)";
-              e.currentTarget.style.border = "1px solid rgba(255, 122, 0, 0.25)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            <ArrowLeft className="w-5 h-5 text-[#FF7A00]" />
-            <div className="flex flex-col items-start leading-tight">
-              <span className="text-[#F2F2F2] font-[600] text-[13px]">Back to Nearby Wells</span>
-              <span className="text-[#FF7A00] font-[600] text-[13px]">Map</span>
-            </div>
-          </button>
-
-          {/* 7. OFFSET WELL INTELLIGENCE TITLE */}
-          <div className="flex items-center gap-3 shrink-0">
-            <Database className="w-8 h-8 text-[#FF7A00]" />
-            <div className="flex flex-col leading-tight font-[700] text-[20px] tracking-wide">
-              <span className="text-[#F2F2F2]">OFFSET WELL</span>
-              <span className="text-[#F2F2F2]">INTELLIGENCE:</span>
-            </div>
-          </div>
-
-          {/* 8. HISTORICAL DDR / NWIS CARD */}
-          <div 
-            className="flex flex-col justify-center px-[20px] h-[60px]"
-            style={{
-              background: "rgba(20,20,20,0.55)",
-              border: "1px solid rgba(255, 122, 0, 0.25)",
-              borderRadius: "14px",
-              boxShadow: "0 0 20px rgba(255,122,0,0.04)"
-            }}
-          >
-            <span className="text-[#FF7A00] font-[600] text-[12px] tracking-wider uppercase leading-tight">Historical DDR / NWIS</span>
-            <span className="text-[#A1A1A1] font-[500] text-[12px] uppercase leading-tight">Intelligence</span>
-          </div>
-
-          {/* Spacer */}
-          <div className="flex-1"></div>
-
-          {/* 9. ACTIVE OFFSET STATUS */}
-          <div 
-            className="flex items-center gap-4 px-[20px] h-[60px] whitespace-nowrap"
-            style={{
-              background: "rgba(20,20,20,0.55)",
-              border: "1px solid rgba(255, 122, 0, 0.25)",
-              borderRadius: "14px"
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]"></span>
-              <div className="flex flex-col leading-tight">
-                <span className="text-[#FF7A00] font-[600] text-[11px] tracking-wider">ACTIVE: {activeWellId}</span>
-                <span className="text-[#A1A1A1] font-mono text-[10px]">({currentMd.toFixed(1)}m)</span>
+        {/* MAIN HEADER / INTELLIGENCE HEADER */}
+        <div className="flex flex-col xl:flex-row items-center justify-between w-full pb-4 border-b border-[rgba(255,122,0,0.15)]">
+          <div className="flex flex-col xl:flex-row items-center gap-8 w-full">
+            {/* CENTER: TITLE + BADGE */}
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col leading-none font-[800] text-[20px] sm:text-[24px] tracking-wide">
+                <span className="text-[#F5F5F5]">OFFSET WELL</span>
+                <span className="text-[#F5F5F5] mt-1">INTELLIGENCE:</span>
+              </div>
+              
+              <div 
+                className="flex flex-col justify-center ml-2 border-l pl-5"
+                style={{
+                  borderColor: "rgba(255, 122, 0, 0.3)",
+                }}
+              >
+                <span className="text-[#FF7A00] font-[700] text-[12px] tracking-wider uppercase leading-tight">HISTORICAL DDR / NWIS</span>
+                <span className="text-[#A0A0A0] font-[500] text-[11px] uppercase leading-tight mt-0.5">INTELLIGENCE</span>
               </div>
             </div>
-            
-            <span className="text-[#737373] mx-1">→</span>
-            
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#FF7A00]" />
-              <span className="text-[#FF7A00] font-[600] text-[11px] tracking-wider">OFFSET:</span>
-            </div>
 
-            <span className="text-[#737373]">|</span>
+            <div className="flex-1"></div>
 
-            <div className="flex flex-col leading-tight">
-              <span className="text-[#F2F2F2] font-[600] text-[11px] tracking-wider">Dist: {formatDistance(data?.distance_km, data?.distance_m)?.split(' ')[0]}</span>
-              <span className="text-[#F2F2F2] font-[600] text-[11px] tracking-wider">{formatDistance(data?.distance_km, data?.distance_m)?.split(' ')[1] || ''}</span>
+            {/* RIGHT: ACTIVE OFFSET STATUS */}
+            <div 
+              className="flex items-center gap-5 px-6 h-[64px] whitespace-nowrap shrink-0"
+              style={{
+                background: "rgba(10, 5, 0, 0.6)",
+                border: "1px solid rgba(255, 122, 0, 0.3)",
+                borderRadius: "14px"
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]"></span>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-[#FF7A00] font-[700] text-[12px] tracking-wider uppercase">ACTIVE: {activeWellId}</span>
+                  <span className="text-[#A0A0A0] font-[500] text-[11px]">({currentMd.toFixed(1)}m)</span>
+                </div>
+              </div>
+              
+              <ArrowRight className="w-4 h-4 text-[#6F6F6F]" />
+              
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#FF7A00]" />
+                <span className="text-[#FF7A00] font-[700] text-[12px] tracking-wider uppercase">OFFSET:</span>
+              </div>
+
+              <div className="w-[1px] h-8 bg-[#FF7A00] opacity-20"></div>
+
+              <div className="flex flex-col leading-tight items-start">
+                <span className="text-[#F5F5F5] font-[600] text-[12px] tracking-wider">
+                  {formatDistance(data?.distance_km, data?.distance_m) === "Same Platform Complex" ? "Dist: Same" : `Dist: ${formatDistance(data?.distance_km, data?.distance_m)?.split(' ')[0]}`}
+                </span>
+                <span className="text-[#F5F5F5] font-[600] text-[12px] tracking-wider">
+                  {formatDistance(data?.distance_km, data?.distance_m) === "Same Platform Complex" ? "Platform" : formatDistance(data?.distance_km, data?.distance_m)?.split(' ')[1] || ''}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -287,13 +242,53 @@ export const OffsetWellIntelligence: React.FC<OffsetWellIntelligenceProps> = ({
         )}
 
         {error && !loading && (
-          <div className="p-6 flex items-center justify-between" style={{ ...glassPanelStyle, borderColor: "rgba(255,0,0,0.3)" }}>
-            <div className="flex items-center gap-3 text-red-400">
-              <AlertTriangle className="w-5 h-5 shrink-0" />
-              <span>{error}</span>
+          <div 
+            className="w-full p-6 flex items-center justify-between" 
+            style={{
+              background: "rgba(15, 5, 5, 0.70)",
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+              border: "1px solid rgba(255, 77, 94, 0.4)",
+              borderRadius: "22px",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,77,94,0.05), 0 0 15px rgba(255,77,94,0.1)",
+            }}
+          >
+            <div className="flex items-center gap-5 text-[#FF4D5E]">
+              <div 
+                className="w-14 h-14 flex items-center justify-center rounded-xl shrink-0"
+                style={{
+                  background: "rgba(255, 77, 94, 0.05)",
+                  border: "1px solid rgba(255, 77, 94, 0.3)",
+                }}
+              >
+                <AlertTriangle className="w-7 h-7 text-[#FF4D5E]" />
+              </div>
+              <span className="text-[17px] font-[500] leading-tight">{error}</span>
             </div>
-            <button onClick={onBackToMap} className="px-4 py-2 bg-[#FF7A00] text-black font-bold rounded-lg text-sm">
+            
+            <button 
+              onClick={onBackToMap}
+              className="px-6 py-3 rounded-xl font-[700] text-[15px] flex items-center gap-3 transition-all duration-250 cursor-pointer shrink-0"
+              style={{
+                background: "rgba(255, 122, 0, 0.1)",
+                border: "1px solid #FF7A00",
+                color: "#FFB000"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#FF7A00";
+                e.currentTarget.style.color = "#030303";
+                e.currentTarget.style.boxShadow = "0 0 20px rgba(255,122,0,0.4)";
+                e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 122, 0, 0.1)";
+                e.currentTarget.style.color = "#FFB000";
+                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.transform = "translateY(0) scale(1)";
+              }}
+            >
               Return to Map
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         )}

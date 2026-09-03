@@ -19,16 +19,17 @@ import {
   ChevronRight,
   User,
   Shield,
-  Search
+  Search,
+  Menu
 } from "lucide-react";
 import { useActiveWell } from "../../context/ActiveWellContext";
 import { useAuth } from "../../context/AuthContext";
 
 export const Sidebar: React.FC = () => {
   const { selectedWell } = useActiveWell();
-  const { profile, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [expanded, setExpanded] = useState<boolean>(false);
 
   const navLinks = [
     { to: "/dashboard", label: "DASHBOARD", icon: LayoutDashboard },
@@ -53,97 +54,105 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className={`bg-[#050607] flex flex-col justify-between transition-all duration-300 z-40 sticky top-0 h-screen font-['Space_Grotesk',sans-serif] ${
-        collapsed ? "w-[80px]" : "w-[280px]"
+      className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 flex flex-col py-6 transition-all duration-300 ease-in-out max-h-[90vh] overflow-hidden ${
+        expanded ? "w-[280px] rounded-[24px] px-4" : "w-[72px] rounded-[32px] px-2 items-center"
       }`}
       style={{
-        borderRight: "1px solid rgba(255,138,0,0.05)",
+        background: "rgba(10, 12, 16, 0.4)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        boxShadow: "0 20px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02)"
       }}
     >
-      {/* Top Brand Banner */}
-      <div className="flex flex-col h-full">
-        <div className="p-[24px] border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between">
+      {/* Top Toggle / Brand Area */}
+      <div className={`flex items-center mb-6 w-full ${expanded ? "justify-between px-2" : "justify-center"}`}>
+        {expanded && (
           <div 
-            className={`w-[44px] h-[44px] rounded-[12px] flex items-center justify-center border transition-all duration-300 ${collapsed ? "mx-auto" : ""}`}
-            style={{ 
-              background: "rgba(255, 138, 0, 0.08)", 
-              borderColor: "rgba(255, 138, 0, 0.4)", 
-              boxShadow: "0 0 20px rgba(255,138,0,0.15)" 
+            className="flex flex-col justify-center px-3 h-[44px] rounded-[14px]"
+            style={{
+              background: "rgba(20,20,20,0.55)",
+              border: "1px solid rgba(255,122,0,0.18)",
             }}
           >
-            <Cylinder className="w-5 h-5 text-[#FF9D1A] drop-shadow-[0_0_8px_rgba(255,157,26,0.6)] animate-pulse" strokeWidth={1.5} />
-          </div>
-
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              className="w-[32px] h-[32px] rounded-[8px] flex items-center justify-center text-[#9AA0A6] transition-all duration-200 hover:text-[#FF9D1A] hover:bg-[rgba(255,138,0,0.05)] hover:border hover:border-[rgba(255,138,0,0.3)] hover:shadow-[0_0_10px_rgba(255,138,0,0.1)] border border-transparent"
-              title="Collapse sidebar"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          )}
-          {collapsed && (
-            <div className="absolute -right-4 top-[32px] z-50">
-              <button
-                type="button"
-                onClick={() => setCollapsed(false)}
-                className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[#9AA0A6] bg-[#050607] border border-[rgba(255,138,0,0.3)] transition-all duration-200 hover:text-[#FF9D1A] hover:shadow-[0_0_10px_rgba(255,138,0,0.2)]"
-                title="Expand sidebar"
-              >
-                <ChevronRight className="w-3 h-3" />
-              </button>
+            <div className="font-[700] text-[16px] leading-tight flex">
+              <span className="text-[#F5F5F5]">eRTMAC</span>
+              <span className="text-[#FF7A00]">-NWIS</span>
             </div>
+            <div className="text-[#9A9A9A] text-[9px] font-[400] leading-none lowercase mt-0.5">
+              Nearbywells intelligence system
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => {
+            const newVal = !expanded;
+            setExpanded(newVal);
+            window.dispatchEvent(new CustomEvent("sidebar:toggle", { detail: newVal }));
+          }}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-[#9AA0A6] hover:text-[#FF9D1A] hover:bg-[rgba(255,138,0,0.1)] transition-all"
+        >
+          <Menu className="w-5 h-5 text-[#FF7A00]" />
+        </button>
+      </div>
+
+      {/* Navigation Link List */}
+      <nav className={`flex flex-col space-y-2 overflow-y-auto custom-scrollbar no-scrollbar w-full ${expanded ? "" : "items-center"}`}>
+        {navLinks.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end
+              className={({ isActive }) =>
+                `group relative flex items-center transition-all duration-300 ${
+                  expanded 
+                    ? `w-full px-4 py-3 rounded-[12px] ${isActive ? "bg-[rgba(255,138,0,0.1)] text-[#FF9D1A] shadow-[inset_3px_0_0_#FF9D1A]" : "text-[#9AA0A6] hover:text-[#FF9D1A] hover:bg-[rgba(255,138,0,0.05)]"}`
+                    : `justify-center w-12 h-12 rounded-[16px] ${isActive ? "bg-[rgba(255,138,0,0.1)] text-[#FF9D1A] shadow-[inset_2px_0_0_#FF9D1A,0_0_15px_rgba(255,138,0,0.15)]" : "text-[#9AA0A6] hover:text-[#FF9D1A] hover:bg-[rgba(255,138,0,0.05)]"}`
+                }`
+              }
+              title={!expanded ? item.label : undefined}
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon 
+                    className={`w-5 h-5 shrink-0 transition-all duration-300 ${
+                      isActive ? 'drop-shadow-[0_0_8px_rgba(255,157,26,0.6)]' : ''
+                    } ${!expanded && isActive ? 'scale-110' : (!expanded ? 'group-hover:scale-110' : '')}`} 
+                    strokeWidth={1.5} 
+                  />
+                  {expanded && (
+                    <span className={`ml-4 text-[13px] tracking-wide ${isActive ? 'font-[700]' : 'font-[600]'}`}>
+                      {item.label}
+                    </span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Bottom Actions */}
+      <div className={`mt-auto pt-4 w-full flex ${expanded ? "px-4" : "justify-center"}`}>
+        <button
+          onClick={handleLogout}
+          className={`group relative flex items-center transition-all duration-300 text-[#9AA0A6] hover:text-[#FF3B3B] hover:bg-[rgba(255,59,59,0.05)] ${
+            expanded ? "w-full px-4 py-3 rounded-[12px]" : "justify-center w-12 h-12 rounded-[16px]"
+          }`}
+          title={!expanded ? "Sign Out" : undefined}
+        >
+          <LogOut 
+            className={`w-5 h-5 shrink-0 transition-all duration-300 ${!expanded ? 'group-hover:scale-110' : ''}`} 
+            strokeWidth={1.5} 
+          />
+          {expanded && (
+            <span className="ml-4 text-[13px] tracking-wide font-[600]">
+              Sign Out
+            </span>
           )}
-        </div>
-
-        {/* Navigation Link List */}
-        <nav className="flex-1 p-[16px] space-y-[12px] overflow-y-auto custom-scrollbar">
-          {navLinks.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end
-                className={({ isActive }) =>
-                  `group relative flex items-center justify-between px-[16px] py-[14px] rounded-[12px] transition-all duration-200 border ${
-                    isActive
-                      ? "border-[rgba(255,138,0,0.4)] bg-[rgba(255,138,0,0.08)] shadow-[0_0_20px_rgba(255,138,0,0.15)] text-[#FF9D1A]"
-                      : "border-transparent text-[#9AA0A6] hover:border-[rgba(255,138,0,0.2)] hover:bg-[rgba(255,138,0,0.03)] hover:shadow-[0_0_15px_rgba(255,138,0,0.08)] hover:text-[#FF9D1A]"
-                  } ${collapsed ? "justify-center px-[0] w-[44px] h-[44px] mx-auto" : ""}`
-                }
-                title={collapsed ? item.label : undefined}
-              >
-                {({ isActive }) => (
-                  <>
-                    {/* Active State Left Edge Accent */}
-                    {isActive && (
-                      <div className="absolute left-0 top-[15%] bottom-[15%] w-[4px] bg-[#FF9D1A] rounded-r-[4px] shadow-[0_0_10px_#FF9D1A]"></div>
-                    )}
-                    
-                    <div className="flex items-center gap-[16px]">
-                      <Icon 
-                        className={`w-[20px] h-[20px] shrink-0 transition-colors duration-200 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,157,26,0.5)]' : 'group-hover:drop-shadow-[0_0_5px_rgba(255,157,26,0.3)]'}`} 
-                        strokeWidth={1.5} 
-                      />
-                      {!collapsed && (
-                        <span className={`text-[13px] tracking-wide ${isActive ? 'font-[700]' : 'font-[600]'}`}>
-                          {item.label}
-                        </span>
-                      )}
-                    </div>
-
-                    {!collapsed && isActive && (
-                      <ChevronRight className="w-4 h-4 text-[#FF9D1A] drop-shadow-[0_0_5px_rgba(255,157,26,0.5)]" />
-                    )}
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
+        </button>
       </div>
     </aside>
   );

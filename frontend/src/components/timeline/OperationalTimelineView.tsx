@@ -186,7 +186,7 @@ export const OperationalTimelineView: React.FC<OperationalTimelineViewProps> = (
                     {evt.event_category}
                   </span>
                   <p className="text-xs text-white font-semibold leading-tight">{evt.title}</p>
-                  <p className="text-[11px] text-slate-400 font-sans truncate">{evt.description}</p>
+                  <p className="text-[11px] text-slate-400 font-sans break-words whitespace-pre-wrap">{evt.description}</p>
                 </div>
                 
                 <div className="flex flex-col items-end text-[10px] text-slate-500 flex-shrink-0 whitespace-nowrap">
