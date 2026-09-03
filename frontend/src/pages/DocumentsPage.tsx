@@ -1153,10 +1153,18 @@ export const DocumentsPage: React.FC = () => {
 
       {/* ── DOCUMENT & NOTE DETAIL / VERIFICATION MODAL ── */}
       {activeItem && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-start justify-center pt-[70px] pb-6 px-4">
+          <div 
+            className="bg-slate-900 border border-slate-700 rounded-2xl w-full shadow-2xl flex flex-col overflow-hidden relative"
+            style={{ 
+              maxWidth: "1100px", 
+              width: "90vw", 
+              height: "80vh", 
+              maxHeight: "calc(100vh - 100px)" 
+            }}
+          >
+            {/* Modal Header - Fixed at top */}
+            <div className="shrink-0 sticky top-0 z-20 p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950 shadow-md">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-blue-950 border border-blue-500/40 rounded-xl text-blue-400 shadow-sm">
                   {activeItem.sourceType === "DIGITAL_DOC" ? <FileCode className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
@@ -1179,40 +1187,41 @@ export const DocumentsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            {/* Modal Body - Grid with independently scrolling columns */}
+            <div className="flex-1 min-h-0 p-6 flex flex-col">
               {itemDetailLoading ? (
-                <div className="py-20 text-center text-slate-400 space-y-3">
+                <div className="py-20 flex-1 flex flex-col items-center justify-center text-center text-slate-400 space-y-3">
                   <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-400" />
                   <p className="text-sm">Loading document details & verified evidence...</p>
                 </div>
               ) : activeItem.sourceType === "DIGITAL_DOC" && digitalDocDetails ? (
                 /* Digital Document Content */
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                   {/* Left Column: PDF Preview */}
-                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 h-[600px] flex flex-col">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">Document Preview</h4>
-                    {activeItem.filename?.toLowerCase().match(/\.(png|jpe?g|gif|webp)$/i) || ["PNG", "JPEG", "JPG", "GIF"].includes((digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "").toUpperCase()) ? (
-                      <div className="w-full h-full flex items-center justify-center overflow-hidden bg-black/40 rounded">
-                        <img 
-                          src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content`}
-                          alt="Document Preview"
-                          className="max-w-full max-h-full object-contain"
+                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col h-full min-h-0">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase mb-3 shrink-0">Document Preview</h4>
+                    <div className="flex-1 min-h-0 overflow-hidden rounded bg-black/40">
+                      {activeItem.filename?.toLowerCase().match(/\.(png|jpe?g|gif|webp)$/i) || ["PNG", "JPEG", "JPG", "GIF"].includes((digitalDocDetails.document.document_type || digitalDocDetails.document.doc_type || "").toUpperCase()) ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <img 
+                            src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content`}
+                            alt="Document Preview"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <iframe
+                          src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
+                          className="w-full h-full bg-white"
+                          title="Document Preview"
                         />
-                      </div>
-                    ) : (
-                      <iframe
-                        src={`${API_BASE_URL}/api/documents/${digitalDocDetails.document.id}/content#view=Fit`}
-                        className="w-full h-full rounded bg-white"
-                        title="Document Preview"
-                      />
-                    )}
+                      )}
+                    </div>
                   </div>
 
-                  {/* Right Column: Details */}
-                  <div className="space-y-5 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
+                  {/* Right Column: Details & Events */}
+                  <div className="flex flex-col space-y-5 overflow-y-auto min-h-0 h-full pr-2 custom-scrollbar">
+                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
                       <h4 className="text-xs font-bold text-slate-300 uppercase">Document Information</h4>
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div><span className="text-slate-500 block text-[10px]">ID:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.id}</span></div>
@@ -1223,7 +1232,7 @@ export const DocumentsPage: React.FC = () => {
                     </div>
 
                     {/* Document Metadata Details */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
                       <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200 break-words">{digitalDocDetails.document.filename}</span></div>
@@ -1237,7 +1246,7 @@ export const DocumentsPage: React.FC = () => {
                     
                     {/* Summary & Tags Section (Like OCR Notes) */}
                     {(digitalDocDetails.document.source_metadata?.summary || digitalDocDetails.document.source_metadata?.tags) && (
-                      <div className="bg-cyan-950/20 border border-cyan-900/30 rounded-xl p-4 space-y-3">
+                      <div className="bg-cyan-950/20 border border-cyan-900/30 rounded-xl p-4 space-y-3 shrink-0">
                         {digitalDocDetails.document.source_metadata?.summary && (
                           <div>
                             <h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 mb-1.5">
@@ -1263,186 +1272,182 @@ export const DocumentsPage: React.FC = () => {
                         )}
                       </div>
                     )}
-                  </div>
-                </div>
 
-                  {/* Extracted Events Section */}
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-300 uppercase">
-                      Extracted Events & Operational Episodes ({digitalDocDetails.extracted_events?.length || 0})
-                    </h4>
-                    <div className="space-y-2">
-                      {digitalDocDetails.extracted_events?.map((ev: any) => (
-                        <div key={ev.id} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-cyan-400">{ev.event_type || "Drilling Event"}</span>
-                            <span className="text-[10px] font-mono text-slate-500">MD: {ev.onset_md ? `${ev.onset_md}m` : "N/A"}</span>
+                    {/* Extracted Events Section */}
+                    <div className="space-y-3 shrink-0 pb-4">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase">
+                        Extracted Events & Operational Episodes ({digitalDocDetails.extracted_events?.length || 0})
+                      </h4>
+                      <div className="space-y-2">
+                        {digitalDocDetails.extracted_events?.map((ev: any) => (
+                          <div key={ev.id} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-bold text-cyan-400">{ev.event_type || "Drilling Event"}</span>
+                              <span className="text-[10px] font-mono text-slate-500">MD: {ev.onset_md ? `${ev.onset_md}m` : "N/A"}</span>
+                            </div>
+                            <p className="text-xs text-slate-300">{ev.summary || ev.raw_text}</p>
                           </div>
-                          <p className="text-xs text-slate-300">{ev.summary || ev.raw_text}</p>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : noteDetails ? (
                 /* Handwritten OCR Note Review & Edit */
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                    {/* Left Column: Image Preview and Transcription */}
-                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-4">
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">Scanned Note Image</h4>
-                        <div className="w-full max-h-[400px] bg-black/40 rounded flex items-center justify-center overflow-hidden">
-                          <img
-                            src={`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
-                              (noteDetails.metadata?.storage as any)?.stored_filename ||
-                              noteDetails.storage_path?.split('/').pop() ||
-                              noteDetails.public_url?.split('/').pop() ||
-                              (noteDetails.metadata?.storage as any)?.filename ||
-                              activeItem.filename ||
-                              noteDetails.id
-                            )}`}
-                            alt="Scanned Handwritten Note"
-                            className="max-w-full max-h-full object-contain"
-                            onError={(e) => {
-                              // Fallback if specific image file lookup fails
-                              const target = e.currentTarget;
-                              if (!target.src.includes("fallback")) {
-                                target.src = `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(noteDetails.id)}?fallback=1`;
-                              }
-                            }}
-                          />
-                        </div>
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                  {/* Left Column: Image Preview and Transcription */}
+                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col h-full min-h-0 gap-4">
+                    <div className="flex-1 min-h-0 flex flex-col">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase mb-3 shrink-0">Scanned Note Image</h4>
+                      <div className="w-full flex-1 min-h-0 bg-black/40 rounded flex items-center justify-center overflow-hidden">
+                        <img
+                          src={`${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(
+                            (noteDetails.metadata?.storage as any)?.stored_filename ||
+                            noteDetails.storage_path?.split('/').pop() ||
+                            noteDetails.public_url?.split('/').pop() ||
+                            (noteDetails.metadata?.storage as any)?.filename ||
+                            activeItem.filename ||
+                            noteDetails.id
+                          )}`}
+                          alt="Scanned Handwritten Note"
+                          className="max-w-full max-h-full object-contain"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.src.includes("fallback")) {
+                              target.src = `${API_BASE_URL}/api/v1/notes/images/${encodeURIComponent(noteDetails.id)}?fallback=1`;
+                            }
+                          }}
+                        />
                       </div>
-                      
-                      {/* Transcribed Text */}
-                      <div className="flex-1 flex flex-col min-h-[150px]">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">Transcribed Text</h4>
-                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex-1 overflow-y-auto custom-scrollbar max-h-[300px]">
-                          <p className="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">
-                            {noteDetails.verified_text || noteDetails.raw_ocr_text || "No transcription available."}
-                          </p>
+                    </div>
+                    
+                    {/* Transcribed Text */}
+                    <div className="h-1/3 min-h-[150px] flex flex-col shrink-0">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase mb-2 shrink-0">Transcribed Text</h4>
+                      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                        <p className="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">
+                          {noteDetails.verified_text || noteDetails.raw_ocr_text || "No transcription available."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Details */}
+                  <div className="flex flex-col space-y-5 overflow-y-auto min-h-0 h-full pr-2 custom-scrollbar">
+                    {/* Note Information */}
+                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase">Note Information</h4>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div><span className="text-slate-500 block text-[10px]">ID:</span><span className="text-slate-200 break-words">{noteDetails.id}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">SOURCE:</span><span className="text-slate-200 break-words">HANDWRITTEN OCR</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">STATUS:</span>
+                          <span className={noteDetails.verification_status === "VERIFIED" ? "text-emerald-400 font-bold" : noteDetails.verification_status === "REJECTED" ? "text-rose-400 font-bold" : "text-amber-400 font-bold"}>
+                            {noteDetails.verification_status === "VERIFIED" ? "VERIFIED" : noteDetails.verification_status === "REJECTED" ? "REJECTED" : "YET TO BE VERIFIED"}
+                          </span>
                         </div>
+                        <div><span className="text-slate-500 block text-[10px]">CONFIDENCE:</span><span className="text-slate-200">{noteDetails.confidence ? `${(noteDetails.confidence * 100).toFixed(1)}%` : "HIGH"}</span></div>
                       </div>
                     </div>
 
-                    {/* Right Column: Details */}
-                    <div className="space-y-5 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-                      {/* Note Information */}
-                      <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase">Note Information</h4>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div><span className="text-slate-500 block text-[10px]">ID:</span><span className="text-slate-200 break-words">{noteDetails.id}</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">SOURCE:</span><span className="text-slate-200 break-words">HANDWRITTEN OCR</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">STATUS:</span>
-                            <span className={noteDetails.verification_status === "VERIFIED" ? "text-emerald-400 font-bold" : noteDetails.verification_status === "REJECTED" ? "text-rose-400 font-bold" : "text-amber-400 font-bold"}>
-                              {noteDetails.verification_status === "VERIFIED" ? "VERIFIED" : noteDetails.verification_status === "REJECTED" ? "REJECTED" : "YET TO BE VERIFIED"}
-                            </span>
-                          </div>
-                          <div><span className="text-slate-500 block text-[10px]">CONFIDENCE:</span><span className="text-slate-200">{noteDetails.confidence ? `${(noteDetails.confidence * 100).toFixed(1)}%` : "HIGH"}</span></div>
-                        </div>
+                    {/* Imported Note Details */}
+                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2 shrink-0">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200 break-words">{noteDetails.title || noteDetails.metadata?.storage?.filename || activeItem.filename}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">WELL ID:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.well_id || noteDetails.well_id || "N/A"}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.depth || "N/A"}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">WATER DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.water_depth || "N/A"}</span></div>
+                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">REPORT PERIOD:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.report_period || "N/A"}</span></div>
+                        <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">ABNORMAL REMARKS:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.abnormal_remarks || "None"}</span></div>
                       </div>
+                    </div>
 
-                      {/* Imported Note Details */}
-                      <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase">Imported Details</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">FILE NAME:</span><span className="text-slate-200 break-words">{noteDetails.title || noteDetails.metadata?.storage?.filename || activeItem.filename}</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">WELL ID:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.well_id || noteDetails.well_id || "N/A"}</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.depth || "N/A"}</span></div>
-                          <div><span className="text-slate-500 block text-[10px]">WATER DEPTH:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.water_depth || "N/A"}</span></div>
-                          <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">REPORT PERIOD:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.report_period || "N/A"}</span></div>
-                          <div className="col-span-1 sm:col-span-2"><span className="text-slate-500 block text-[10px]">ABNORMAL REMARKS:</span><span className="text-slate-200 break-words">{noteDetails.structured_data?.abnormal_remarks || "None"}</span></div>
+                    {/* OCR Structured Entities & Measurements */}
+                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-4 shrink-0">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase">Structured Extraction (Mistral OCR)</h4>
+                      
+                      {/* Summary & Tags */}
+                      {noteDetails.structured_data?.summary && (
+                        <div className="space-y-1">
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Summary</span>
+                          <p className="text-xs text-slate-300 leading-relaxed">{noteDetails.structured_data.summary}</p>
                         </div>
-                      </div>
-
-                      {/* OCR Structured Entities & Measurements */}
-                      <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-4">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase">Structured Extraction (Mistral OCR)</h4>
-                        
-                        {/* Summary & Tags */}
-                        {noteDetails.structured_data?.summary && (
-                          <div className="space-y-1">
-                            <span className="text-slate-500 text-[10px] uppercase font-bold">Summary</span>
-                            <p className="text-xs text-slate-300 leading-relaxed">{noteDetails.structured_data.summary}</p>
+                      )}
+                      {noteDetails.structured_data?.tags && noteDetails.structured_data.tags.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Tags</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {noteDetails.structured_data.tags.map((t, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                                #{t}
+                              </span>
+                            ))}
                           </div>
-                        )}
-                        {noteDetails.structured_data?.tags && noteDetails.structured_data.tags.length > 0 && (
-                          <div className="space-y-1">
-                            <span className="text-slate-500 text-[10px] uppercase font-bold">Tags</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {noteDetails.structured_data.tags.map((t, idx) => (
-                                <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
-                                  #{t}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Measurements List */}
-                        {noteDetails.structured_data?.measurements && noteDetails.structured_data.measurements.length > 0 && (
-                          <div className="space-y-2">
-                            <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Measurements ({noteDetails.structured_data.measurements.length})</span>
-                            <div className="grid grid-cols-2 gap-2">
-                              {noteDetails.structured_data.measurements.map((m, idx) => (
-                                <div key={idx} className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs">
-                                  <span className="text-slate-400 block text-[10px]">{m.parameter}</span>
-                                  <span className="font-bold text-cyan-400">{m.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Identified Entities */}
-                        {noteDetails.structured_data?.entities && noteDetails.structured_data.entities.length > 0 && (
-                          <div className="space-y-2">
-                            <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Entities ({noteDetails.structured_data.entities.length})</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {noteDetails.structured_data.entities.map((ent, idx) => (
-                                <span key={idx} className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300">
-                                  <strong className="text-cyan-400">{ent.type}:</strong> {ent.value}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Human Verification & Editing Action */}
-                      <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-300 uppercase">Human Verification & Text Edit</h4>
-                          <span className="text-[10px] text-slate-500">Edit and confirm to promote to RAG Ground Truth</span>
                         </div>
-                        <textarea
-                          rows={6}
-                          value={editableVerifiedText}
-                          onChange={(e) => setEditableVerifiedText(e.target.value)}
-                          placeholder="Edit or correct OCR transcribed text before human verification..."
-                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition"
-                        />
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                          {noteDetails.verification_status !== "REJECTED" && (
-                            <button
-                              onClick={handleRejectNote}
-                              disabled={verifyingAction}
-                              className="px-4 py-2 text-xs font-bold bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50 rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                              <span>REJECT OCR</span>
-                            </button>
-                          )}
+                      )}
+
+                      {/* Measurements List */}
+                      {noteDetails.structured_data?.measurements && noteDetails.structured_data.measurements.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Measurements ({noteDetails.structured_data.measurements.length})</span>
+                          <div className="grid grid-cols-2 gap-2">
+                            {noteDetails.structured_data.measurements.map((m, idx) => (
+                              <div key={idx} className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs">
+                                <span className="text-slate-400 block text-[10px]">{m.parameter}</span>
+                                <span className="font-bold text-cyan-400">{m.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Identified Entities */}
+                      {noteDetails.structured_data?.entities && noteDetails.structured_data.entities.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-slate-500 text-[10px] uppercase font-bold">Detected Entities ({noteDetails.structured_data.entities.length})</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {noteDetails.structured_data.entities.map((ent, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300">
+                                <strong className="text-cyan-400">{ent.type}:</strong> {ent.value}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Human Verification & Editing Action */}
+                    <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3 shrink-0 pb-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-300 uppercase">Human Verification & Text Edit</h4>
+                        <span className="text-[10px] text-slate-500">Edit and confirm to promote to RAG Ground Truth</span>
+                      </div>
+                      <textarea
+                        rows={6}
+                        value={editableVerifiedText}
+                        onChange={(e) => setEditableVerifiedText(e.target.value)}
+                        placeholder="Edit or correct OCR transcribed text before human verification..."
+                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 transition"
+                      />
+                      <div className="flex items-center justify-end gap-2 pt-2">
+                        {noteDetails.verification_status !== "REJECTED" && (
                           <button
-                            onClick={handleVerifyNote}
+                            onClick={handleRejectNote}
                             disabled={verifyingAction}
-                            className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition flex items-center gap-1.5 disabled:opacity-50 shadow-md shadow-emerald-600/20"
+                            className="px-4 py-2 text-xs font-bold bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/50 rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
                           >
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>VERIFY OCR AS GROUND TRUTH</span>
+                            <X className="w-3.5 h-3.5" />
+                            <span>REJECT OCR</span>
                           </button>
-                        </div>
+                        )}
+                        <button
+                          onClick={handleVerifyNote}
+                          disabled={verifyingAction}
+                          className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition flex items-center gap-1.5 disabled:opacity-50 shadow-md shadow-emerald-600/20"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>VERIFY OCR AS GROUND TRUTH</span>
+                        </button>
                       </div>
                     </div>
                   </div>
