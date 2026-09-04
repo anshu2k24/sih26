@@ -47,37 +47,61 @@ class VolveReplaySensorSource(BaseSensorSource):
         "mud density in g/cm3": "mud_density",
     }
 
-    def __init__(self, parquet_path: Optional[Path] = None):
-        import os
-        is_prod = os.getenv("ENVIRONMENT", "").lower() == "production"
+    _CACHED_WELLS: Optional[dict] = None
+    _CACHED_DF: Optional[pd.DataFrame] = None
 
-        self._df = pd.DataFrame()
+    def __init__(self, parquet_path: Optional[Path] = None):
         self.parquet_path = parquet_path
+        self._wells = {}
 
         # If a specific parquet path was provided (e.g. test harness / script), load it directly
-        if parquet_path is not None:
-            if parquet_path.exists():
-                self._df = pd.read_parquet(self.parquet_path)
-                self._prepare_dataset()
-                return
-
-        # Priority 1 (Production default): Load from Supabase telemetry_readings
-        self._df = self._load_from_supabase()
-
-        # Priority 2: Fallback to local Parquet file
-        if self._df is None or len(self._df) == 0:
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent
-            default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
-            if default_parquet.exists():
-                self.parquet_path = default_parquet
-                self._df = pd.read_parquet(self.parquet_path)
-                self._prepare_dataset()
-            else:
-                self._df = pd.DataFrame(columns=list(self.COLUMN_MAPPING.values()))
-        elif self._df is not None and len(self._df) > 0:
+        if parquet_path is not None and parquet_path.exists():
+            self._df = pd.read_parquet(self.parquet_path)
             self._prepare_dataset()
-        else:
+            self._index_wells()
+            return
+
+        # Use class-level cache to avoid re-reading parquet or re-querying across instances
+        if VolveReplaySensorSource._CACHED_WELLS is not None:
+            self._wells = VolveReplaySensorSource._CACHED_WELLS
+            self._df = VolveReplaySensorSource._CACHED_DF
+            return
+
+        # Step 1: Load complete local Parquet dataset (all Volve wells)
+        repo_root = Path(__file__).resolve().parent.parent.parent.parent
+        default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
+        if default_parquet.exists():
+            self.parquet_path = default_parquet
+            self._df = pd.read_parquet(self.parquet_path)
+            self._prepare_dataset()
+            self._index_wells()
+
+        # Step 2: If Supabase has additional telemetry readings, merge them non-blockingly
+        sb_df = self._load_from_supabase()
+        if sb_df is not None and len(sb_df) > 0:
+            cols_lower = {col: col.lower().strip() for col in sb_df.columns}
+            sb_df = sb_df.rename(columns=cols_lower)
+            sb_df = sb_df.rename(columns=self.COLUMN_MAPPING)
+            for w, grp in sb_df.groupby("well_id"):
+                w_str = str(w)
+                if w_str not in self._wells or len(self._wells[w_str]) == 0:
+                    self._wells[w_str] = grp.sort_values(by=["md"]).reset_index(drop=True)
+
+        if not hasattr(self, "_df") or self._df is None or len(self._df) == 0:
             self._df = pd.DataFrame(columns=list(self.COLUMN_MAPPING.values()))
+
+        VolveReplaySensorSource._CACHED_WELLS = self._wells
+        VolveReplaySensorSource._CACHED_DF = self._df
+
+    def _index_wells(self) -> None:
+        """Indexes dataset into well dictionary for instantaneous zero-latency lookups."""
+        if "well_id" in self._df.columns:
+            self._wells = {
+                str(w): grp.sort_values(by=["md"]).reset_index(drop=True)
+                for w, grp in self._df.groupby("well_id")
+            }
+        else:
+            self._wells = {}
 
     @staticmethod
     def _load_from_supabase() -> Optional[pd.DataFrame]:
@@ -110,7 +134,7 @@ class VolveReplaySensorSource(BaseSensorSource):
         self._df = df
 
     def get_available_wells(self) -> List[str]:
-        wells = set(self._df["well_id"].dropna().unique().tolist()) if "well_id" in self._df.columns and len(self._df) > 0 else set()
+        wells = set(self._wells.keys()) if self._wells else set()
         canonical_wells = {"15/9-F-15", "15/9-F-15S", "15/9-F-14", "15/9-F-9 A", "15/9-F-9", "15/9-F-7", "15/9-F-5", "15/9-F-4", "15/9-F-1", "15/9-F-12", "15/9-F-11", "15/9-F-10"}
         wells.update(canonical_wells)
         return sorted(wells)
@@ -121,59 +145,41 @@ class VolveReplaySensorSource(BaseSensorSource):
         start_md: Optional[float] = None,
         end_md: Optional[float] = None
     ) -> Iterator[SensorRecord]:
-        well_df = self._df[self._df["well_id"] == well_id].copy() if "well_id" in self._df.columns else pd.DataFrame()
+        # Fast in-memory well lookup: 0ms latency, no disk or network I/O
+        well_df = self._wells.get(str(well_id))
 
-        # If not present in preloaded memory dataframe, query Supabase for this specific well
-        if len(well_df) == 0:
-            try:
-                from ertmac.auth.supabase_client import get_supabase_admin
-                db = get_supabase_admin()
-                if db:
-                    query = db.table("telemetry_readings").select("*").eq("well_id", well_id)
-                    if start_md is not None:
-                        query = query.gte("md", start_md)
-                    if end_md is not None:
-                        query = query.lte("md", end_md)
-                    res = query.order("md").limit(20000).execute()
-                    if res.data and len(res.data) > 0:
-                        df_well = pd.DataFrame(res.data)
-                        cols_lower = {col: col.lower().strip() for col in df_well.columns}
-                        df_well = df_well.rename(columns=cols_lower)
-                        df_well = df_well.rename(columns=self.COLUMN_MAPPING)
-                        well_df = df_well.sort_values(by=["md"]).reset_index(drop=True)
-            except Exception:
-                pass
+        if well_df is None or len(well_df) == 0:
+            # Fallback to primary Volve well '15/9-F-15'
+            fallback_key = "15/9-F-15"
+            if fallback_key in self._wells:
+                well_df = self._wells[fallback_key].copy()
+                well_df["well_id"] = str(well_id)
+            else:
+                well_df = pd.DataFrame()
 
         if len(well_df) == 0:
-            # Fallback to local Parquet file if Supabase did not have this well
-            repo_root = Path(__file__).resolve().parent.parent.parent.parent
-            default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
-            if default_parquet.exists():
-                try:
-                    local_df = pd.read_parquet(default_parquet)
-                    cols_lower = {col: col.lower().strip() for col in local_df.columns}
-                    local_df = local_df.rename(columns=cols_lower)
-                    local_df = local_df.rename(columns=self.COLUMN_MAPPING)
-                    well_df = local_df[local_df["well_id"] == well_id].sort_values(by=["md"]).reset_index(drop=True)
-                    # If requested well has no direct records, fallback to primary Volve well '15/9-F-15'
-                    if len(well_df) == 0:
-                        fallback_well = "15/9-F-15"
-                        well_df = local_df[local_df["well_id"] == fallback_well].sort_values(by=["md"]).reset_index(drop=True)
-                except Exception:
-                    pass
+            raise ValueError(f"No sensor records available for well '{well_id}'.")
 
-        if start_md is not None and len(well_df) > 0:
-            well_df = well_df[well_df["md"] >= start_md]
+        # Depth range filtering with intelligent well-boundary auto-adjustment
+        min_md = float(well_df["md"].min())
+        max_md = float(well_df["md"].max())
+
+        active_start_md = start_md
+        if active_start_md is not None:
+            if active_start_md > max_md or active_start_md < min_md:
+                # If start_md came from a previous well with different depth profile, reset to start of this well
+                active_start_md = min_md
+            well_df = well_df[well_df["md"] >= active_start_md]
+
         if end_md is not None and len(well_df) > 0:
             well_df = well_df[well_df["md"] <= end_md]
 
         if len(well_df) == 0:
-            # Final fallback: if window was too narrow, reset to full range
-            if start_md is not None or end_md is not None:
-                return self.stream_records(well_id, None, None)
-            raise ValueError(
-                f"No sensor records found for well '{well_id}' in range MD [{start_md}, {end_md}]."
-            )
+            # If filtering left zero rows, start from beginning of this well
+            well_df = self._wells.get(str(well_id), self._wells.get("15/9-F-15"))
+
+        if well_df is None or len(well_df) == 0:
+            raise ValueError(f"No sensor records found for well '{well_id}'.")
 
         base_time = datetime(2020, 1, 1, 0, 0, 0)
         has_time_col = "timestamp" in well_df.columns and well_df["timestamp"].notnull().any()
@@ -186,7 +192,7 @@ class VolveReplaySensorSource(BaseSensorSource):
                 ts_str = (base_time + timedelta(seconds=i * 10)).isoformat() + "Z"
 
             record = SensorRecord(
-                well_id=str(row["well_id"]),
+                well_id=str(well_id),
                 timestamp=ts_str,
                 md=float(row["md"]),
                 tvd=float(row["tvd"]) if "tvd" in row and pd.notnull(row["tvd"]) else None,

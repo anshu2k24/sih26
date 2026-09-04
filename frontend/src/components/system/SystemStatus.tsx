@@ -50,7 +50,7 @@ export const SystemStatus: React.FC<SystemStatusProps> = ({ streamStatus, mlStat
       icon: Database,
     },
     {
-      name: "React Frontend Console",
+      name: "ORIS Console",
       url: "http://localhost:5173",
       status: "CONNECTED",
       icon: Monitor,

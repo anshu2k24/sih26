@@ -21,10 +21,12 @@ export const LivePage: React.FC = () => {
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(50);
   const [isTriggering, setIsTriggering] = useState<boolean>(false);
 
+  const isActivelyStreaming = isStreaming && (samplesReceived > 0 || status === "LIVE");
+
   const handleToggleStream = async () => {
     setIsTriggering(true);
     try {
-      if (isStreaming) {
+      if (isActivelyStreaming && samplesReceived > 0) {
         await pauseStream();
       } else {
         await startStream(selectedWell, speedMultiplier);
@@ -62,7 +64,7 @@ export const LivePage: React.FC = () => {
               <h1 className="text-lg font-bold text-white uppercase tracking-wider">
                 REAL-TIME TELEMETRY CONSOLE
               </h1>
-              {isStreaming && (
+              {isActivelyStreaming && samplesReceived > 0 && (
                 <span className="text-xs px-2.5 py-0.5 rounded font-bold border bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40 animate-pulse">
                   🟢 DRILLING ACTIVE
                 </span>
@@ -102,7 +104,7 @@ export const LivePage: React.FC = () => {
               disabled={isTriggering}
               className="px-5 py-2.5 rounded-[12px] font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all shadow-lg active:scale-95 disabled:opacity-50"
               style={
-                isStreaming
+                isActivelyStreaming && samplesReceived > 0
                   ? {
                       background: "rgba(239, 68, 68, 0.2)",
                       border: "1px solid rgba(239, 68, 68, 0.4)",
@@ -116,7 +118,7 @@ export const LivePage: React.FC = () => {
                     }
               }
             >
-              {isStreaming ? (
+              {isActivelyStreaming && samplesReceived > 0 ? (
                 <>
                   <Pause className="w-4 h-4 fill-current" />
                   <span>PAUSE DRILLING</span>

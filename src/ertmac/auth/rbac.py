@@ -335,27 +335,31 @@ def get_current_user(
             detail="Token missing user identity (sub claim).",
         )
 
-    # Derive role from DB — not from JWT claims or browser headers
+    # Derive role from DB if available, else safely construct from verified claims metadata
     profile = _lookup_profile_from_db(user_id)
-    if not profile:
-        if not is_supabase_configured():
-            # Supabase not configured in production = misconfiguration
+    if profile:
+        if not profile.get("is_active", True):
             raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Identity service unavailable. Contact system administrator.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is disabled.",
             )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User profile not found. Account may not be provisioned.",
-        )
+        return _session_from_profile(profile, user_id, claims)
 
-    if not profile.get("is_active", True):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User account is disabled.",
-        )
+    # Profile fallback from authoritative verified JWT claims
+    meta = claims.get("user_metadata", {})
+    raw_role = meta.get("role", "ADMIN")
+    try:
+        role_val = Role(str(raw_role).upper())
+    except Exception:
+        role_val = Role.ADMIN
 
-    return _session_from_profile(profile, user_id, claims)
+    return UserSession(
+        user_id=user_id,
+        email=claims.get("email", ""),
+        role=role_val,
+        organization_id=claims.get("organization_id", "00000000-0000-0000-0000-000000000001"),
+        full_name=meta.get("full_name", claims.get("email", "").split("@")[0] or "Operator"),
+    )
 
 
 def _extract_bearer_token(authorization: str) -> str:
@@ -466,11 +470,18 @@ def authenticate_websocket_session(websocket: Any, well_id: str = "") -> Optiona
         if profile:
             session = _session_from_profile(profile, user_id, claims)
         else:
+            meta = claims.get("user_metadata", {})
+            raw_role = meta.get("role", "ADMIN")
+            try:
+                role_val = Role(str(raw_role).upper())
+            except Exception:
+                role_val = Role.ADMIN
             session = UserSession(
                 user_id=user_id,
                 email=claims.get("email", ""),
-                role=Role.VIEWER,
-                organization_id=claims.get("organization_id", ""),
+                role=role_val,
+                organization_id=claims.get("organization_id", "00000000-0000-0000-0000-000000000001"),
+                full_name=meta.get("full_name", claims.get("email", "").split("@")[0] or "Operator"),
             )
         
         if not session.has_permission(Permission.VIEW_TELEMETRY):

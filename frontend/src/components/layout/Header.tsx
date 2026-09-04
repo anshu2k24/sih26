@@ -48,19 +48,26 @@ export const Header: React.FC = () => {
         {/* Brand */}
         {!sidebarExpanded && (
           <div 
-            className="flex flex-col justify-center px-4 h-[44px] rounded-[14px] transition-all duration-300"
+            className="flex items-center gap-3 px-3.5 h-[46px] rounded-[14px] transition-all duration-300 select-none"
             style={{
               background: "rgba(20,20,20,0.55)",
-              border: "1px solid rgba(255,122,0,0.18)",
-              minWidth: "210px"
+              border: "1px solid rgba(255,122,0,0.22)",
+              boxShadow: "0 0 16px rgba(255,122,0,0.08)",
             }}
           >
-            <div className="font-[700] text-[20px] leading-tight flex">
-              <span className="text-[#F5F5F5]">eRTMAC</span>
-              <span className="text-[#FF7A00]">-NWIS</span>
-            </div>
-            <div className="text-[#9A9A9A] text-[10px] font-[400] leading-none lowercase mt-0.5">
-              Nearbywells intelligence system
+            <img 
+              src="/oris-badge.png" 
+              alt="ORIS" 
+              className="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(255,122,0,0.4)]" 
+            />
+            <div className="flex flex-col justify-center">
+              <div className="font-[800] text-[20px] leading-tight flex items-center gap-1.5 tracking-wider">
+                <span className="text-[#F5F5F5] font-black">ORIS</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00] animate-pulse"></span>
+              </div>
+              <div className="text-[#9A9A9A] text-[9.5px] font-[500] leading-none uppercase tracking-wide mt-0.5 whitespace-nowrap">
+                Oil Field Risk & Intelligence System
+              </div>
             </div>
           </div>
         )}

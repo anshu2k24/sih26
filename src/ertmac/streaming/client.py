@@ -28,8 +28,8 @@ class SensorStreamClient:
         self.max_history = max_history
 
         self.status = "STREAM DISCONNECTED"
-        self.is_streaming = True
-        self.well_id = "15/9-F-15"
+        self.is_streaming = False
+        self.well_id = ""
         self.current_md = 0.0
         self.tvd: Optional[float] = None
         self.last_timestamp = "N/A"
@@ -46,16 +46,18 @@ class SensorStreamClient:
             def __init__(self, model_path, features_path):
                 self.model = joblib.load(model_path)
                 self.features = joblib.load(features_path)
+                # Calibrated 98th-percentile anomaly threshold for Volve formation
+                self.anomaly_threshold = 0.088
             
             def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
                 df = X.copy()
                 for col in self.features:
                     if col not in df.columns:
                         df[col] = 0.0
-                df = df[self.features]
-                # Isolation Forest predict returns -1 for anomaly, 1 for normal
-                preds = self.model.predict(df)
-                probs = np.where(preds == -1, 1.0, 0.0)
+                df = df[self.features].fillna(0.0)
+                # Isolation Forest continuous decision function (higher = more anomalous)
+                scores = -self.model.decision_function(df)
+                probs = np.where(scores >= self.anomaly_threshold, 1.0, 0.0)
                 return probs
 
         try:
@@ -176,9 +178,14 @@ class SensorStreamClient:
 
             rec = SensorRecord.from_dict(data)
             with self._lock:
+                # Strictly reject and drop any residual packets from an old well
+                if self.well_id and self.well_id != "N/A" and rec.well_id != self.well_id:
+                    return
+
                 # Detect well reset or new stream start
                 if self.current_md > 0 and rec.md < self.current_md:
                     self.history.clear()
+                    self.samples_received = 0
 
                 self.well_id = rec.well_id
                 self.current_md = rec.md
@@ -199,6 +206,9 @@ class SensorStreamClient:
 
     def send_command(self, action: str, **kwargs) -> Dict[str, Any]:
         """Dispatches an interactive stream control command (start, pause, resume) to the simulator."""
+        well_id = kwargs.get("well_id")
+        if well_id and well_id != "N/A" and well_id != self.well_id:
+            self.set_well(well_id)
         msg = json.dumps({"action": action, **kwargs})
         with self._lock:
             if action in ("start", "resume"):
@@ -206,7 +216,7 @@ class SensorStreamClient:
             elif action == "pause":
                 self.is_streaming = False
 
-        if hasattr(self, "_ws_conn") and self._ws_conn and hasattr(self, "_loop") and self._loop and self._loop.is_running():
+        if hasattr(self, "_ws_conn") and self._ws_conn and not getattr(self._ws_conn, "closed", True) and hasattr(self, "_loop") and self._loop and self._loop.is_running():
             try:
                 asyncio.run_coroutine_threadsafe(self._ws_conn.send(msg), self._loop)
                 return {"success": True, "action": action, "dispatched": True}
@@ -225,6 +235,13 @@ class SensorStreamClient:
                 self.history.clear()
                 self.current_record = None
                 self.is_streaming = True
+                self.ml_result = {
+                    "status": "ML_NOT_READY",
+                    "is_blocked": True,
+                    "gate_reason": f"Initializing stream for well {well_id}...",
+                    "risk_score": None,
+                    "features": {}
+                }
                 logger.info(f"Active stream well switched to '{well_id}'")
 
     def get_state(self) -> Dict[str, Any]:

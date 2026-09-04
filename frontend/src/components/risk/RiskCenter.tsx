@@ -201,7 +201,7 @@ export const RiskCenter: React.FC<RiskCenterProps> = ({ mlState, latestSensor, c
                 {[
                   { label: "ROP", value: latestSensor?.rop, unit: " m/h" },
                   { label: "WOB", value: latestSensor?.wob, unit: " kN" },
-                  { label: "SPP", value: latestSensor?.spp, unit: " bar" },
+                  { label: "SPP", value: latestSensor?.spp, unit: " kPa", fmt: 0 },
                   { label: "Torque", value: latestSensor?.torque, unit: " kNm" },
                   { label: "RPM", value: latestSensor?.rpm, unit: "", fmt: 0 },
                   { label: "Flow", value: latestSensor?.flow_in, unit: " L/m", fmt: 0 },
@@ -275,7 +275,7 @@ export const RiskCenter: React.FC<RiskCenterProps> = ({ mlState, latestSensor, c
           <span>MD (m)</span>
           <span>ROP m/h</span>
           <span>WOB kN</span>
-          <span>SPP bar</span>
+          <span>SPP kPa</span>
           <span>Torque</span>
           <span>RPM</span>
           <span>Flow L/m</span>

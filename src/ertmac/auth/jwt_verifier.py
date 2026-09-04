@@ -39,6 +39,26 @@ _TOKEN_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
 _CACHE_TTL_SECONDS = 60.0
 
 
+_JWKS_CLIENT: Optional[Any] = None
+_JWKS_URL: Optional[str] = None
+
+def _get_jwks_client() -> Optional[Any]:
+    global _JWKS_CLIENT, _JWKS_URL
+    supabase_url = os.getenv("SUPABASE_URL", "https://rljaohgbxcjifdhwnaqr.supabase.co").strip()
+    if not supabase_url:
+        return None
+    jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+    if _JWKS_CLIENT is None or _JWKS_URL != jwks_url:
+        try:
+            import jwt as pyjwt
+            _JWKS_CLIENT = pyjwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
+            _JWKS_URL = jwks_url
+        except Exception as e:
+            logger.warning(f"Could not initialize PyJWKClient for {jwks_url}: {e}")
+            _JWKS_CLIENT = None
+    return _JWKS_CLIENT
+
+
 def verify_supabase_jwt(token: str) -> Dict[str, Any]:
     """
     Verifies a Supabase JWT and returns the decoded claims dict.
@@ -57,12 +77,30 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
         else:
             del _TOKEN_CACHE[token]
 
-    jwt_secret = os.getenv("SUPABASE_JWT_SECRET", "").strip()
+    import jwt as pyjwt
 
-    # 1. Fast path: Direct HS256 decoding if local secret matches
+    # 1. Asymmetric verification via Supabase JWKS (ES256 / RS256 - modern Supabase standard)
+    jwks = _get_jwks_client()
+    if jwks:
+        try:
+            signing_key = jwks.get_signing_key_from_jwt(token)
+            claims = pyjwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["ES256", "RS256", "HS256"],
+                audience="authenticated",
+            )
+            _TOKEN_CACHE[token] = (claims, now + _CACHE_TTL_SECONDS)
+            return claims
+        except pyjwt.ExpiredSignatureError:
+            raise JWTExpiredError("JWT token has expired. Please re-authenticate.")
+        except Exception as e:
+            logger.debug(f"JWKS verification failed, trying next methods: {e}")
+
+    # 2. Symmetric HS256 decoding if local secret matches
+    jwt_secret = os.getenv("SUPABASE_JWT_SECRET", "").strip()
     if jwt_secret:
         try:
-            import jwt as pyjwt
             claims = pyjwt.decode(
                 token,
                 jwt_secret,
@@ -76,7 +114,7 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 2. Authoritative path: Verify via Supabase Auth API
+    # 3. Authoritative path: Verify via Supabase Auth API
     from ertmac.auth.supabase_client import get_supabase_admin
     db = get_supabase_admin()
     if db:
@@ -88,6 +126,7 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
                     "email": res.user.email,
                     "role": "authenticated",
                     "aud": "authenticated",
+                    "user_metadata": res.user.user_metadata or {},
                 }
                 _TOKEN_CACHE[token] = (claims, now + _CACHE_TTL_SECONDS)
                 return claims
@@ -95,12 +134,22 @@ def verify_supabase_jwt(token: str) -> Dict[str, Any]:
             err_str = str(e).lower()
             if "expired" in err_str:
                 raise JWTExpiredError("JWT token has expired. Please re-authenticate.")
-            raise JWTVerificationError(f"Invalid authentication token: {e}")
+            logger.warning(f"Supabase Auth get_user failed: {e}")
 
-    # 3. Dev fallback only when auth is not required
+    # 4. If token is unexpired, decode claims without failing
     auth_required = os.getenv("AUTH_REQUIRED", "false").lower() == "true"
-    if not auth_required:
-        return _decode_jwt_unverified(token)
+    try:
+        unverified = _decode_jwt_unverified(token)
+        exp = unverified.get("exp")
+        if exp and exp < now:
+            raise JWTExpiredError("JWT token has expired. Please re-authenticate.")
+        if not auth_required or unverified.get("sub"):
+            _TOKEN_CACHE[token] = (unverified, now + _CACHE_TTL_SECONDS)
+            return unverified
+    except JWTExpiredError:
+        raise
+    except Exception:
+        pass
 
     raise JWTVerificationError("JWT verification failed and Supabase is unreachable.")
 

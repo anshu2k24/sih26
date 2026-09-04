@@ -83,32 +83,31 @@ class ApplicationStateManager:
         return results
 
     def get_well_state(self, well_id: str) -> Dict[str, Any]:
-        if well_id and well_id != "N/A" and hasattr(self.stream_client, "set_well"):
-            if self.stream_client.well_id != well_id:
-                self.stream_client.set_well(well_id)
         st = self.stream_client.get_state()
-        active_well = st["well_id"] if st["well_id"] != "N/A" else well_id
+        is_same = (st["well_id"] == well_id)
         return {
-            "well_id": active_well,
-            "stream_status": st["status"],
+            "well_id": well_id,
+            "stream_status": st["status"] if is_same else "STANDBY",
             "data_source": SCIENTIFIC_LABEL,
-            "current_md": st["current_md"],
-            "tvd": st["tvd"],
-            "last_timestamp": st["last_timestamp"],
-            "samples_received": st["samples_received"],
-            "latest_sensor": st["current_record"],
+            "current_md": st["current_md"] if is_same else 0.0,
+            "tvd": st["tvd"] if is_same else None,
+            "last_timestamp": st["last_timestamp"] if is_same else "N/A",
+            "samples_received": st["samples_received"] if is_same else 0,
+            "latest_sensor": st["current_record"] if is_same else None,
             "ml": {
-                "status": st["ml_result"]["status"],
+                "status": st["ml_result"]["status"] if is_same else "ML_NOT_READY",
                 "is_blocked": st["ml_result"].get("is_blocked", True),
                 "gate_reason": st["ml_result"].get("gate_reason", "ML_NOT_READY"),
-                "risk_score": st["ml_result"].get("risk_score", None),
-                "features_constructed": len(st["ml_result"].get("features", {}))
+                "risk_score": st["ml_result"].get("risk_score", None) if is_same else None,
+                "features_constructed": len(st["ml_result"].get("features", {})) if is_same else 0
             }
         }
 
     def get_latest_sensor(self, well_id: str) -> Optional[Dict[str, Any]]:
         st = self.stream_client.get_state()
-        return st["current_record"]
+        if st.get("well_id") == well_id:
+            return st.get("current_record")
+        return None
 
     def get_sensor_history(self, well_id: str, cutoff_md: Optional[float] = None) -> Dict[str, Any]:
         st = self.stream_client.get_state()
@@ -116,8 +115,11 @@ class ApplicationStateManager:
         if cutoff_md is None:
             cutoff_md = st["current_md"]
 
-        # STRICT CAUSAL FILTERING: Return ONLY emitted records <= cutoff_md
-        causal_records = [r for r in history if r["md"] <= cutoff_md]
+        # STRICT CAUSAL FILTERING: Return ONLY emitted records for this well_id <= cutoff_md
+        causal_records = [
+            r for r in history
+            if (r.get("well_id") == well_id or not r.get("well_id")) and r["md"] <= cutoff_md
+        ]
         return {
             "well_id": well_id,
             "cutoff_md": cutoff_md,
@@ -128,17 +130,21 @@ class ApplicationStateManager:
     def get_risk_status(self, well_id: str) -> Dict[str, Any]:
         st = self.stream_client.get_state()
         ml_res = st["ml_result"]
+        is_same = (st.get("well_id") == well_id)
         return {
             "well_id": well_id,
-            "status": ml_res.get("status", "ML_NOT_READY"),
+            "status": ml_res.get("status", "ML_NOT_READY") if is_same else "ML_NOT_READY",
             "is_blocked": ml_res.get("is_blocked", True),
-            "risk_score": ml_res.get("risk_score", None),  # NEVER fabricate risk score
+            "risk_score": ml_res.get("risk_score", None) if is_same else None,
             "reason": ml_res.get("gate_reason", "ML Readiness Gate blocked"),
-            "features_constructed": len(ml_res.get("features", {}))
+            "features_constructed": len(ml_res.get("features", {})) if is_same else 0
         }
 
     def send_stream_command(self, action: str, **kwargs) -> Dict[str, Any]:
         """Dispatches an interactive stream control command (start, pause, resume) to the sensor stream."""
+        well_id = kwargs.get("well_id")
+        if well_id and hasattr(self.stream_client, "set_well"):
+            self.stream_client.set_well(well_id)
         return self.stream_client.send_command(action, **kwargs)
 
     def get_stream_status(self) -> Dict[str, Any]:

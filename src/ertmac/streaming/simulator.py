@@ -32,6 +32,7 @@ class SensorStreamSimulator:
         self.speed = 50.0
         self.active_well_id: Optional[str] = None
         self._pause_event: Optional[asyncio.Event] = None
+        self._switch_event: Optional[asyncio.Event] = None
         self._autostart = autostart
 
     @property
@@ -44,13 +45,21 @@ class SensorStreamSimulator:
 
     def start_streaming(self, well_id: Optional[str] = None, speed: Optional[float] = None) -> None:
         """Starts or unpauses well digging."""
+        well_changed = False
         if speed is not None:
-            self.speed = speed
-        if well_id:
+            self.speed = float(speed)
+        if well_id and well_id != "N/A" and well_id != self.active_well_id:
+            logger.info(f"[{SCIENTIFIC_LABEL}] Instant well switch: '{self.active_well_id}' -> '{well_id}'")
             self.active_well_id = well_id
+            self.buffer.clear()
+            well_changed = True
+
+        self.is_running = True
         self.is_paused = False
         if self._pause_event:
             self._pause_event.set()
+        if well_changed and self._switch_event:
+            self._switch_event.set()
         logger.info(f"[{SCIENTIFIC_LABEL}] Digging started for well '{self.active_well_id}' at {self.speed}x speed")
 
     def pause_streaming(self) -> None:
@@ -58,10 +67,13 @@ class SensorStreamSimulator:
         self.is_paused = True
         if self._pause_event:
             self._pause_event.clear()
+        if self._switch_event:
+            self._switch_event.set()
         logger.info(f"[{SCIENTIFIC_LABEL}] Digging paused for well '{self.active_well_id}'")
 
     def resume_streaming(self) -> None:
         """Resumes a paused drilling stream."""
+        self.is_running = True
         self.is_paused = False
         if self._pause_event:
             self._pause_event.set()
@@ -110,17 +122,20 @@ class SensorStreamSimulator:
         well_id: str,
         speed: float = 1.0,
         start_md: Optional[float] = None,
-        end_md: Optional[float] = None
+        end_md: Optional[float] = None,
+        loop: bool = True
     ) -> AsyncIterator[SensorRecord]:
         """
         Asynchronous replay generator for WebSocket server broadcasting.
         Respects is_paused state so it only digs when commanded by user.
+        Dynamically handles well switches cleanly and IMMEDIATELY in real-time.
         """
         self.reset()
         self.is_running = True
         self.active_well_id = well_id
         self.speed = speed
         self._pause_event = asyncio.Event()
+        self._switch_event = asyncio.Event()
 
         if not self.is_paused:
             self._pause_event.set()
@@ -132,25 +147,59 @@ class SensorStreamSimulator:
                 f"Digging will begin when user clicks START."
             )
 
-        records_iter = self.source.stream_records(well_id, start_md, end_md)
+        while self.is_running:
+            current_well = self.active_well_id
+            self.reset()
+            self.is_running = True
+            self.active_well_id = current_well
+            self.state.well_id = current_well
+            self._switch_event.clear()
 
-        for record in records_iter:
-            if not self.is_running:
-                break
+            try:
+                records_iter = iter(self.source.stream_records(current_well, start_md, end_md))
+            except Exception as e:
+                logger.error(f"Failed to stream records for well '{current_well}': {e}")
+                for _ in range(10):
+                    if not self.is_running or self.active_well_id != current_well:
+                        break
+                    await asyncio.sleep(0.1)
+                continue
 
-            # If paused, wait for user to click START/RESUME
-            while self.is_paused and self.is_running:
-                await self._pause_event.wait()
-                if not self.is_running:
+            for record in records_iter:
+                if not self.is_running or self.active_well_id != current_well:
                     break
 
-            self.buffer.append(record)
-            yield record
+                # If paused, wait for user to click START/RESUME
+                while self.is_paused and self.is_running and self.active_well_id == current_well:
+                    await self._pause_event.wait()
+                    if not self.is_running or self.active_well_id != current_well:
+                        break
 
-            effective_speed = max(0.001, self.speed)
-            base_step_delay = 0.5 / effective_speed
-            if effective_speed > 0 and base_step_delay >= 0.005:
-                await asyncio.sleep(base_step_delay)
+                if not self.is_running or self.active_well_id != current_well:
+                    break
+
+                self.buffer.append(record)
+                yield record
+
+                effective_speed = max(0.001, self.speed)
+                base_step_delay = max(0.04, 1.0 / effective_speed)
+                if effective_speed > 0 and base_step_delay >= 0.005:
+                    try:
+                        await asyncio.wait_for(self._switch_event.wait(), timeout=base_step_delay)
+                        # Switch requested during sleep: break old well immediately
+                        self._switch_event.clear()
+                        break
+                    except asyncio.TimeoutError:
+                        pass
+
+            # If finished all records for this well
+            if self.active_well_id == current_well:
+                if loop and end_md is None:
+                    logger.info(f"[{SCIENTIFIC_LABEL}] Completed well '{current_well}' stream sequence. Continuous rewinding active.")
+                    await asyncio.sleep(0.2)
+                    continue
+                else:
+                    break
 
         self.is_running = False
 

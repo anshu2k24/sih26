@@ -13,8 +13,8 @@ export const LoginPage: React.FC = () => {
   const location = useLocation();
 
   const [mode, setMode] = useState<Mode>("LOGIN");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("jayanthjay751@gmail.com");
+  const [password, setPassword] = useState("123456");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("ADMIN");
   const [showPassword, setShowPassword] = useState(false);
@@ -82,9 +82,9 @@ export const LoginPage: React.FC = () => {
 
       {/* Header */}
       <header className="login-header">
-        <div className="brand">
-          <span className="brand-dot"></span>
-          eRTMAC-NWIS
+        <div className="brand flex items-center gap-2">
+          <img src="/oris-badge.png" alt="ORIS" className="w-7 h-7 object-contain" />
+          <span className="font-extrabold tracking-wider text-white">ORIS</span>
         </div>
         <div className="secure-text">SECURE ACCESS</div>
       </header>
@@ -93,7 +93,10 @@ export const LoginPage: React.FC = () => {
       <main className="login-main">
         {/* LEFT SIDE */}
         <section className="login-intro">
-          <p className="eyebrow">NEARBY WELLS INTELLIGENCE SYSTEM</p>
+          <div className="mb-4">
+            <img src="/oris-logo-dark.png" alt="ORIS Logo" className="h-20 w-auto object-contain" />
+          </div>
+          <p className="eyebrow">OIL FIELD RISK AND INTELLIGENCE SYSTEM</p>
           <h1>
             Smarter decisions.<br />
             <span>Safer drilling.</span>
@@ -112,11 +115,11 @@ export const LoginPage: React.FC = () => {
               {mode === "LOGIN"
                 ? "WELCOME BACK"
                 : mode === "SIGNUP"
-                ? "JOIN NWIS"
+                ? "JOIN ORIS"
                 : "RECOVER ACCESS"}
             </p>
             <h2>
-              {mode === "LOGIN" && "Sign in to NWIS"}
+              {mode === "LOGIN" && "Sign in to ORIS"}
               {mode === "SIGNUP" && "Create an Account"}
               {mode === "FORGOT" && "Reset Password"}
             </h2>
@@ -196,7 +199,7 @@ export const LoginPage: React.FC = () => {
               <label>Email</label>
               <input
                 type="email"
-                placeholder="engineer@oilindia.in"
+                placeholder="jayanthjay751@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -207,7 +210,7 @@ export const LoginPage: React.FC = () => {
                 <label>Password</label>
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="123456"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -262,7 +265,7 @@ export const LoginPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="login-footer">
-        eRTMAC-NWIS · Drilling Intelligence Platform
+        ORIS · Oil Field Risk and Intelligence System
       </footer>
     </div>
   );

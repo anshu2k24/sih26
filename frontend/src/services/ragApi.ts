@@ -41,10 +41,26 @@ async function ragFetch<T>(
     }
   }
 
-  const res = await fetch(`${RAG_BASE_URL}${path}`, {
+  let res = await fetch(`${RAG_BASE_URL}${path}`, {
     ...options,
     headers,
   });
+
+  if (res.status === 401 && import.meta.env.VITE_SUPABASE_URL) {
+    try {
+      const { data: refreshData, error } = await supabase.auth.refreshSession();
+      if (!error && refreshData?.session?.access_token) {
+        headers.set("Authorization", `Bearer ${refreshData.session.access_token}`);
+        res = await fetch(`${RAG_BASE_URL}${path}`, {
+          ...options,
+          headers,
+        });
+      }
+    } catch {
+      // Continue
+    }
+  }
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(error.detail || `RAG API error: ${res.status}`);

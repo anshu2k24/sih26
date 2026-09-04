@@ -172,19 +172,24 @@ class BroadcastManager:
 
     async def _broadcast_loop(self):
         state_mgr = get_app_state()
-        last_counts = {}
+        last_keys = {}
         while self.running:
             try:
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.1)
                 for well_id, queues in list(self.queues.items()):
                     if not queues:
                         continue
                     st = state_mgr.get_well_state(well_id)
                     current_count = st["samples_received"]
-                    last_count = last_counts.get(well_id, -1)
+                    current_md = st["current_md"]
+                    state_well = st.get("well_id")
                     
-                    if current_count != last_count and st["latest_sensor"] is not None:
-                        last_counts[well_id] = current_count
+                    if state_well != well_id:
+                        continue
+                    
+                    state_key = (current_count, current_md)
+                    if state_key != last_keys.get(well_id) and st["latest_sensor"] is not None:
+                        last_keys[well_id] = state_key
                         ml = st["ml"]
                         
                         if ml.get("status") == "SUCCESS" and ml.get("risk_score") == 1.0:
@@ -826,6 +831,11 @@ async def websocket_gateway(websocket: WebSocket, well_id: str):
     await websocket.accept()
     logger.info(f"WebSocket client connected for well '{well_id}' (User: {session.email}, Org: {session.organization_id})")
     state_mgr = get_app_state()
+
+    # Automatically activate stream for requested well if changing wells or not yet streaming
+    st_check = state_mgr.get_well_state(well_id)
+    if not st_check.get("is_streaming") or state_mgr.stream_client.well_id != well_id or st_check.get("samples_received", 0) == 0:
+        state_mgr.send_stream_command("start", well_id=well_id)
 
     try:
         st = state_mgr.get_well_state(well_id)

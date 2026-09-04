@@ -36,7 +36,7 @@ export function useSensorStream(selectedWell: string) {
   // Fetch initial REST state and history on well change
   const loadInitialState = useCallback(async (wellId: string) => {
     const initialState = await fetchWellState(wellId);
-    if (initialState) {
+    if (initialState && initialState.well_id === wellId) {
       setCurrentMd(initialState.current_md);
       setTvd(initialState.tvd || null);
       setLastTimestamp(initialState.last_timestamp || "N/A");
@@ -57,7 +57,7 @@ export function useSensorStream(selectedWell: string) {
     }
 
     const initialHistory = await fetchSensorHistory(wellId);
-    if (initialHistory && initialHistory.length > 0) {
+    if (initialHistory && initialHistory.length > 0 && (!initialHistory[0].well_id || initialHistory[0].well_id === wellId)) {
       setHistory(initialHistory);
     } else {
       setHistory([]);
@@ -69,6 +69,21 @@ export function useSensorStream(selectedWell: string) {
     let isIntentionalClose = false;
 
     setStatus("CONNECTING");
+    // Immediately clear telemetry from previous well for instant, clean transition
+    setHistory([]);
+    setLatestSensor(null);
+    setCurrentMd(0);
+    setTvd(null);
+    setSamplesReceived(0);
+    setLastTimestamp("N/A");
+    setMlState({
+      status: "ML_NOT_READY",
+      is_blocked: true,
+      gate_reason: `Initializing stream listener for ${selectedWell}...`,
+      risk_score: null,
+      features_constructed: 0,
+    });
+
     loadInitialState(selectedWell);
 
     const connectWebSocket = async () => {
@@ -89,9 +104,13 @@ export function useSensorStream(selectedWell: string) {
       let wsUrl = `${WS_BASE_URL}/api/ws/wells/${encodedWell}`;
 
       try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session?.access_token) {
-          wsUrl += `?token=${encodeURIComponent(data.session.access_token)}`;
+        let session = (await supabase.auth.getSession()).data.session;
+        if (!session?.access_token && import.meta.env.VITE_SUPABASE_URL) {
+          const refreshed = await supabase.auth.refreshSession();
+          session = refreshed.data?.session || null;
+        }
+        if (session?.access_token) {
+          wsUrl += `?token=${encodeURIComponent(session.access_token)}`;
         } else if (import.meta.env.VITE_SUPABASE_URL) {
           // Waiting for user login
           if (isSubscribed) setStatus("STREAM DISCONNECTED");
@@ -120,6 +139,11 @@ export function useSensorStream(selectedWell: string) {
 
           if (msg.type === "sensor_update" && msg.data) {
             const rec: SensorRecord = msg.data;
+            // Ignore residual packets from prior wells
+            if (rec.well_id && rec.well_id !== selectedWell) {
+              return;
+            }
+
             setLatestSensor(rec);
             setCurrentMd(rec.md);
             if (rec.tvd !== undefined) setTvd(rec.tvd);
@@ -129,6 +153,9 @@ export function useSensorStream(selectedWell: string) {
 
             // Append strictly emitted record to history
             setHistory((prev) => {
+              if (prev.length > 0 && prev[0].well_id && prev[0].well_id !== rec.well_id) {
+                return [rec];
+              }
               if (prev.length > 0 && rec.md < prev[prev.length - 1].md) {
                 return [rec];
               }
@@ -175,9 +202,14 @@ export function useSensorStream(selectedWell: string) {
 
         // Only schedule reconnect if closed unexpectedly and still subscribed
         if (event.code !== 1000 && !reconnectTimerRef.current) {
-          reconnectTimerRef.current = window.setTimeout(() => {
+          reconnectTimerRef.current = window.setTimeout(async () => {
             reconnectTimerRef.current = null;
             if (isSubscribed) {
+              try {
+                await supabase.auth.refreshSession();
+              } catch {
+                // Non-blocking
+              }
               connectWebSocket();
             }
           }, 3000);
@@ -203,17 +235,19 @@ export function useSensorStream(selectedWell: string) {
 
   const startStream = useCallback(async (wellId?: string, speed?: number) => {
     const targetWell = wellId || selectedWell;
+    setIsStreaming(true);
     const ok = await startStreamApi(targetWell, speed);
-    if (ok) {
-      setIsStreaming(true);
+    if (!ok) {
+      setIsStreaming(false);
     }
     return ok;
   }, [selectedWell]);
 
   const pauseStream = useCallback(async () => {
+    setIsStreaming(false);
     const ok = await pauseStreamApi();
-    if (ok) {
-      setIsStreaming(false);
+    if (!ok) {
+      setIsStreaming(true);
     }
     return ok;
   }, []);

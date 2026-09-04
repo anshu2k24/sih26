@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import type { WellItem } from "../types/api";
 import type { SensorRecord, StreamConnectionStatus } from "../types/sensor";
 import type { MLStatusState } from "../types/ml";
-import { fetchWells } from "../services/api";
+import { fetchWells, startStreamApi } from "../services/api";
 import { useSensorStream } from "../hooks/useSensorStream";
 
 interface ActiveWellContextType {
@@ -26,7 +26,14 @@ const ActiveWellContext = createContext<ActiveWellContextType | undefined>(undef
 
 export const ActiveWellProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [wells, setWells] = useState<WellItem[]>([]);
-  const [selectedWell, setSelectedWell] = useState<string>("15/9-F-15");
+  const [selectedWell, _setSelectedWell] = useState<string>("15/9-F-15");
+
+  const setSelectedWell = (wellId: string) => {
+    if (!wellId || wellId === selectedWell) return;
+    _setSelectedWell(wellId);
+    // Command backend stream simulation to switch to the new well immediately
+    startStreamApi(wellId).catch(() => {});
+  };
 
   useEffect(() => {
     fetchWells().then((data) => {

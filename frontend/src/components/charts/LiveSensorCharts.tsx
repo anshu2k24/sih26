@@ -108,7 +108,7 @@ export const LiveSensorCharts: React.FC<LiveSensorChartsProps> = ({ history }) =
                       dataKey={c.dataKey}
                       stroke={c.color}
                       strokeWidth={2}
-                      dot={false}
+                      dot={chartData.length < 5 ? { r: 3, fill: c.color } : false}
                       isAnimationActive={false}
                     />
                   </LineChart>

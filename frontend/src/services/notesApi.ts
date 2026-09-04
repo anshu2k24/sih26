@@ -27,7 +27,22 @@ async function authFetch(url: string, init?: RequestInit): Promise<Response> {
   } catch (err) {
     // Continue with existing headers
   }
-  return fetch(url, { ...init, headers });
+
+  let res = await fetch(url, { ...init, headers });
+
+  if (res.status === 401 && import.meta.env.VITE_SUPABASE_URL) {
+    try {
+      const { data: refreshData, error } = await supabase.auth.refreshSession();
+      if (!error && refreshData?.session?.access_token) {
+        headers.set("Authorization", `Bearer ${refreshData.session.access_token}`);
+        res = await fetch(url, { ...init, headers });
+      }
+    } catch {
+      // Continue
+    }
+  }
+
+  return res;
 }
 
 /**

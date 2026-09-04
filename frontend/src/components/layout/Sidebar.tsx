@@ -66,16 +66,35 @@ export const Sidebar: React.FC = () => {
       }}
     >
       {/* Top Toggle / Brand Area */}
-      <div className={`flex items-center mb-6 w-full ${expanded ? "justify-between px-2" : "justify-center"}`}>
-        <div className={`flex flex-col justify-center overflow-hidden whitespace-nowrap transition-all duration-300 ${expanded ? 'w-[180px] opacity-100 px-2' : 'w-0 opacity-0'}`}>
-          <div className="font-[700] text-[16px] leading-tight flex">
-            <span className="text-[#F5F5F5]">eRTMAC</span>
-            <span className="text-[#FF7A00]">-NWIS</span>
+      <div className={`flex items-center mb-6 w-full ${expanded ? "justify-between px-2" : "flex-col gap-3 items-center"}`}>
+        {expanded ? (
+          <div className="flex items-center gap-2.5 overflow-hidden whitespace-nowrap transition-all duration-300">
+            <img 
+              src="/oris-badge.png" 
+              alt="ORIS" 
+              className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(255,122,0,0.4)]" 
+            />
+            <div className="flex flex-col justify-center">
+              <div className="font-[800] text-[16px] leading-tight flex items-center gap-1 tracking-wider">
+                <span className="text-[#F5F5F5] font-black">ORIS</span>
+                <span className="w-1 h-1 rounded-full bg-[#FF7A00]"></span>
+              </div>
+              <div className="text-[#9A9A9A] text-[8.5px] font-[500] leading-none uppercase tracking-wide mt-0.5">
+                Risk & Intelligence
+              </div>
+            </div>
           </div>
-          <div className="text-[#9A9A9A] text-[9px] font-[400] leading-none lowercase mt-0.5">
-            Nearbywells intelligence system
-          </div>
-        </div>
+        ) : (
+          <img 
+            src="/oris-badge.png" 
+            alt="ORIS" 
+            className="w-8 h-8 object-contain cursor-pointer drop-shadow-[0_0_8px_rgba(255,122,0,0.4)] hover:scale-105 transition-transform" 
+            onClick={() => {
+              setExpanded(true);
+              window.dispatchEvent(new CustomEvent("sidebar:toggle", { detail: true }));
+            }}
+          />
+        )}
         <button
           onClick={() => {
             const newVal = !expanded;
