@@ -67,11 +67,19 @@ class VolveReplaySensorSource(BaseSensorSource):
             self._df = VolveReplaySensorSource._CACHED_DF
             return
 
-        # Step 1: Load complete local Parquet dataset (all Volve wells)
+        # Step 1: Load complete local Parquet dataset (all Volve wells, or synthetic fallback)
         repo_root = Path(__file__).resolve().parent.parent.parent.parent
         default_parquet = repo_root / "data" / "processed" / "usrop" / "usrop_clean.parquet"
+        synthetic_parquet = repo_root / "data" / "synthetic" / "oil_ertmac_sensors.parquet"
+
+        target_parquet = None
         if default_parquet.exists():
-            self.parquet_path = default_parquet
+            target_parquet = default_parquet
+        elif synthetic_parquet.exists():
+            target_parquet = synthetic_parquet
+
+        if target_parquet is not None:
+            self.parquet_path = target_parquet
             self._df = pd.read_parquet(self.parquet_path)
             self._prepare_dataset()
             self._index_wells()
@@ -149,10 +157,14 @@ class VolveReplaySensorSource(BaseSensorSource):
         well_df = self._wells.get(str(well_id))
 
         if well_df is None or len(well_df) == 0:
-            # Fallback to primary Volve well '15/9-F-15'
+            # Fallback to primary Volve well '15/9-F-15' or first available indexed well
             fallback_key = "15/9-F-15"
-            if fallback_key in self._wells:
+            if fallback_key in self._wells and len(self._wells[fallback_key]) > 0:
                 well_df = self._wells[fallback_key].copy()
+                well_df["well_id"] = str(well_id)
+            elif len(self._wells) > 0:
+                first_key = next(iter(self._wells.keys()))
+                well_df = self._wells[first_key].copy()
                 well_df["well_id"] = str(well_id)
             else:
                 well_df = pd.DataFrame()

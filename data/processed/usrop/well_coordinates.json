@@ -1,0 +1,145 @@
+{
+  "15/9-F-15": {
+    "well_id": "15/9-F-15",
+    "name": "Volve F-15 Main Development",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Active Drilling",
+    "latitude": 58.44168,
+    "longitude": 1.88778,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 3"
+  },
+  "15/9-F-15S": {
+    "well_id": "15/9-F-15S",
+    "name": "Volve F-15 Sidetrack",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Active Sidetrack",
+    "latitude": 58.44168,
+    "longitude": 1.88778,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 3"
+  },
+  "15/9-F-14": {
+    "well_id": "15/9-F-14",
+    "name": "Volve F-14 Producer",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Producer",
+    "latitude": 58.44165,
+    "longitude": 1.88781,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 2"
+  },
+  "15/9-F-12": {
+    "well_id": "15/9-F-12",
+    "name": "Volve F-12 Injector",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Injector",
+    "latitude": 58.44171,
+    "longitude": 1.88775,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 4"
+  },
+  "15/9-F-11": {
+    "well_id": "15/9-F-11",
+    "name": "Volve F-11 Oil Producer",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Producer",
+    "latitude": 58.44162,
+    "longitude": 1.88784,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 1"
+  },
+  "15/9-F-9 A": {
+    "well_id": "15/9-F-9 A",
+    "name": "Volve F-9 Sidetrack A",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Sidetrack",
+    "latitude": 58.44170,
+    "longitude": 1.88772,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 5"
+  },
+  "15/9-F-9": {
+    "well_id": "15/9-F-9",
+    "name": "Volve F-9 Surface Well",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Surface Section",
+    "latitude": 58.44170,
+    "longitude": 1.88772,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 5"
+  },
+  "15/9-F-7": {
+    "well_id": "15/9-F-7",
+    "name": "Volve F-7 Water Injector",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Injector",
+    "latitude": 58.44160,
+    "longitude": 1.88786,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 6"
+  },
+  "15/9-F-5": {
+    "well_id": "15/9-F-5",
+    "name": "Volve F-5 Oil Producer",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Producer",
+    "latitude": 58.44158,
+    "longitude": 1.88790,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 7"
+  },
+  "15/9-F-4": {
+    "well_id": "15/9-F-4",
+    "name": "Volve F-4 Producer",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Producer",
+    "latitude": 58.44156,
+    "longitude": 1.88792,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 8"
+  },
+  "15/9-F-1 C": {
+    "well_id": "15/9-F-1 C",
+    "name": "Volve F-1 Sidetrack C",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Historical Wellbore",
+    "latitude": 58.44154,
+    "longitude": 1.88795,
+    "water_depth_m": 84.0,
+    "slot_name": "Slot 9"
+  },
+  "15/9-19": {
+    "well_id": "15/9-19",
+    "name": "Volve Subsea Wildcat Discovery",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Subsea Exploration",
+    "latitude": 58.43500,
+    "longitude": 1.90200,
+    "water_depth_m": 88.0,
+    "slot_name": "Subsea Template A"
+  },
+  "15/9-19 A": {
+    "well_id": "15/9-19 A",
+    "name": "Volve Subsea Appraisal",
+    "field": "Volve",
+    "operator": "Equinor",
+    "status": "Subsea Appraisal",
+    "latitude": 58.43510,
+    "longitude": 1.90210,
+    "water_depth_m": 88.0,
+    "slot_name": "Subsea Template A"
+  }
+}

@@ -7,8 +7,10 @@ import { supabase } from "../lib/supabase";
 
 const WS_BASE_URL =
   import.meta.env.VITE_WS_BASE_URL ||
-  (typeof window !== "undefined" && window.location.protocol === "https:"
-    ? `wss://${window.location.host}`
+  (typeof window !== "undefined"
+    ? (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        ? "ws://localhost:8000"
+        : "wss://ertmac-backend.onrender.com")
     : "ws://localhost:8000");
 
 const MAX_HISTORY = 2000;

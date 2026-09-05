@@ -15,7 +15,12 @@ frontend/dist/
 
 # Data
 data/raw/
-data/processed/
+data/processed/*
+!data/processed/usrop/
+!data/processed/usrop/usrop_clean.parquet
+!data/processed/usrop/well_coordinates.json
+!data/processed/events/
+!data/processed/events/event_context.parquet
 data/features/
 data/uploads/
 data/reports/

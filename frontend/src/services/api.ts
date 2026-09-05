@@ -48,7 +48,9 @@ import type { MLStatusState } from "../types/ml";
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== "undefined"
-    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    ? (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        ? `${window.location.protocol}//${window.location.hostname}:8000`
+        : "https://ertmac-backend.onrender.com")
     : "http://localhost:8000");
 
 

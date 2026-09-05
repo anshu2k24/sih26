@@ -17,9 +17,9 @@ services:
       - key: STREAM_IN_PROCESS
         value: "true"
       - key: CORS_ORIGINS
-        value: "https://ertmac-nwis.vercel.app,https://sih26.vercel.app"
+        value: "https://orisai.vercel.app,https://ertmac-nwis.vercel.app,https://sih26.vercel.app"
       - key: FRONTEND_URL
-        value: "https://ertmac-nwis.vercel.app"
+        value: "https://orisai.vercel.app"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
