@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { SensorRecord, StreamConnectionStatus } from "../types/sensor";
 import type { MLStatusState } from "../types/ml";
 import type { WSEventMessage } from "../types/api";
-import { fetchWellState, fetchSensorHistory, startStreamApi, pauseStreamApi, fetchStreamStatusApi } from "../services/api";
+import { fetchWellState, fetchSensorHistory, startStreamApi, pauseStreamApi } from "../services/api";
 import { supabase } from "../lib/supabase";
 
 const WS_BASE_URL =
@@ -32,8 +32,10 @@ export function useSensorStream(selectedWell: string) {
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
+  // Tracks whether the user explicitly paused — prevents loadInitialState race from overwriting it
+  const userPausedRef = useRef<boolean>(false);
 
-  // Fetch initial REST state and history on well change
+  // Fetch initial REST state and history on well change (no streaming status — that comes from WS onopen)
   const loadInitialState = useCallback(async (wellId: string) => {
     const initialState = await fetchWellState(wellId);
     if (initialState && initialState.well_id === wellId) {
@@ -47,14 +49,9 @@ export function useSensorStream(selectedWell: string) {
       }
     }
 
-    try {
-      const streamInfo = await fetchStreamStatusApi();
-      if (streamInfo) {
-        setIsStreaming(Boolean(streamInfo.is_streaming));
-      }
-    } catch {
-      // Non-blocking
-    }
+    // NOTE: fetchStreamStatusApi is intentionally NOT called here.
+    // isStreaming is driven exclusively by ws.onopen (start) and pauseStream() (pause).
+    // Calling fetchStreamStatusApi here creates a race condition that overwrites user-initiated pauses.
 
     const initialHistory = await fetchSensorHistory(wellId);
     if (initialHistory && initialHistory.length > 0 && (!initialHistory[0].well_id || initialHistory[0].well_id === wellId)) {
@@ -69,6 +66,9 @@ export function useSensorStream(selectedWell: string) {
     let isIntentionalClose = false;
 
     setStatus("CONNECTING");
+    setIsStreaming(false);  // Reset on every well change — ws.onopen will set it back to true
+    userPausedRef.current = false; // Reset intentional-pause protection on well change
+    sessionStorage.removeItem('ertmac_stream_paused'); // Clear persisted pause on well switch (new well auto-starts)
     // Immediately clear telemetry from previous well for instant, clean transition
     setHistory([]);
     setLatestSensor(null);
@@ -128,8 +128,19 @@ export function useSensorStream(selectedWell: string) {
 
       ws.onopen = () => {
         if (!isSubscribed) return;
+        // Don't auto-start if the user explicitly paused (survives page refresh via sessionStorage)
+        const isPersistentlyPaused = sessionStorage.getItem('ertmac_stream_paused') === '1';
+        if (userPausedRef.current || isPersistentlyPaused) {
+          setStatus("LIVE");
+          setIsStreaming(false);
+          return;
+        }
         console.log(`[WebSocket] Connected for well '${selectedWell}'`);
         setStatus("LIVE");
+        // Auto-start stream immediately on connect — no button click required
+        startStreamApi(selectedWell).then((ok) => {
+          if (ok && isSubscribed && !userPausedRef.current) setIsStreaming(true);
+        }).catch(() => {});
       };
 
       ws.onmessage = (event) => {
@@ -235,6 +246,8 @@ export function useSensorStream(selectedWell: string) {
 
   const startStream = useCallback(async (wellId?: string, speed?: number) => {
     const targetWell = wellId || selectedWell;
+    userPausedRef.current = false; // User explicitly starting — clear pause protection
+    sessionStorage.removeItem('ertmac_stream_paused'); // Clear persisted pause
     setIsStreaming(true);
     const ok = await startStreamApi(targetWell, speed);
     if (!ok) {
@@ -244,9 +257,13 @@ export function useSensorStream(selectedWell: string) {
   }, [selectedWell]);
 
   const pauseStream = useCallback(async () => {
+    userPausedRef.current = true; // User explicitly paused — protect from being overwritten
+    sessionStorage.setItem('ertmac_stream_paused', '1'); // Persist across page refresh
     setIsStreaming(false);
     const ok = await pauseStreamApi();
     if (!ok) {
+      userPausedRef.current = false;
+      sessionStorage.removeItem('ertmac_stream_paused');
       setIsStreaming(true);
     }
     return ok;

@@ -13,6 +13,7 @@ _SYSTEM_SETTINGS: Dict[str, Any] = {
     "telemetry_stream_url": "ws://localhost:8765",
     "notification_recipient_email": os.getenv("ALERT_NOTIFICATION_EMAIL", "operator@company.com"),
     "email_rate_limit_per_sec": int(os.getenv("EMAIL_RATE_LIMIT_PER_SEC", "4")),
+    "email_rate_limit_per_min": int(os.getenv("EMAIL_RATE_LIMIT_PER_MIN", "4")),  # Max 4 emails per minute
     "send_to_login_account": True,
     "resend_notifications_enabled": bool(os.getenv("RESEND_API_KEY")),
     "supabase_persistence_enabled": bool(os.getenv("SUPABASE_URL")),

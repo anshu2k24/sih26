@@ -81,6 +81,8 @@ class SensorStreamClient:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
+        # Event fired by set_well() to interrupt the in-process streaming loop immediately
+        self._well_switch_event = threading.Event()
 
     def start(self) -> None:
         if self._running:
@@ -140,22 +142,39 @@ class SensorStreamClient:
                 try:
                     from ertmac.streaming.sources import VolveReplaySensorSource
                     source = VolveReplaySensorSource()
-                    active_well = self.well_id if (self.well_id and self.well_id != "N/A") else "15/9-F-15"
+
+                    # Determine active well — default to 15/9-F-15 if none set yet
                     with self._lock:
+                        active_well = self.well_id if (self.well_id and self.well_id != "N/A") else "15/9-F-15"
                         self.well_id = active_well
                         self.status = "LIVE"
-                        self.is_streaming = True
+                        # DO NOT force is_streaming=True here — let START DRILLING command control it
 
-                    logger.info(f"In-process stream replay active for well '{active_well}'")
+                    logger.info(f"In-process stream replay standby for well '{active_well}' (waiting for START command)")
                     current_streaming_well = active_well
+                    self._well_switch_event.clear()
+
                     for rec in source.stream_records(active_well):
-                        if not self._running or self.well_id != current_streaming_well:
+                        # Check if runner was stopped or well was switched
+                        if not self._running or self._well_switch_event.is_set():
                             break
-                        # If user paused, wait until unpaused
-                        while not self.is_streaming and self._running and self.well_id == current_streaming_well:
-                            time.sleep(0.5)
+
+                        # Honor PAUSE: spin-wait until user sends START/RESUME
+                        while not self.is_streaming and self._running and not self._well_switch_event.is_set():
+                            time.sleep(0.2)
+
+                        # Re-check after unblocking
+                        if not self._running or self._well_switch_event.is_set():
+                            break
+
                         self._process_message(json.dumps(rec.to_dict()))
                         time.sleep(0.1)
+
+                    if self._well_switch_event.is_set():
+                        logger.info(f"In-process stream: well switched away from '{active_well}', restarting loop.")
+                        self._well_switch_event.clear()
+                        # No sleep — restart immediately for new well
+                        continue
 
                 except Exception as e:
                     logger.error(f"In-process stream error: {e}")
@@ -176,6 +195,12 @@ class SensorStreamClient:
                     self.is_streaming = bool(data.get("is_streaming", False))
                 return
 
+            # Gate: if the user has paused, drop incoming telemetry records immediately
+            # This stops data from reaching the frontend even if the external simulator keeps running
+            with self._lock:
+                if not self.is_streaming:
+                    return
+
             rec = SensorRecord.from_dict(data)
             with self._lock:
                 # Strictly reject and drop any residual packets from an old well
@@ -192,7 +217,9 @@ class SensorStreamClient:
                 self.tvd = rec.tvd
                 self.last_timestamp = rec.timestamp
                 self.samples_received += 1
-                self.is_streaming = True
+                # NOTE: Do NOT set self.is_streaming = True here.
+                # is_streaming is controlled exclusively by send_command() and welcome messages.
+                # Setting it here would override a user-initiated pause on every incoming record.
                 self.current_record = rec.to_dict()
                 self.history.append(rec.to_dict())
 
@@ -216,13 +243,15 @@ class SensorStreamClient:
             elif action == "pause":
                 self.is_streaming = False
 
-        if hasattr(self, "_ws_conn") and self._ws_conn and not getattr(self._ws_conn, "closed", True) and hasattr(self, "_loop") and self._loop and self._loop.is_running():
+        # Try to forward command to external WS simulator (websockets 13+ compatible)
+        ws_conn = getattr(self, "_ws_conn", None)
+        loop = getattr(self, "_loop", None)
+        if ws_conn is not None and loop is not None and loop.is_running():
             try:
-                asyncio.run_coroutine_threadsafe(self._ws_conn.send(msg), self._loop)
+                asyncio.run_coroutine_threadsafe(ws_conn.send(msg), loop)
                 return {"success": True, "action": action, "dispatched": True}
             except Exception as e:
                 logger.warning(f"Failed to dispatch command to stream server: {e}")
-                return {"success": True, "action": action, "dispatched": False, "error": str(e)}
         return {"success": True, "action": action, "dispatched": False, "note": "Local state updated"}
 
     def set_well(self, well_id: str) -> None:
@@ -234,7 +263,7 @@ class SensorStreamClient:
                 self.samples_received = 0
                 self.history.clear()
                 self.current_record = None
-                self.is_streaming = True
+                # is_streaming stays whatever it was — START command will set it
                 self.ml_result = {
                     "status": "ML_NOT_READY",
                     "is_blocked": True,
@@ -243,6 +272,8 @@ class SensorStreamClient:
                     "features": {}
                 }
                 logger.info(f"Active stream well switched to '{well_id}'")
+            # Signal the in-process loop to break out of the old well iterator immediately
+            self._well_switch_event.set()
 
     def get_state(self) -> Dict[str, Any]:
         with self._lock:

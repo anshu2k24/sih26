@@ -8,13 +8,20 @@ import os
 import time
 import uuid
 import logging
+from collections import deque
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Deque
 from datetime import datetime, timezone
 
 from ertmac.alerts.persistence import AlertPersistence
 
 logger = logging.getLogger("AlertEngine")
+
+# ---------------------------------------------------------------------------
+# Global email rate limiter: sliding-window, max 4 emails per 60 seconds
+# ---------------------------------------------------------------------------
+_EMAIL_RATE_WINDOW_SEC: float = 60.0
+_email_dispatch_times: Deque[float] = deque()
 
 
 class AlertSeverity(str, Enum):
@@ -211,14 +218,55 @@ class AlertEngine:
         return alert
 
     def _dispatch_email_notification(self, alert: AlertItem) -> bool:
+        """Dispatches an alert email with per-minute global rate limiting (max 4/min)."""
+        global _email_dispatch_times
+        now = time.time()
+
+        # Sliding-window rate limit: evict timestamps older than 60 s
+        while _email_dispatch_times and now - _email_dispatch_times[0] > _EMAIL_RATE_WINDOW_SEC:
+            _email_dispatch_times.popleft()
+
+        # Read configured max from settings (default 4 per minute)
+        from ertmac.config.settings import get_system_settings
+        settings = get_system_settings()
+        max_per_min = int(settings.get("email_rate_limit_per_min", 4))
+
+        if len(_email_dispatch_times) >= max_per_min:
+            logger.info(
+                f"Email rate limit reached ({len(_email_dispatch_times)}/{max_per_min} per min). "
+                f"Suppressing email for alert {alert.alert_id}."
+            )
+            return False
+
+        _email_dispatch_times.append(now)
+
         try:
             from ertmac.notifications.delivery import NotificationDeliveryEngine
             from ertmac.config.settings import get_notification_recipient_email
-            target_email = get_notification_recipient_email()
+
+            # Fetch the logged-in user's email from Supabase (respects Settings toggle)
+            user_email = None
+            try:
+                from ertmac.auth.supabase_auth import get_supabase_client
+                sb = get_supabase_client()
+                if sb:
+                    # Fetch the admin/primary user email
+                    resp = sb.auth.admin.list_users()
+                    if resp and hasattr(resp, '__iter__'):
+                        for u in resp:
+                            if hasattr(u, 'email') and u.email:
+                                user_email = u.email
+                                break
+            except Exception:
+                pass
+
+            target_email = get_notification_recipient_email(user_email=user_email)
             NotificationDeliveryEngine.dispatch_alert_email(alert.to_dict(), recipient_email=target_email)
+            logger.info(f"Alert email dispatched to {target_email} for alert {alert.alert_id} ({len(_email_dispatch_times)}/{max_per_min} this minute)")
             return True
         except Exception as e:
             logger.error(f"Failed to dispatch alert email: {e}")
+            _email_dispatch_times.pop()  # roll back the count on failure
             return False
 
 
